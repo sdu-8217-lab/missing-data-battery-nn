@@ -51,17 +51,56 @@ class BatteryDataset(Dataset):
         
         return combined_features, target
 
+# 定义数据清洗函数 (从示例代码借鉴)
+def clean_data(df, feature_cols, target_col):
+    print("Cleaning data: removing inf values and outliers...")
+    
+    # 1. 替换无穷大值为NaN
+    df = df.replace([np.inf, -np.inf], np.nan)
+    
+    # 2. 删除包含NaN的行
+    original_shape = df.shape
+    df = df.dropna()
+    df = df.reset_index(drop=True)
+    print(f"  Removed {original_shape[0] - df.shape[0]} rows with NaN/inf values")
+    
+    # 3. 应用3-sigma原则移除异常值
+    out_index = []
+    for col in feature_cols + [target_col]:
+        if col in df.columns:
+            mean = df[col].mean()
+            std = df[col].std()
+            # 避免除以零
+            if std > 0:
+                lower_bound = mean - 3 * std
+                upper_bound = mean + 3 * std
+                outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)].index
+                out_index.extend(outliers.tolist())
+    
+    # 去重并删除异常值
+    out_index = list(set(out_index))
+    if out_index:
+        print(f"  Removing {len(out_index)} rows with extreme outliers")
+        df = df.drop(out_index)
+        df = df.reset_index(drop=True)
+    
+    print(f"  Data shape after cleaning: {df.shape}")
+    return df
+
 # 加载数据
 df = pd.read_csv(args.data_path)
 print(f"Loaded dataset with shape: {df.shape}")
 
-# 提取特征和目标
+# 应用数据清洗
 feature_cols = ['voltage mean', 'voltage std', 'voltage kurtosis', 'voltage skewness', 
                 'CC Q', 'CC charge time', 'voltage slope', 'voltage entropy',
                 'current mean', 'current std', 'current kurtosis', 'current skewness',
                 'CV Q', 'CV charge time', 'current slope', 'current entropy']
 target_col = 'capacity'
 
+df = clean_data(df, feature_cols, target_col)
+
+# 提取特征和目标
 X = df[feature_cols].values
 y_capacity = df[target_col].values
 
