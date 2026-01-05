@@ -1,21 +1,42 @@
+# ========================= 导入必要的库 =========================
+# 处理文件路径
 from pathlib import Path
+# 命令行参数解析
 import argparse
+# 科学计算
 import numpy as np
+# 数据处理与分析
 import pandas as pd
+# 数据可视化
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
+# 机器学习预处理与模型选择
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+# 深度学习框架
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+# 系统操作与时间处理
 import os
 import datetime
 
 # =========================
 # 1. 命令行参数与配置
 # =========================
+"""
+配置实验参数，支持通过命令行自定义实验设置
+参数说明:
+--missing_rates: 要测试的缺失率列表，范围0.05到0.8
+--max_missing_rate: 动态训练时允许的最大缺失率
+--epochs: 模型训练的最大轮数
+--data_dir: 电池数据集的根目录路径
+--batch: 电池批次标识，可选值包括2C,3C,R2.5,R3,RW,satellite
+--seed: 随机种子，确保实验可复现性
+--batch_size: 训练时的批次大小
+--results_dir: 结果保存的目录路径
+"""
 parser = argparse.ArgumentParser(description='SOH estimation with missing data handling')
 parser.add_argument('--missing_rates', type=float, nargs='+', default=[0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8],
                    help='要测试的缺失率列表 (0.1-0.9)')
@@ -31,14 +52,14 @@ parser.add_argument('--batch_size', type=int, default=32, help='训练批次大�
 parser.add_argument('--results_dir', type=str, default='results', help='结果保存目录')
 args = parser.parse_args()
 
-# 设置随机种子保证可复现性
+# 设置随机种子以保证实验可复现性
 torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 
-# 确保结果目录存在
+# 确保结果保存目录存在，若不存在则创建
 os.makedirs(args.results_dir, exist_ok=True)
 
-# 生成全局唯一标识符（时间戳）
+# 生成全局唯一标识符（时间戳），用于区分不同实验
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 print(f"实验时间戳: {timestamp}")
 
@@ -46,7 +67,22 @@ print(f"实验时间戳: {timestamp}")
 # 2. 数据清洗函数
 # =========================
 def clean_data(df, feature_cols, target_col):
-    """清洗数据：处理inf值、NaN值和异常值"""
+    """
+    清洗电池数据集，处理异常值和缺失值
+    
+    参数:
+    df: pandas DataFrame，包含原始电池数据
+    feature_cols: 特征列名列表
+    target_col: 目标列名（通常是容量）
+    
+    返回:
+    清洗后的DataFrame
+    
+    处理步骤:
+    1. 替换无穷大值为NaN
+    2. 删除包含NaN的行
+    3. 应用3-sigma原则移除异常值
+    """
     print("正在清洗数据: 移除inf值和异常值...")
     
     # 1. 替换无穷大值为NaN
@@ -87,18 +123,36 @@ def clean_data(df, feature_cols, target_col):
 def expand_training_set(X_train, y_train, missing_rates):
     """
     扩充训练集以适应带缺失指示器的神经网络
-    根据给定的缺失率列表生成多个缺失副本
+    
+    通过在原始数据上模拟不同缺失率，生成多个带缺失指示器的数据副本，
+    使模型能够学习处理不同缺失模式的能力
+    
+    参数:
+    X_train: 原始训练特征，numpy数组
+    y_train: 原始训练标签，numpy数组
+    missing_rates: 要生成的缺失率列表
+    
+    返回:
+    X_expanded: 扩充后的特征，包含原始特征和缺失指示器
+    y_expanded: 扩充后的标签（与原始标签相同）
+    
+    处理流程:
+    1. 对每个缺失率生成一个随机缺失掩码
+    2. 应用掩码创建带缺失的特征
+    3. 生成缺失指示器向量（1表示缺失，0表示存在）
+    4. 将带缺失的特征与缺失指示器拼接
+    5. 合并所有缺失率的数据副本
     """
     print(f"正在扩充训练集，缺失率范围: {missing_rates}")
     
     expanded_X = []
     expanded_y = []
     
-    # 为每个缺失率生成缺失副本（只生成缺失指示器格式的副本）
+    # 为每个缺失率生成缺失副本
     for mr in missing_rates:
         print(f"  生成缺失率为 {mr*100:.0f}% 的副本...")
         
-        # 生成随机缺失掩码
+        # 生成随机缺失掩码 (1表示保留，0表示缺失)
         mask = np.random.binomial(1, 1-mr, size=X_train.shape)
         
         # 应用缺失（将缺失位置设为0）
@@ -126,7 +180,21 @@ def expand_training_set(X_train, y_train, missing_rates):
 # 4. Dataset 定义
 # =========================
 class BatteryDatasetFixedMissing(Dataset):
-    """固定缺失率的数据集，用于验证和测试"""
+    """
+    电池数据集类，用于处理固定缺失率的场景
+    
+    该类扩展了PyTorch的Dataset类，能够:
+    1. 模拟指定缺失率的数据
+    2. 生成缺失指示器
+    3. 将特征与缺失指示器组合
+    
+    参数:
+    X: 原始特征数据
+    y: 目标值（SOH）
+    missing_rate: 要模拟的缺失率（0.0-1.0）
+    include_missing_indicators: 是否包含缺失指示器
+    missing_mask: 可选的预定义缺失掩码，若未提供则自动生成
+    """
     def __init__(self, X, y, missing_rate=0.0, include_missing_indicators=True, missing_mask=None):
         self.X = X
         self.y = y
@@ -146,9 +214,20 @@ class BatteryDatasetFixedMissing(Dataset):
         self.X_with_missing = np.where(self.missing_mask == 1, self.X, 0)
         
     def __len__(self):
+        """返回数据集大小"""
         return len(self.X)
     
     def __getitem__(self, idx):
+        """
+        获取指定索引的数据样本
+        
+        返回:
+        feature_values: 特征值张量
+        target: 目标值张量
+        或
+        combined_features: 特征值与缺失指示器拼接的张量
+        target: 目标值张量
+        """
         # 获取特征值
         feature_values = torch.tensor(self.X_with_missing[idx], dtype=torch.float32)
         target = torch.tensor(self.y[idx], dtype=torch.float32)
@@ -162,7 +241,17 @@ class BatteryDatasetFixedMissing(Dataset):
             return feature_values, target
 
 class MeanFillDataset(Dataset):
-    """均值填充方法的数据集"""
+    """
+    均值填充数据集类，用于处理缺失数据的基线方法
+    
+    该类使用列均值填充缺失值，作为缺失指示器方法的对比基线
+    
+    参数:
+    X: 原始特征数据
+    y: 目标值（SOH）
+    missing_rate: 要模拟的缺失率
+    missing_mask: 可选的预定义缺失掩码
+    """
     def __init__(self, X, y, missing_rate=0.0, missing_mask=None):
         self.X = X.copy()
         self.y = y
@@ -172,7 +261,7 @@ class MeanFillDataset(Dataset):
         if missing_mask is None:
             missing_mask = np.random.binomial(1, 1-missing_rate, size=X.shape)
         
-        # 应用缺失
+        # 应用缺失（将缺失位置设为NaN）
         features_with_missing = np.where(missing_mask == 1, self.X, np.nan)
         
         # 均值填充
@@ -182,17 +271,41 @@ class MeanFillDataset(Dataset):
         self.features_filled = np.where(np.isnan(features_with_missing), feature_means, features_with_missing)
         
     def __len__(self):
+        """返回数据集大小"""
         return len(self.X)
     
     def __getitem__(self, idx):
+        """
+        获取指定索引的数据样本，返回均值填充后的特征
+        
+        返回:
+        features_filled: 均值填充后的特征张量
+        target: 目标值张量
+        """
         return torch.tensor(self.features_filled[idx], dtype=torch.float32), torch.tensor(self.y[idx], dtype=torch.float32)
 
 # =========================
 # 5. 模型定义
 # =========================
 class SOHNetwork(nn.Module):
-    """SOH估计神经网络，支持不同输入大小"""
+    """
+    SOH估计神经网络，支持不同输入大小
+    
+    根据输入特征数量动态调整网络结构:
+    - 16个输入特征：使用标准结构（基线和均值填充方法）
+    - 32个输入特征：为缺失指示器方法优化的结构
+    - 其他输入大小：自适应生成网络结构
+    
+    网络结构:
+    输入层 -> 隐藏层1 (ReLU) -> 隐藏层2 (ReLU) -> 隐藏层3 (ReLU) -> 输出层
+    """
     def __init__(self, input_size):
+        """
+        初始化网络结构
+        
+        参数:
+        input_size: 输入特征维数
+        """
         super(SOHNetwork, self).__init__()
         
         # 根据输入大小动态设计网络结构
@@ -233,6 +346,7 @@ class SOHNetwork(nn.Module):
             )
     
     def forward(self, x):
+        """前向传播"""
         return self.net(x).squeeze()
 
 # =========================
@@ -240,24 +354,32 @@ class SOHNetwork(nn.Module):
 # =========================
 def train_model(model, train_loader, val_loader, epochs, device, save_path=None, patience=15):
     """
-    训练模型，包含早停机制
+    训练模型，包含早停机制以防止过拟合
     
     参数:
-    model: 要训练的模型
+    model: 要训练的神经网络模型
     train_loader: 训练数据加载器
     val_loader: 验证数据加载器
     epochs: 最大训练轮数
-    device: 训练设备
-    save_path: 模型保存路径
-    patience: 早停耐心值
+    device: 训练设备（CPU或GPU）
+    save_path: 最佳模型保存路径
+    patience: 早停耐心值，在验证损失不再改善时的等待轮数
     
     返回:
-    model: 训练好的模型
-    train_losses: 训练损失历史
-    val_losses: 验证损失历史
+    model: 训练好的模型（加载了验证集上表现最好的权重）
+    train_losses: 训练损失历史记录
+    val_losses: 验证损失历史记录
+    
+    训练流程:
+    1. 初始化优化器和损失函数
+    2. 每轮迭代:
+       - 训练阶段：前向传播、计算损失、反向传播、更新权重
+       - 验证阶段：评估模型在验证集上的性能
+       - 早停判断：若验证损失不再改善且超过耐心值，则提前终止训练
+    3. 保存并加载最佳模型
     """
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.MSELoss()  # 均方误差损失函数，适合回归任务
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)  # Adam优化器
     
     best_val_loss = float('inf')
     patience_counter = 0
@@ -320,7 +442,26 @@ def train_model(model, train_loader, val_loader, epochs, device, save_path=None,
 # 7. 评估函数
 # =========================
 def evaluate_model(model, loader, device):
-    """评估模型性能"""
+    """
+    评估模型性能，计算多种评估指标
+    
+    参数:
+    model: 已训练的模型
+    loader: 数据加载器（通常是测试集）
+    device: 运行设备（CPU或GPU）
+    
+    返回:
+    mae: 平均绝对误差
+    rmse: 均方根误差
+    r2: 决定系数（R²）
+    predictions: 预测值数组
+    targets: 真实值数组
+    
+    评估指标说明:
+    - MAE: 预测误差的平均绝对值，直观反映预测精度
+    - RMSE: 误差平方的均方根，对大误差更敏感
+    - R²: 模型解释方差的比例，1.0表示完美拟合，0表示模型不优于均值预测
+    """
     model.eval()
     predictions = []
     targets = []
@@ -347,7 +488,21 @@ def evaluate_model(model, loader, device):
 # 8. 可视化和结果保存函数
 # =========================
 def plot_training_results(train_losses, val_losses, missing_rate, method_name, save_dir):
-    """绘制训练过程的损失曲线"""
+    """
+    绘制训练过程的损失曲线
+    
+    参数:
+    train_losses: 训练损失历史记录
+    val_losses: 验证损失历史记录
+    missing_rate: 当前实验的缺失率
+    method_name: 方法名称（如"indicators"或"mean_fill"）
+    save_dir: 保存目录路径
+    
+    生成内容:
+    - 训练和验证损失随轮次变化的曲线图
+    - 包含标题、图例、网格线
+    - 以高分辨率保存为PNG文件
+    """
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, 'b-', label='Training Loss')
     plt.plot(val_losses, 'r--', label='Validation Loss')
@@ -360,7 +515,22 @@ def plot_training_results(train_losses, val_losses, missing_rate, method_name, s
     plt.close()
 
 def plot_comparison_results(true_values, indicator_preds, fill_preds, baseline_preds, missing_rate, save_dir):
-    """绘制不同方法的预测结果对比"""
+    """
+    绘制不同方法的预测结果对比
+    
+    参数:
+    true_values: 真实SOH值
+    indicator_preds: 缺失指示器方法的预测值
+    fill_preds: 均值填充方法的预测值
+    baseline_preds: 基线模型（完整数据）的预测值
+    missing_rate: 当前缺失率
+    save_dir: 保存目录路径
+    
+    生成内容:
+    - 四条曲线：真实值、缺失指示器方法、均值填充方法、基线模型
+    - 包含图例、标题、网格线
+    - 以高分辨率保存为PNG文件
+    """
     plt.figure(figsize=(12, 8))
     
     # 预测结果对比
@@ -380,7 +550,20 @@ def plot_comparison_results(true_values, indicator_preds, fill_preds, baseline_p
     plt.close()
 
 def plot_error_distribution(indicator_errors, fill_errors, missing_rate, save_dir):
-    """绘制误差分布"""
+    """
+    绘制不同方法的误差分布对比
+    
+    参数:
+    indicator_errors: 缺失指示器方法的绝对误差
+    fill_errors: 均值填充方法的绝对误差
+    missing_rate: 当前缺失率
+    save_dir: 保存目录路径
+    
+    生成内容:
+    - 两个箱线图：比较两种方法的误差分布
+    - 包含标题、轴标签、网格线
+    - 以高分辨率保存为PNG文件
+    """
     plt.figure(figsize=(10, 6))
     plt.boxplot([indicator_errors, fill_errors], tick_labels=['Missing Indicators', 'Mean Filling'])
     plt.title(f'Absolute Error Distribution (Missing Rate: {missing_rate*100:.0f}%)')
@@ -390,7 +573,23 @@ def plot_error_distribution(indicator_errors, fill_errors, missing_rate, save_di
     plt.close()
 
 def plot_comprehensive_results(results, save_dir):
-    """生成综合比较图表"""
+    """
+    生成综合比较图表，展示不同方法在各种缺失率下的性能
+    
+    参数:
+    results: 包含所有实验结果的字典
+    save_dir: 保存目录路径
+    
+    生成内容:
+    2x2子图布局:
+    1. MAE随缺失率变化趋势
+    2. RMSE随缺失率变化趋势
+    3. R²随缺失率变化趋势
+    4. 缺失指示器方法相对于均值填充方法的改进百分比
+       - 条形图，正值表示改进，负值表示退化
+       - 每个柱子上显示具体改进百分比
+    - 以高分辨率保存为PNG文件
+    """
     missing_rates = results['missing_rates']
     
     plt.figure(figsize=(15, 12))
@@ -452,14 +651,28 @@ def plot_comprehensive_results(results, save_dir):
     plt.close()
 
 def save_results_to_csv(results, save_dir):
-    """将结果保存到CSV文件"""
+    """
+    将实验结果保存到CSV文件，便于后续分析
+    
+    参数:
+    results: 包含所有实验结果的字典
+    save_dir: 保存目录路径
+    
+    保存内容:
+    - 缺失率
+    - 三种方法（基线、缺失指示器、均值填充）的MAE、RMSE、R²
+    - 缺失指示器方法相对于均值填充方法的改进百分比
+    
+    返回:
+    CSV文件的完整路径
+    """
     results_df = pd.DataFrame({
         'Missing_Rate': results['missing_rates'],
         'Baseline_MAE': results['baseline_mae'],
         'Baseline_RMSE': results['baseline_rmse'],
         'Baseline_R2': results['baseline_r2'],
         'Indicator_MAE': results['indicator_mae'],
-        'Indicator_RMSE': results['indicator_rmse'],  # 修复：将 'indicator_rm2' 改为 'indicator_rmse'
+        'Indicator_RMSE': results['indicator_rmse'],
         'Indicator_R2': results['indicator_r2'],
         'Fill_MAE': results['fill_mae'],
         'Fill_RMSE': results['fill_rmse'],
@@ -475,6 +688,24 @@ def save_results_to_csv(results, save_dir):
 # 9. 主程序
 # =========================
 def main():
+    """
+    主函数，执行完整的实验流程
+    
+    实验步骤:
+    1. 设置设备（GPU/CPU）
+    2. 加载并预处理电池数据
+    3. 按电池ID划分训练/测试集
+    4. 特征标准化
+    5. 训练基线模型（完整数据）
+    6. 对每个缺失率:
+       - 训练缺失指示器模型
+       - 训练均值填充模型
+       - 评估并比较两种方法
+       - 生成详细可视化
+    7. 生成综合比较图表
+    8. 保存结果到CSV
+    9. 打印结果摘要
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"使用设备: {device}")
     
