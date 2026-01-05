@@ -12,13 +12,12 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import os
 import datetime
-import glob
 
 # =========================
 # 1. 命令行参数与配置
 # =========================
 parser = argparse.ArgumentParser(description='SOH estimation with missing data handling')
-parser.add_argument('--missing_rates', type=float, nargs='+', default=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+parser.add_argument('--missing_rates', type=float, nargs='+', default=[0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8],
                    help='要测试的缺失率列表 (0.1-0.9)')
 parser.add_argument('--max_missing_rate', type=float, default=0.9,
                    help='动态训练的最大缺失率')
@@ -27,7 +26,7 @@ parser.add_argument('--data_dir', type=str, default='./data/XJTU data',
                    help='数据集根目录')
 parser.add_argument('--batch', type=str, default='2C', choices=['2C','3C','R2.5','R3','RW','satellite'],
                    help='电池批次')
-parser.add_argument('--seed', type=int, default=42, help='用于可复现性的随机种子')
+parser.add_argument('--seed', type=int, default=8217, help='用于可复现性的随机种子')
 parser.add_argument('--batch_size', type=int, default=32, help='训练批次大小')
 parser.add_argument('--results_dir', type=str, default='results', help='结果保存目录')
 args = parser.parse_args()
@@ -161,35 +160,6 @@ class BatteryDatasetFixedMissing(Dataset):
             return combined_features, target
         else:
             return feature_values, target
-
-class BatteryDatasetDynamicMissing(Dataset):
-    """动态缺失率的数据集，用于训练"""
-    def __init__(self, X, y, max_missing_rate=0.9, include_missing_indicators=True):
-        self.X = X
-        self.y = y
-        self.max_missing_rate = max_missing_rate
-        self.include_missing_indicators = include_missing_indicators
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        x = self.X[idx]
-        # 随机生成当前样本的缺失率
-        mr = np.random.uniform(0.0, self.max_missing_rate)
-        mask = np.random.binomial(1, 1 - mr, size=x.shape)
-
-        x_miss = np.where(mask == 1, x, 0.0)
-        indicator = 1 - mask
-
-        x_tensor = torch.tensor(x_miss, dtype=torch.float32)
-        y_tensor = torch.tensor(self.y[idx], dtype=torch.float32)
-        
-        if self.include_missing_indicators:
-            m_tensor = torch.tensor(indicator, dtype=torch.float32)
-            return torch.cat([x_tensor, m_tensor]), y_tensor
-        else:
-            return x_tensor, y_tensor
 
 class MeanFillDataset(Dataset):
     """均值填充方法的数据集"""
