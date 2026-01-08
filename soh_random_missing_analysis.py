@@ -1,5 +1,7 @@
 from pathlib import Path
 import argparse
+import os
+import datetime
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,15 +12,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-import os
-import datetime
 
 # =========================
 # 1. 命令行参数与配置
 # =========================
 parser = argparse.ArgumentParser(description='SOH estimation with missing data handling')
 parser.add_argument('--missing_rates', type=float, nargs='+', default=[0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8],
-                   help='要测试的缺失率列表 (0.1-0.9)')
+                   help='要测试的缺失率列表 (0.05-0.9)')  # 修复：更新帮助信息为0.05-0.9
 parser.add_argument('--training_missing_rates', type=float, nargs='+', default=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
                    help='训练缺失指示器模型时使用的缺失率列表，包含0.0(完整数据)')
 parser.add_argument('--epochs', type=int, default=100, help='训练轮数')
@@ -26,7 +26,7 @@ parser.add_argument('--data_dir', type=str, default='./data/XJTU data',
                    help='数据集根目录')
 parser.add_argument('--batch', type=str, default='2C', choices=['2C','3C','R2.5','R3','RW','satellite'],
                    help='电池批次')
-parser.add_argument('--seed', type=int, default=42, help='用于可复现性的随机种子')
+parser.add_argument('--seed', type=int, default=14544, help='用于可复现性的随机种子')
 parser.add_argument('--batch_size', type=int, default=32, help='训练批次大小')
 parser.add_argument('--results_dir', type=str, default='results', help='结果保存目录')
 args = parser.parse_args()
@@ -70,6 +70,9 @@ def clean_data(df, feature_cols, target_col):
                 upper_bound = mean + 3 * std
                 outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)].index
                 out_index.extend(outliers.tolist())
+        else:
+            # 修复：添加缺失列警告
+            print(f"警告: 列 {col} 不存在，跳过异常值检测")
     
     # 去重并删除异常值
     out_index = list(set(out_index))
@@ -514,6 +517,7 @@ def main():
     if not test_files:
         print("警告: 没有找到测试电池文件（包含'4'或'8'），将使用20%的训练电池作为测试集")
         # 从训练电池中随机选择20%作为测试集
+        np.random.seed(args.seed)  # 修复：设置随机种子确保可复现性
         np.random.shuffle(train_files)
         split_idx = int(len(train_files) * 0.8)
         test_files = train_files[split_idx:]
@@ -689,8 +693,8 @@ def main():
     
     # ===== 3. 为每个缺失率生成固定的测试掩码，确保可比性 =====
     test_masks = {}
-    np.random.seed(args.seed)  # 重置随机种子确保可复现性
-    for mr in args.missing_rates:
+    for i, mr in enumerate(args.missing_rates):
+        np.random.seed(args.seed + i)  # 修复：每个缺失率使用唯一种子
         mask = np.random.binomial(1, 1-mr, size=X_test.shape)
         test_masks[mr] = mask
     
