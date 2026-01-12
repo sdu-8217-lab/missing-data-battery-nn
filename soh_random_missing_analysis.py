@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -36,17 +37,18 @@ torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 
 # 确保结果目录存在
-os.makedirs(args.results_dir, exist_ok=True)
+results_dir = Path(args.results_dir)
+results_dir.mkdir(parents=True, exist_ok=True)
 
 # 生成全局唯一标识符（时间戳）
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 print(f"实验时间戳: {timestamp}")
 
 # =========================
-# 2. 数据清洗函数
+# 2. 数据清洗函数（优化版）
 # =========================
 def clean_data(df, feature_cols, target_col):
-    """清洗数据：处理inf值、NaN值和异常值"""
+    """清洗数据：处理inf值、NaN值和异常值（使用pandas和scipy）"""
     print("正在清洗数据: 移除inf值和异常值...")
     
     # 1. 替换无穷大值为NaN
@@ -54,32 +56,18 @@ def clean_data(df, feature_cols, target_col):
     
     # 2. 删除包含NaN的行
     original_shape = df.shape
-    df = df.dropna()
-    df = df.reset_index(drop=True)
+    df = df.dropna(subset=feature_cols + [target_col], how='any')
     print(f"  已移除 {original_shape[0] - df.shape[0]} 行包含NaN/inf值的数据")
     
     # 3. 应用3-sigma原则移除异常值
-    out_index = []
+    from scipy import stats
     for col in feature_cols + [target_col]:
-        if col in df.columns:
-            mean = df[col].mean()
-            std = df[col].std()
-            # 避免除以零
-            if std > 0:
-                lower_bound = mean - 3 * std
-                upper_bound = mean + 3 * std
-                outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)].index
-                out_index.extend(outliers.tolist())
-        else:
-            # 修复：添加缺失列警告
+        if col not in df.columns:
             print(f"警告: 列 {col} 不存在，跳过异常值检测")
-    
-    # 去重并删除异常值
-    out_index = list(set(out_index))
-    if out_index:
-        print(f"  正在移除 {len(out_index)} 行极端异常值")
-        df = df.drop(out_index)
-        df = df.reset_index(drop=True)
+            continue
+            
+        z_scores = stats.zscore(df[col])
+        df = df[(np.abs(z_scores) < 3)]
     
     print(f"  清洗后数据形状: {df.shape}")
     return df
@@ -165,7 +153,7 @@ class BatteryDatasetFixedMissing(Dataset):
             return feature_values, target
 
 class MeanFillDataset(Dataset):
-    """修正：均值填充方法的数据集，使用0填充（标准化后的均值）"""
+    """均值填充方法的数据集，使用0填充（标准化后的均值）"""
     def __init__(self, X, y, missing_mask=None):
         self.X = X.copy()
         self.y = y
@@ -315,10 +303,10 @@ def train_model(model, train_loader, val_loader, epochs, device, save_path=None,
     return model, train_losses, val_losses
 
 # =========================
-# 7. 评估函数
+# 7. 评估函数（优化版）
 # =========================
 def evaluate_model(model, loader, device):
-    """评估模型性能"""
+    """评估模型性能（使用sklearn.metrics）"""
     model.eval()
     predictions = []
     targets = []
@@ -333,11 +321,10 @@ def evaluate_model(model, loader, device):
     predictions = np.array(predictions)
     targets = np.array(targets)
     
-    # 计算评估指标
-    mae = np.mean(np.abs(predictions - targets))
-    rmse = np.sqrt(np.mean((predictions - targets) ** 2))
-    r2 = 1 - (np.sum((predictions - targets) ** 2) / 
-              np.sum((targets - np.mean(targets)) ** 2)) if np.var(targets) > 1e-8 else 0.0
+    # ✅ 优化后：使用sklearn标准指标计算
+    mae = mean_absolute_error(targets, predictions)
+    rmse = np.sqrt(mean_squared_error(targets, predictions))
+    r2 = r2_score(targets, predictions)  # 自动处理分母为0情况
     
     return mae, rmse, r2, predictions, targets
 
@@ -507,17 +494,30 @@ def main():
     print(f"找到 {len(all_files)} 个电池文件: {[f.name for f in all_files]}")
     
     # 按电池ID划分训练/测试集（4号和8号电池作为测试集）
-    train_files = [f for f in all_files if not ('4' in f.name or '8' in f.name)]
-    test_files = [f for f in all_files if '4' in f.name or '8' in f.name]
+    battery_ids = [f.stem.split('_')[1] for f in all_files]  # 提取电池ID（如 "2C_battery-4" → "4"）
+    test_battery_ids = ['4', '8']
+    test_mask = np.array([id in test_battery_ids for id in battery_ids])
+    train_mask = ~test_mask
+    
+    train_files = [f for i, f in enumerate(all_files) if train_mask[i]]
+    test_files = [f for i, f in enumerate(all_files) if test_mask[i]]
+    
+    # 如果测试集为空，用sklearn随机划分20%作为测试集
+    if not test_files:
+        print("警告: 测试电池未找到，使用20%训练集作为测试集")
+        train_files, test_files = train_test_split(
+            all_files, test_size=0.2, random_state=args.seed
+        )
+    
     print(f"训练电池文件 ({len(train_files)}): {[f.name for f in train_files]}")
     print(f"测试电池文件 ({len(test_files)}): {[f.name for f in test_files]}")
     
     if not train_files:
         raise ValueError("没有找到训练电池文件")
     if not test_files:
-        print("警告: 没有找到测试电池文件（包含'4'或'8'），将使用20%的训练电池作为测试集")
+        print("警告: 没有找到测试电池文件，将使用20%的训练电池作为测试集")
         # 从训练电池中随机选择20%作为测试集
-        np.random.seed(args.seed)  # 修复：设置随机种子确保可复现性
+        np.random.seed(args.seed)
         np.random.shuffle(train_files)
         split_idx = int(len(train_files) * 0.8)
         test_files = train_files[split_idx:]

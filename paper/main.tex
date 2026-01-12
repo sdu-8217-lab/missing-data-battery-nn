@@ -1,0 +1,221 @@
+\documentclass[12pt, a4paper]{ctexart}
+% 设置页边距：上下 2.5cm，左右 3cm
+\usepackage[ 
+    top=2.5cm, 
+    bottom=2.5cm, 
+    left=3cm, 
+    right=3cm,
+    paperwidth=210mm,   % A4 宽度
+    paperheight=297mm  % A4 高度
+]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{lipsum} % 仅用于占位文本，实际使用时删除
+
+% 自定义命令
+\newcommand{\SOH}{\text{SOH}}
+\newcommand{\MAE}{\text{MAE}}
+\newcommand{\RMSE}{\text{RMSE}}
+\newcommand{\Rtwo}{R^2}
+\newcommand{\PINN}{\text{PINN}}
+\newcommand{\MIND}{\text{MIND}}
+\newcommand{\MINDPINN}{\text{MIND-PINN}}
+
+\title{特征缺失感知的物理信息神经网络用于锂离子电池健康状态估计}
+\author{作者姓名}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{引言}
+锂离子电池的健康状态（State of Health, \SOH）估计是电池管理系统（Battery Management System, BMS）的核心任务之一，对电动汽车（EV）、储能电站及航空航天电源系统的安全性、可靠性和经济性具有决定性影响。准确的\SOH估计不仅支撑剩余使用寿命（RUL）的预测，更直接指导充放电策略优化、维护计划制定及梯次利用等关键决策。
+
+传统\SOH估计方法主要分为两类：\textbf{基于机理的物理模型}（如等效电路模型、简化电化学模型）和\textbf{数据驱动的机器学习方法}（如SVR、GPR、DNN、RNN）。前者虽具可解释性，但模型阶次高、参数多、对连续传感器数据依赖强，难以在资源受限的嵌入式BMS中部署；后者虽建模灵活、推理高效，却严重依赖高质量数据，对噪声和缺失敏感，且缺乏物理可解释性。
+
+近年来，物理信息神经网络（\PINN）通过在损失函数中嵌入容量衰减、SEI膜生长等物理残差项，实现了物理先验与数据驱动的融合。Ma等\cite{ma2023}提出的\textit{Physics-Informed neural SOH Estimation}在NASA和Oxford数据集上验证了其在"部分可观测性"（如部分充电段、下采样容量标签）场景下的优越性，但其核心假设是\textbf{特征维度完备}，即输入特征在所有样本中均存在。然而，真实BMS场景中，传感器故障或成本限制常导致\textbf{特征维度缺失}（如某类特征长期失效），若简单用均值填充或置零，将引入系统性偏差（模型无法区分"真实为0"与"缺失填充为0"）。
+
+针对上述问题，本文提出\textbf{带缺失指示器的神经网络（\MIND）}，通过显式编码特征缺失模式（二元指示器），并结合物理约束构建\textbf{\MINDPINN融合框架}。核心创新点如下：
+
+\begin{enumerate}[leftmargin=*,nosep]
+    \item \textbf{缺失指示器框架}：为每个输入特征添加二元缺失指示器，系统分析随机缺失率与固定特征缺失场景下的\SOH预测行为。
+    \item \textbf{\MINDPINN融合模型}：在\textit{缺失指示器框架}中引入简化容量衰减物理模型作为正则项，实现对特征维度缺失与时间稀疏性的鲁棒估计。
+    \item \textbf{可解释性工程分析}：基于XJTU数据集，从跨电池泛化、缺失率敏感度、特征重要性三个维度，量化不同特征对\SOH估计的关键性，提供传感器配置优化建议。
+\end{enumerate}
+
+\section{相关工作}
+\subsection{基于物理模型的SOH估计}
+基于物理的\SOH估计依赖等效电路模型或电化学模型，通过辨识参数（如极化电阻、SEI膜电阻）推断\SOH。其优势在于可解释性强，但面临三大挑战：(1) 模型阶次高、计算成本大；(2) 需高频率多类型传感器数据；(3) 参数辨识易陷入非凸优化。在车载BMS中部署困难。
+
+\subsection{数据驱动的SOH估计}
+数据驱动方法（SVR、GPR、DNN、RNN）通过自动特征提取提升精度，但普遍假设输入特征完备。对缺失数据敏感，且缺乏物理约束导致外推不稳定。近期工作如\cite{zhang2022}虽引入CNN处理原始波形，仍忽略特征维度缺失问题。
+
+\subsection{PINN在SOH估计中的应用}
+\cite{ma2023}将SEI生长模型嵌入\PINN，损失函数为：
+\begin{equation}
+\mathcal{L}_{\text{total}} = \lambda_1 \mathcal{L}_{\text{data}} + \lambda_2 \mathcal{L}_{\text{physics}} + \lambda_3 \mathcal{L}_{\text{smooth}}
+\end{equation}
+在时间维度稀疏场景（如部分充电段）下显著提升鲁棒性。然而，其隐含假设为\textbf{特征维度固定完备}，未解决特征缺失问题。
+
+\subsection{缺失数据处理与缺失指示器方法}
+缺失数据处理传统方法（删除、均值填充、插补）在神经网络中效果有限。缺失指示器（Missing Indicator）通过二元掩码 $m_i$ 显式告知模型缺失位置，有效区分"真实0"与"填充0"。该方法在医疗、金融领域已验证有效\cite{rogers2020}，但尚未应用于电池\SOH估计，尤其缺乏与物理约束的结合。
+
+\section{方法}
+\subsection{特征构造与标准化}
+从每个充电循环提取16维特征（表\ref{tab:features}），经z-score标准化：
+\begin{equation}
+x_i^{\text{norm}} = \frac{x_i - \mu_i}{\sigma_i}
+\end{equation}
+\SOH标签通过容量归一化计算：
+\begin{equation}
+\SOH_k = \frac{C_k}{C_0}
+\end{equation}
+
+\begin{table}[h]
+\centering
+\caption{16维电池特征分类}
+\label{tab:features}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{类别} & \textbf{特征} \\
+\midrule
+电压相关 & mean, std, kurtosis, skewness, slope, entropy \\
+恒流充电 & CC Q, CC time \\
+电流相关 & mean, std, kurtosis, skewness, slope, entropy \\
+恒压充电 & CV Q, CV time \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{缺失指示器编码}
+对特征向量 $\mathbf{x} \in \mathbb{R}^{16}$ 和保留掩码 $\mathbf{r} \in \{0,1\}^{16}$：
+\begin{enumerate}
+    \item 缺失特征：$\tilde{\mathbf{x}} = \mathbf{r} \odot \mathbf{x}^{\text{norm}}$（缺失位置置0）
+    \item 缺失指示器：$\mathbf{m} = \mathbf{1} - \mathbf{r}$
+    \item 拼接输入：$\mathbf{z} = [\tilde{\mathbf{x}}, \mathbf{m}] \in \mathbb{R}^{32}$
+\end{enumerate}
+
+\subsection{网络结构}
+\subsubsection{完整数据基线}
+输入：16维标准化特征 $\mathbf{x}^{\text{norm}}$ \\
+结构：$16 \xrightarrow{\text{Linear}(64)} 64 \xrightarrow{\text{ReLU}} 32 \xrightarrow{\text{Linear}(16)} 16 \xrightarrow{\text{ReLU}} 1$
+
+\subsubsection{MIND模型}
+输入：32维 $\mathbf{z}$ \\
+结构：$32 \xrightarrow{\text{Linear}(64)} 64 \xrightarrow{\text{ReLU}} 32 \xrightarrow{\text{Linear}(16)} 16 \xrightarrow{\text{ReLU}} 1$ \\
+\textit{训练策略：} 通过蒙特卡洛采样生成多缺失率（$r \in \{0.0, 0.1, \dots, 0.9\}$）的扩展训练集，训练单一通用模型。
+
+\subsubsection{15维缩减模型}
+输入：删除指定特征的15维特征向量 $\mathbf{x}_{\neg i}^{\text{norm}}$ \\
+结构：同基线模型（输入维度15） \\
+\textit{目的：} 作为"工程上移除传感器"的对照组。
+
+\subsection{损失函数与优化}
+数据损失：
+\begin{equation}
+\mathcal{L}_{\text{data}} = \frac{1}{N}\sum_{i=1}^{N}(\hat{y}_i - y_i)^2
+\end{equation}
+优化：Adam ($\eta=10^{-3}$, batch size=32)，早停（patience=15）。  
+\MINDPINN扩展：$\mathcal{L}_{\text{total}} = \lambda_1 \mathcal{L}_{\text{data}} + \lambda_2 \mathcal{L}_{\text{physics}} + \lambda_3 \mathcal{L}_{\text{smooth}}$，其中：
+\begin{itemize}
+    \item $\mathcal{L}_{\text{physics}}$：基于物理模型的容量衰减残差（如Arrhenius方程）
+    \item $\mathcal{L}_{\text{smooth}}$：相邻循环\SOH二阶差分的方差
+\end{itemize}
+
+\section{实验设计}
+\subsection{数据集与划分}
+使用XJTU电池数据集（批次：2C, 3C, R2.5, R3, RW, satellite），按电池ID划分：
+\begin{itemize}
+    \item 训练集：除ID=4,8外的所有电池
+    \item 测试集：电池4和8
+    \item 验证集：训练集20\%（仅用于超参调优）
+\end{itemize}
+标准化参数仅基于训练集计算。
+
+\subsection{评价指标}
+\begin{itemize}
+    \item $\MAE$, $\RMSE$, $\Rtwo$（核心指标）
+    \item 物理一致性残差（$\mathcal{L}_{\text{physics}}$）
+    \item SOH轨迹平滑度（$\mathcal{L}_{\text{smooth}}$）
+\end{itemize}
+
+\subsection{实验一：随机缺失率鲁棒性}
+\textbf{目标}：量化\textit{随机特征缺失率}下\textbf{\MIND}相对于\textit{均值填充}的改进。  
+\textbf{设置}：
+\begin{itemize}
+    \item 缺失率：$r \in \{0.05, 0.1, \dots, 0.8\}$
+    \item 对比方法：
+    \begin{enumerate}
+        \item Baseline（完整数据训练，$r=0$）
+        \item Mean Filling（均值填充 + Baseline）
+        \item \MIND（通用模型，训练时覆盖多缺失率）
+    \end{enumerate}
+\end{itemize}
+\textbf{输出}：
+\begin{itemize}
+    \item $\MAE$/$\RMSE$/$\Rtwo$ 随缺失率变化曲线（图\ref{fig:missing_rate}）
+    \item 典型缺失率（50\%, 70\%）的SOH预测序列对比（图\ref{fig:time_series}）
+    \item $\MAE$ 相对改进率：$\frac{\text{Mean Filling MAE} - \MIND\text{ MAE}}{\text{Mean Filling MAE}} \times 100\%$（[数值]）
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+% \includegraphics[width=0.8\textwidth]{missing_rate.png}
+\textit{[Figure: 随机缺失率下\MAE 对比（\MIND vs Mean Filling）]}
+\caption{随机缺失率下\MAE 对比（\MIND vs Mean Filling）}
+\label{fig:missing_rate}
+\end{figure}
+
+\subsection{实验二：单特征缺失敏感性}
+\textbf{目标}：分析\textit{固定特征长期缺失}时，\MIND与15维缩减模型的性能差异，量化特征重要性。  
+\textbf{设置}：
+\begin{itemize}
+    \item 对每个特征 $i$，构造固定掩码 $\mathbf{r}$（$r_i=0$，其余$r_j=1$）
+    \item 对比方法：
+    \begin{enumerate}
+        \item \MIND通用模型（输入32维，含指示器）
+        \item 15维缩减模型（删除特征$i$，重新训练）
+    \end{enumerate}
+\end{itemize}
+\textbf{输出}：
+\begin{itemize}
+    \item 16个特征缺失时的\MAE对比柱状图（图\ref{fig:feature_importance}）
+    \item 关键特征分析：如"CV charge time"缺失导致\MAE上升[数值]，而"current entropy"缺失影响较小（[数值]）
+    \item 传感器配置建议：优先保留[特征列表]（基于\MAE增幅<10\%的特征）
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+% \includegraphics[width=0.8\textwidth]{feature_importance.png}
+\textit{[Figure: 单特征缺失时\MAE对比（\MIND vs 15D Reduction）]}
+\caption{单特征缺失时\MAE对比（\MIND vs 15D Reduction）}
+\label{fig:feature_importance}
+\end{figure}
+
+\subsection{实验三：MIND-PINN融合验证（可选）}
+\textbf{目标}：验证物理约束在特征缺失场景中的协同优势。  
+\textbf{设置}（固定缺失率50\% + 1个关键特征缺失）：
+\begin{itemize}
+    \item 对比：\PINN（无缺失指示器） vs \MIND（无物理约束） vs \MINDPINN
+    \item 指标：$\MAE$, $\Rtwo$, 物理残差, 平滑度
+\end{itemize}
+\textbf{预期结论}：\MINDPINN在\MAE（[数值]）和物理一致性（[数值]）上显著优于对比方法。
+
+\section*{结论与展望}
+本文提出\textbf{\MIND}框架解决特征维度缺失问题，通过缺失指示器显式编码缺失模式，并扩展为\textbf{\MINDPINN}融合物理约束。核心发现：
+\begin{enumerate}
+    \item \MIND在随机缺失率下比均值填充平均降低\MAE [数值]\%（图\ref{fig:missing_rate}）
+    \item 电压斜率（voltage slope）和CV充电时间（CV charge time）为关键特征（缺失时\MAE增加[数值]\%）
+    \item \MINDPINN在特征缺失场景下实现\MAE [数值] vs 原PINN [数值]，证明物理约束的必要性
+\end{enumerate}
+未来工作将探索缺失模式的动态建模及多模态传感器融合。
+
+\bibliographystyle{IEEEtran}
+\bibliography{references} % 实际使用时替换为参考文献数据库
+
+\end{document}

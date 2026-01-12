@@ -55,6 +55,21 @@ datasets/
 .idea/
 *.iml
 
+# LaTeX (新增规则)
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.pdf
+*.ps
+*.eps
+
 # ======================
 # Python 通用忽略规则
 # ======================
@@ -98,4 +113,4 @@ htmlcov/
 .Thumbs.db
 *.swp
 *.swo
-*~
+*～
