@@ -1,7 +1,8 @@
-from pathlib import Path
-import argparse
 import os
 import datetime
+import logging
+from pathlib import Path
+import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -15,26 +16,42 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
 # =========================
-# 1. 命令行参数与配置
+# 1. 日志配置
 # =========================
-parser = argparse.ArgumentParser(description='SOH estimation with missing data handling')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# =========================
+# 2. 命令行参数与配置
+# =========================
+parser = argparse.ArgumentParser(description='Optimized SOH estimation with missing data handling')
 parser.add_argument('--missing_rates', type=float, nargs='+', default=[0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95],
-                   help='要测试的缺失率列表 (0.05-0.95)')  # 修复：更新帮助信息为0.05-0.95
-parser.add_argument('--training_missing_rates', type=float, nargs='+', default=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                   help='要测试的缺失率列表 (0.05-0.95)')
+parser.add_argument('--training_missing_rates', type=float, nargs='+', default=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95],
                    help='训练缺失指示器模型时使用的缺失率列表，包含0.0(完整数据)')
 parser.add_argument('--epochs', type=int, default=100, help='训练轮数')
 parser.add_argument('--data_dir', type=str, default='./data/XJTU data',
                    help='数据集根目录')
-parser.add_argument('--batch', type=str, default='2C', choices=['2C','3C','R2.5','R3','RW','satellite'],
+parser.add_argument('--batch', type=str, default='3C', choices=['2C','3C','R2.5','R3','RW','satellite'],
                    help='电池批次')
-parser.add_argument('--seed', type=int, default=14544, help='用于可复现性的随机种子')
+parser.add_argument('--seed', type=int, default=42, help='用于可复现性的随机种子')
 parser.add_argument('--batch_size', type=int, default=32, help='训练批次大小')
-parser.add_argument('--results_dir', type=str, default='results', help='结果保存目录')
+parser.add_argument('--results_dir', type=str, default='optimized_results', help='结果保存目录')
 args = parser.parse_args()
 
-# 设置随机种子保证可复现性
-torch.manual_seed(args.seed)
-np.random.seed(args.seed)
+# =========================
+# 3. 设置随机种子（全面）
+# =========================
+def set_seeds(seed):
+    """设置所有随机种子以确保可复现性"""
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+set_seeds(args.seed)
 
 # 确保结果目录存在
 results_dir = Path(args.results_dir)
@@ -42,14 +59,14 @@ results_dir.mkdir(parents=True, exist_ok=True)
 
 # 生成全局唯一标识符（时间戳）
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-print(f"实验时间戳: {timestamp}")
+logger.info(f"实验时间戳: {timestamp}")
 
 # =========================
-# 2. 数据清洗函数（优化版）
+# 4. 优化的数据清洗函数
 # =========================
-def clean_data(df, feature_cols, target_col):
-    """清洗数据：处理inf值、NaN值和异常值（使用pandas和scipy）"""
-    print("正在清洗数据: 移除inf值和异常值...")
+def clean_data_optimized(df, feature_cols, target_col):
+    """优化的数据清洗函数，使用向量化操作提高效率"""
+    logger.info("正在清洗数据: 移除inf值和异常值...")
     
     # 1. 替换无穷大值为NaN
     df = df.replace([np.inf, -np.inf], np.nan)
@@ -57,43 +74,50 @@ def clean_data(df, feature_cols, target_col):
     # 2. 删除包含NaN的行
     original_shape = df.shape
     df = df.dropna(subset=feature_cols + [target_col], how='any')
-    print(f"  已移除 {original_shape[0] - df.shape[0]} 行包含NaN/inf值的数据")
+    logger.info(f"  已移除 {original_shape[0] - df.shape[0]} 行包含NaN/inf值的数据")
     
-    # 3. 应用3-sigma原则移除异常值
-    from scipy import stats
+    # 3. 使用向量化操作进行3-sigma异常值检测
+    outlier_mask = pd.DataFrame(False, index=df.index, columns=df.columns)
     for col in feature_cols + [target_col]:
-        if col not in df.columns:
-            print(f"警告: 列 {col} 不存在，跳过异常值检测")
-            continue
-            
-        z_scores = stats.zscore(df[col])
-        df = df[(np.abs(z_scores) < 3)]
+        if col in df.columns:
+            mean = df[col].mean()
+            std = df[col].std()
+            if std > 0:
+                lower_bound = mean - 3 * std
+                upper_bound = mean + 3 * std
+                outlier_mask[col] = (df[col] < lower_bound) | (df[col] > upper_bound)
     
-    print(f"  清洗后数据形状: {df.shape}")
+    # 移除异常值
+    outlier_mask = outlier_mask.any(axis=1)
+    if outlier_mask.any():
+        df = df[~outlier_mask]
+        logger.info(f"  移除 {outlier_mask.sum()} 行异常值")
+    
+    logger.info(f"  清洗后数据形状: {df.shape}")
     return df
 
 # =========================
-# 3. 训练集扩充函数 (修复：包含完整数据)
+# 5. 训练集扩充函数 (高效实现)
 # =========================
-def expand_training_set(X_train, y_train, missing_rates):
+def expand_training_set_efficient(X_train, y_train, missing_rates):
     """
-    扩充训练集以适应带缺失指示器的神经网络
+    高效扩充训练集以适应带缺失指示器的神经网络
     根据给定的缺失率列表生成多个缺失副本，包含完整数据(缺失率=0)
     """
-    print(f"正在扩充训练集，缺失率范围: {missing_rates}")
+    logger.info(f"正在扩充训练集，缺失率范围: {missing_rates}")
     
     expanded_X = []
     expanded_y = []
     
     # 为每个缺失率生成缺失副本
     for mr in missing_rates:
-        print(f"  生成缺失率为 {mr*100:.0f}% 的副本...")
+        logger.info(f"  生成缺失率为 {mr*100:.0f}% 的副本...")
         
-        # 生成随机缺失掩码 (1表示保留，0表示缺失)
-        mask = np.random.binomial(1, 1-mr, size=X_train.shape)
+        # 使用高效的方式生成缺失掩码
+        mask = np.random.rand(*X_train.shape) > mr  # 更高效的方法
         
         # 应用缺失（将缺失位置设为0，对应标准化后的均值）
-        X_with_missing = np.where(mask == 1, X_train, 0)
+        X_with_missing = np.where(mask, X_train, 0)
         
         # 生成缺失指示器向量（1表示缺失，0表示存在）
         missing_indicators = 1 - mask
@@ -104,20 +128,20 @@ def expand_training_set(X_train, y_train, missing_rates):
         expanded_X.append(X_combined)
         expanded_y.append(y_train)  # 标签保持不变
         
-        print(f"    缺失副本形状: {X_combined.shape}")
+        logger.info(f"    缺失副本形状: {X_combined.shape}")
     
     # 合并所有数据
     X_expanded = np.vstack(expanded_X)
     y_expanded = np.concatenate(expanded_y)
     
-    print(f"扩展训练集完成 - 特征: {X_expanded.shape}, 标签: {y_expanded.shape}")
+    logger.info(f"扩展训练集完成 - 特征: {X_expanded.shape}, 标签: {y_expanded.shape}")
     return X_expanded, y_expanded
 
 # =========================
-# 4. Dataset 定义
+# 6. Dataset 定义 (优化)
 # =========================
-class BatteryDatasetFixedMissing(Dataset):
-    """固定缺失率的数据集，用于验证和测试"""
+class OptimizedBatteryDatasetFixedMissing(Dataset):
+    """优化的固定缺失率数据集，用于验证和测试"""
     def __init__(self, X, y, missing_rate=0.0, include_missing_indicators=True, missing_mask=None):
         self.X = X
         self.y = y
@@ -126,7 +150,7 @@ class BatteryDatasetFixedMissing(Dataset):
         
         # 如果没有提供预定义的缺失掩码，则生成新的
         if missing_mask is None:
-            self.missing_mask = np.random.binomial(1, 1-missing_rate, size=X.shape)
+            self.missing_mask = np.random.rand(*X.shape) > missing_rate  # 更高效
         else:
             self.missing_mask = missing_mask
         
@@ -134,7 +158,7 @@ class BatteryDatasetFixedMissing(Dataset):
         self.missing_indicators = 1 - self.missing_mask
         
         # 应用缺失 (将缺失位置设为0)
-        self.X_with_missing = np.where(self.missing_mask == 1, self.X, 0)
+        self.X_with_missing = np.where(self.missing_mask, self.X, 0)
         
     def __len__(self):
         return len(self.X)
@@ -152,8 +176,8 @@ class BatteryDatasetFixedMissing(Dataset):
         else:
             return feature_values, target
 
-class MeanFillDataset(Dataset):
-    """均值填充方法的数据集，使用0填充（标准化后的均值）"""
+class OptimizedMeanFillDataset(Dataset):
+    """优化的均值填充方法数据集，使用0填充（标准化后的均值）"""
     def __init__(self, X, y, missing_mask=None):
         self.X = X.copy()
         self.y = y
@@ -162,7 +186,7 @@ class MeanFillDataset(Dataset):
         self.missing_mask = missing_mask
         
         # 应用缺失
-        self.features_with_missing = np.where(self.missing_mask == 1, self.X, np.nan)
+        self.features_with_missing = np.where(self.missing_mask, self.X, np.nan)
         
         # 使用0填充（标准化后的均值）
         self.features_filled = np.where(np.isnan(self.features_with_missing), 0.0, self.features_with_missing)
@@ -174,12 +198,12 @@ class MeanFillDataset(Dataset):
         return torch.tensor(self.features_filled[idx], dtype=torch.float32), torch.tensor(self.y[idx], dtype=torch.float32)
 
 # =========================
-# 5. 模型定义
+# 7. 模型定义 (优化)
 # =========================
-class SOHNetwork(nn.Module):
-    """SOH估计神经网络，支持不同输入大小"""
+class OptimizedSOHNetwork(nn.Module):
+    """优化的SOH估计神经网络，支持不同输入大小"""
     def __init__(self, input_size):
-        super(SOHNetwork, self).__init__()
+        super(OptimizedSOHNetwork, self).__init__()
         
         # 根据输入大小动态设计网络结构
         if input_size == 16:  # 均值填充方法和完整数据基线(无指示器)
@@ -222,11 +246,11 @@ class SOHNetwork(nn.Module):
         return self.net(x).squeeze()
 
 # =========================
-# 6. 训练函数（包含早停机制）
+# 8. 优化的训练函数（包含早停机制和学习率调度）
 # =========================
-def train_model(model, train_loader, val_loader, epochs, device, save_path=None, patience=15):
+def train_model_optimized(model, train_loader, val_loader, epochs, device, save_path=None, patience=15):
     """
-    训练模型，包含早停机制
+    优化的训练模型函数，包含早停机制和安全模型保存
     
     参数:
     model: 要训练的模型
@@ -286,26 +310,27 @@ def train_model(model, train_loader, val_loader, epochs, device, save_path=None,
             best_val_loss = val_loss
             patience_counter = 0
             if save_path:
+                # 使用安全的模型保存方式
                 torch.save(model.state_dict(), save_path)
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                print(f"在第 {epoch+1} 轮提前停止训练")
+                logger.info(f"在第 {epoch+1} 轮提前停止训练")
                 break
         
         if (epoch+1) % 10 == 0 or epoch == 0:
-            print(f"轮次 {epoch+1}/{epochs}, 训练损失: {train_loss:.6f}, 验证损失: {val_loss:.6f}")
+            logger.info(f"轮次 {epoch+1}/{epochs}, 训练损失: {train_loss:.6f}, 验证损失: {val_loss:.6f}")
     
-    # 加载最佳模型
+    # 加载最佳模型（使用安全加载）
     if save_path and os.path.exists(save_path):
-        model.load_state_dict(torch.load(save_path))
+        model.load_state_dict(torch.load(save_path, weights_only=True))
     
     return model, train_losses, val_losses
 
 # =========================
-# 7. 评估函数（优化版）
+# 9. 评估函数（优化版）
 # =========================
-def evaluate_model(model, loader, device):
+def evaluate_model_optimized(model, loader, device):
     """评估模型性能（使用sklearn.metrics）"""
     model.eval()
     predictions = []
@@ -321,28 +346,28 @@ def evaluate_model(model, loader, device):
     predictions = np.array(predictions)
     targets = np.array(targets)
     
-    # ✅ 优化后：使用sklearn标准指标计算
+    # 使用sklearn标准指标计算
     mae = mean_absolute_error(targets, predictions)
     rmse = np.sqrt(mean_squared_error(targets, predictions))
     r2 = r2_score(targets, predictions)  # 自动处理分母为0情况
     
     return mae, rmse, r2, predictions, targets
 
-def evaluate_mean_filling(model, X_test, y_test, missing_mask, device, batch_size=32):
+def evaluate_mean_filling_optimized(model, X_test, y_test, missing_mask, device, batch_size=32):
     """评估基线模型在均值填充数据上的表现，复用预训练模型"""
     # 创建均值填充数据集
-    fill_test_dataset = MeanFillDataset(X_test, y_test, missing_mask=missing_mask)
+    fill_test_dataset = OptimizedMeanFillDataset(X_test, y_test, missing_mask=missing_mask)
     test_loader_fill = DataLoader(fill_test_dataset, batch_size=batch_size)
     
     # 评估
-    mae, rmse, r2, preds, _ = evaluate_model(model, test_loader_fill, device)
+    mae, rmse, r2, preds, _ = evaluate_model_optimized(model, test_loader_fill, device)
     
     return mae, rmse, r2, preds
 
 # =========================
-# 8. 可视化和结果保存函数
+# 10. 可视化和结果保存函数 (优化)
 # =========================
-def plot_training_results(train_losses, val_losses, missing_rate, method_name, save_dir):
+def plot_training_results_optimized(train_losses, val_losses, missing_rate, method_name, save_dir):
     """绘制训练过程的损失曲线"""
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, 'b-', label='Training Loss')
@@ -355,7 +380,7 @@ def plot_training_results(train_losses, val_losses, missing_rate, method_name, s
     plt.savefig(f'{save_dir}/training_curves_{method_name}_mr_{missing_rate*100:.0f}_{timestamp}.png', dpi=300, bbox_inches='tight')
     plt.close()
 
-def plot_comparison_results(true_values, indicator_preds, fill_preds, baseline_preds, missing_rate, save_dir):
+def plot_comparison_results_optimized(true_values, indicator_preds, fill_preds, baseline_preds, missing_rate, save_dir):
     """绘制不同方法的预测结果对比"""
     plt.figure(figsize=(12, 8))
     
@@ -375,7 +400,7 @@ def plot_comparison_results(true_values, indicator_preds, fill_preds, baseline_p
     plt.savefig(f'{save_dir}/prediction_comparison_mr_{missing_rate*100:.0f}_{timestamp}.png', dpi=300, bbox_inches='tight')
     plt.close()
 
-def plot_error_distribution(indicator_errors, fill_errors, missing_rate, save_dir):
+def plot_error_distribution_optimized(indicator_errors, fill_errors, missing_rate, save_dir):
     """绘制误差分布"""
     plt.figure(figsize=(10, 6))
     plt.boxplot([indicator_errors, fill_errors], tick_labels=['Missing Indicators', 'Mean Filling (Base Model)'])
@@ -385,7 +410,7 @@ def plot_error_distribution(indicator_errors, fill_errors, missing_rate, save_di
     plt.savefig(f'{save_dir}/error_distribution_mr_{missing_rate*100:.0f}_{timestamp}.png', dpi=300, bbox_inches='tight')
     plt.close()
 
-def plot_comprehensive_results(results, save_dir):
+def plot_comprehensive_results_optimized(results, save_dir):
     """生成综合比较图表"""
     missing_rates = results['missing_rates']
     
@@ -447,7 +472,7 @@ def plot_comprehensive_results(results, save_dir):
     plt.savefig(f'{save_dir}/comprehensive_comparison_{timestamp}.png', dpi=300, bbox_inches='tight')
     plt.close()
 
-def save_results_to_csv(results, save_dir):
+def save_results_to_csv_optimized(results, save_dir):
     """将结果保存到CSV文件"""
     results_df = pd.DataFrame({
         'Missing_Rate': results['missing_rates'],
@@ -464,15 +489,15 @@ def save_results_to_csv(results, save_dir):
     })
     csv_path = f'{save_dir}/experiment_results_{timestamp}.csv'
     results_df.to_csv(csv_path, index=False)
-    print(f"详细结果已保存至 {csv_path}")
+    logger.info(f"详细结果已保存至 {csv_path}")
     return csv_path
 
 # =========================
-# 9. 主程序 (重构核心逻辑)
+# 11. 主程序 (重构核心逻辑)
 # =========================
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"使用设备: {device}")
+    logger.info(f"使用设备: {device}")
     
     # 定义特征和目标列
     feature_cols = ['voltage mean', 'voltage std', 'voltage kurtosis', 'voltage skewness', 
@@ -483,7 +508,7 @@ def main():
     
     # 获取数据文件列表
     data_dir = Path(args.data_dir)
-    print(f"正在从目录加载数据: {data_dir}, 批次: {args.batch}")
+    logger.info(f"正在从目录加载数据: {data_dir}, 批次: {args.batch}")
     
     # 获取该批次下所有电池文件
     pattern = f"{args.batch}_battery-*.csv"
@@ -491,49 +516,30 @@ def main():
     if not all_files:
         raise ValueError(f"在目录 {data_dir} 下未找到匹配 {pattern} 的文件")
     all_files.sort()  # 确保顺序
-    print(f"找到 {len(all_files)} 个电池文件: {[f.name for f in all_files]}")
+    logger.info(f"找到 {len(all_files)} 个电池文件: {[f.name for f in all_files]}")
     
-    # 按电池ID划分训练/测试集（4号和8号电池作为测试集）
-    battery_ids = [f.stem.split('_')[1] for f in all_files]  # 提取电池ID（如 "2C_battery-4" → "4"）
-    test_battery_ids = ['4', '8']
-    test_mask = np.array([id in test_battery_ids for id in battery_ids])
-    train_mask = ~test_mask
+    # ===== 完全随机划分训练/测试集 (20%测试) =====
+    # 使用随机种子确保可复现性，但划分是随机的
+    train_files, test_files = train_test_split(
+        all_files, test_size=0.2, random_state=args.seed
+    )
     
-    train_files = [f for i, f in enumerate(all_files) if train_mask[i]]
-    test_files = [f for i, f in enumerate(all_files) if test_mask[i]]
+    logger.info(f"训练电池文件 ({len(train_files)}): {[f.name for f in train_files]}")
+    logger.info(f"测试电池文件 ({len(test_files)}): {[f.name for f in test_files]}")
     
-    # 如果测试集为空，用sklearn随机划分20%作为测试集
-    if not test_files:
-        print("警告: 测试电池未找到，使用20%训练集作为测试集")
-        train_files, test_files = train_test_split(
-            all_files, test_size=0.2, random_state=args.seed
-        )
-    
-    print(f"训练电池文件 ({len(train_files)}): {[f.name for f in train_files]}")
-    print(f"测试电池文件 ({len(test_files)}): {[f.name for f in test_files]}")
-    
-    if not train_files:
-        raise ValueError("没有找到训练电池文件")
-    if not test_files:
-        print("警告: 没有找到测试电池文件，将使用20%的训练电池作为测试集")
-        # 从训练电池中随机选择20%作为测试集
-        np.random.seed(args.seed)
-        np.random.shuffle(train_files)
-        split_idx = int(len(train_files) * 0.8)
-        test_files = train_files[split_idx:]
-        train_files = train_files[:split_idx]
-    
+    if not train_files or not test_files:
+        raise ValueError("训练集或测试集为空，请检查数据文件数量")
+
     # 加载并处理训练电池数据
     X_train_list = []
     y_train_list = []
-    train_battery_info = []
     
     for file_path in train_files:
         df = pd.read_csv(file_path)
-        print(f"\n加载训练电池: {file_path.name}, 原始形状: {df.shape}")
-        df = clean_data(df, feature_cols, target_col)
+        logger.info(f"\n加载训练电池: {file_path.name}, 原始形状: {df.shape}")
+        df = clean_data_optimized(df, feature_cols, target_col)
         if df.empty:
-            print(f"  警告: 电池 {file_path.name} 在清洗后无数据，跳过")
+            logger.warning(f"  警告: 电池 {file_path.name} 在清洗后无数据，跳过")
             continue
             
         # 计算该电池的SOH（基于初始容量）
@@ -543,25 +549,25 @@ def main():
         
         X_train_list.append(X)
         y_train_list.append(y_soh)
-        train_battery_info.append((file_path.name, initial_capacity, len(X)))
-        print(f"  电池 {file_path.name} 保留 {X.shape[0]} 个样本，初始容量: {initial_capacity:.4f}, SOH范围: [{y_soh.min():.4f}, {y_soh.max():.4f}]")
-    
+
     # 合并训练电池数据
+    if not X_train_list:
+        raise ValueError("没有可用的训练数据，请检查数据文件")
+        
     X_train_all = np.vstack(X_train_list)
     y_train_all = np.concatenate(y_train_list)
-    print(f"\n训练电池合并后形状 - 特征: {X_train_all.shape}, SOH: {y_train_all.shape}")
+    logger.info(f"\n训练电池合并后形状 - 特征: {X_train_all.shape}, SOH: {y_train_all.shape}")
     
     # 加载并处理测试电池数据
     X_test_list = []
     y_test_list = []
-    test_battery_info = []
     
     for file_path in test_files:
         df = pd.read_csv(file_path)
-        print(f"\n加载测试电池: {file_path.name}, 原始形状: {df.shape}")
-        df = clean_data(df, feature_cols, target_col)
+        logger.info(f"\n加载测试电池: {file_path.name}, 原始形状: {df.shape}")
+        df = clean_data_optimized(df, feature_cols, target_col)
         if df.empty:
-            print(f"  警告: 电池 {file_path.name} 在清洗后无数据，跳过")
+            logger.warning(f"  警告: 电池 {file_path.name} 在清洗后无数据，跳过")
             continue
             
         initial_capacity = df[target_col].iloc[0]
@@ -570,12 +576,14 @@ def main():
         
         X_test_list.append(X)
         y_test_list.append(y_soh)
-        test_battery_info.append((file_path.name, initial_capacity, len(X)))
-        print(f"  电池 {file_path.name} 保留 {X.shape[0]} 个样本，初始容量: {initial_capacity:.4f}, SOH范围: [{y_soh.min():.4f}, {y_soh.max():.4f}]")
-    
+
+    # 合并测试电池数据
+    if not X_test_list:
+        raise ValueError("没有可用的测试数据，请检查数据文件")
+        
     X_test_all = np.vstack(X_test_list)
     y_test_all = np.concatenate(y_test_list)
-    print(f"\n测试电池合并后形状 - 特征: {X_test_all.shape}, SOH: {y_test_all.shape}")
+    logger.info(f"\n测试电池合并后形状 - 特征: {X_test_all.shape}, SOH: {y_test_all.shape}")
     
     # 特征标准化（使用训练集参数）
     scaler = StandardScaler()
@@ -589,7 +597,7 @@ def main():
     X_test = X_test_scaled
     y_test = y_test_all
     
-    print(f"数据集划分完成 - 训练集: {X_train.shape[0]}, 验证集: {X_val.shape[0]}, 测试集: {X_test.shape[0]}")
+    logger.info(f"数据集划分完成 - 训练集: {X_train.shape[0]}, 验证集: {X_val.shape[0]}, 测试集: {X_test.shape[0]}")
     
     # 存储所有结果
     results = {
@@ -601,24 +609,24 @@ def main():
     }
     
     # ===== 1. 训练基线模型（完整数据）=====
-    print("\n" + "="*60)
-    print("正在训练基线模型（完整数据）")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("正在训练基线模型（完整数据）")
+    logger.info("="*60)
     
     # 完整数据基线 - 使用固定的缺失掩码（全1，没有缺失）
     full_train_mask = np.ones_like(X_train)
     full_val_mask = np.ones_like(X_val)
     full_test_mask = np.ones_like(X_test)
     
-    full_train_dataset = BatteryDatasetFixedMissing(
+    full_train_dataset = OptimizedBatteryDatasetFixedMissing(
         X_train, y_train, missing_rate=0.0, 
         include_missing_indicators=False, missing_mask=full_train_mask
     )
-    full_val_dataset = BatteryDatasetFixedMissing(
+    full_val_dataset = OptimizedBatteryDatasetFixedMissing(
         X_val, y_val, missing_rate=0.0, 
         include_missing_indicators=False, missing_mask=full_val_mask
     )
-    full_test_dataset = BatteryDatasetFixedMissing(
+    full_test_dataset = OptimizedBatteryDatasetFixedMissing(
         X_test, y_test, missing_rate=0.0, 
         include_missing_indicators=False, missing_mask=full_test_mask
     )
@@ -627,14 +635,14 @@ def main():
     val_loader = DataLoader(full_val_dataset, batch_size=args.batch_size)
     test_loader = DataLoader(full_test_dataset, batch_size=args.batch_size)
     
-    model_baseline = SOHNetwork(input_size=16).to(device)
+    model_baseline = OptimizedSOHNetwork(input_size=16).to(device)
     baseline_model_path = f'{args.results_dir}/best_model_baseline_{timestamp}.pth'
-    model_baseline, baseline_train_losses, baseline_val_losses = train_model(
+    model_baseline, baseline_train_losses, baseline_val_losses = train_model_optimized(
         model_baseline, train_loader, val_loader, args.epochs, device, baseline_model_path
     )
     
     # 评估完整数据基线
-    baseline_mae, baseline_rmse, baseline_r2, baseline_preds, _ = evaluate_model(
+    baseline_mae, baseline_rmse, baseline_r2, baseline_preds, _ = evaluate_model_optimized(
         model_baseline, test_loader, device
     )
     
@@ -643,16 +651,16 @@ def main():
     results['baseline_rmse'] = baseline_rmse
     results['baseline_r2'] = baseline_r2
     
-    print(f"基线模型（完整数据）- MAE: {baseline_mae:.4f}, RMSE: {baseline_rmse:.4f}, R²: {baseline_r2:.4f}")
-    plot_training_results(baseline_train_losses, baseline_val_losses, 0.0, "baseline", args.results_dir)
+    logger.info(f"基线模型（完整数据）- MAE: {baseline_mae:.4f}, RMSE: {baseline_rmse:.4f}, R²: {baseline_r2:.4f}")
+    plot_training_results_optimized(baseline_train_losses, baseline_val_losses, 0.0, "baseline", args.results_dir)
     
     # ===== 2. 训练缺失指示器模型（一次性训练，通用模型）=====
-    print("\n" + "="*60)
-    print("正在训练缺失指示器模型（通用模型）")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("正在训练缺失指示器模型（通用模型）")
+    logger.info("="*60)
     
     # 一次性扩充训练集，包含完整数据和多种缺失率
-    X_train_expanded, y_train_expanded = expand_training_set(X_train, y_train, args.training_missing_rates)
+    X_train_expanded, y_train_expanded = expand_training_set_efficient(X_train, y_train, args.training_missing_rates)
     
     # 创建扩展训练集的Dataset
     class BatteryDatasetExpanded(Dataset):
@@ -672,8 +680,8 @@ def main():
     expanded_train_dataset = BatteryDatasetExpanded(X_train_expanded, y_train_expanded)
     
     # 为验证集创建固定缺失率的Dataset (使用中等缺失率0.5作为代表)
-    val_mask_indicator = np.random.binomial(1, 0.5, size=X_val.shape)  # 50%缺失率作为验证
-    val_dataset_indicator = BatteryDatasetFixedMissing(
+    val_mask_indicator = np.random.rand(*X_val.shape) > 0.5  # 50%缺失率作为验证，更高效
+    val_dataset_indicator = OptimizedBatteryDatasetFixedMissing(
         X_val, y_val, missing_rate=0.5,
         include_missing_indicators=True, missing_mask=val_mask_indicator
     )
@@ -682,51 +690,47 @@ def main():
     val_loader = DataLoader(val_dataset_indicator, batch_size=args.batch_size)
     
     # 训练单一缺失指示器模型
-    model_indicator = SOHNetwork(input_size=32).to(device)
+    model_indicator = OptimizedSOHNetwork(input_size=32).to(device)
     indicator_model_path = f'{args.results_dir}/best_model_indicator_general_{timestamp}.pth'
-    model_indicator, indicator_train_losses, indicator_val_losses = train_model(
+    model_indicator, indicator_train_losses, indicator_val_losses = train_model_optimized(
         model_indicator, train_loader, val_loader, args.epochs, device, indicator_model_path
     )
     
-    print("缺失指示器通用模型训练完成")
-    plot_training_results(indicator_train_losses, indicator_val_losses, 0.5, "indicators_general", args.results_dir)
+    logger.info("缺失指示器通用模型训练完成")
+    plot_training_results_optimized(indicator_train_losses, indicator_val_losses, 0.5, "indicators_general", args.results_dir)
     
     # ===== 3. 为每个缺失率生成固定的测试掩码，确保可比性 =====
     test_masks = {}
     for i, mr in enumerate(args.missing_rates):
-        np.random.seed(args.seed + i)  # 修复：每个缺失率使用唯一种子
-        mask = np.random.binomial(1, 1-mr, size=X_test.shape)
+        # 使用不同的随机种子确保不同缺失率的掩码独立
+        np.random.seed(args.seed + i)
+        mask = np.random.rand(*X_test.shape) > mr  # 更高效的方法
         test_masks[mr] = mask
     
     # ===== 4. 为每个缺失率评估所有方法 =====
-    print("\n" + "="*60)
-    print("正在测试不同缺失率")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("正在测试不同缺失率")
+    logger.info("="*60)
     
     for i, missing_rate in enumerate(args.missing_rates):
-        print(f"\n" + "-"*60)
-        print(f"正在测试缺失率: {missing_rate*100:.0f}%")
-        print("-"*60)
-        
-        # 为当前缺失率设置随机种子
-        current_seed = args.seed + i
-        torch.manual_seed(current_seed)
-        np.random.seed(current_seed)
+        logger.info(f"\n" + "-"*60)
+        logger.info(f"正在测试缺失率: {missing_rate*100:.0f}%")
+        logger.info("-"*60)
         
         # 获取当前缺失率的测试掩码
         test_mask = test_masks[missing_rate]
         
         # ===== 4.1 评估缺失指示器模型 (使用已训练的通用模型) =====
-        print(f"\n--- 评估缺失指示器通用模型 (缺失率: {missing_rate*100:.0f}%) ---")
+        logger.info(f"\n--- 评估缺失指示器通用模型 (缺失率: {missing_rate*100:.0f}%) ---")
         
-        test_dataset_indicator = BatteryDatasetFixedMissing(
+        test_dataset_indicator = OptimizedBatteryDatasetFixedMissing(
             X_test, y_test, missing_rate=missing_rate,
             include_missing_indicators=True, missing_mask=test_mask
         )
         
         test_loader_indicator = DataLoader(test_dataset_indicator, batch_size=args.batch_size)
         
-        indicator_mae, indicator_rmse, indicator_r2, indicator_preds, _ = evaluate_model(
+        indicator_mae, indicator_rmse, indicator_r2, indicator_preds, _ = evaluate_model_optimized(
             model_indicator, test_loader_indicator, device
         )
         
@@ -734,13 +738,13 @@ def main():
         results['indicator_rmse'].append(indicator_rmse)
         results['indicator_r2'].append(indicator_r2)
         
-        print(f"缺失指示器通用模型 - MAE: {indicator_mae:.4f}, RMSE: {indicator_rmse:.4f}, R²: {indicator_r2:.4f}")
+        logger.info(f"缺失指示器通用模型 - MAE: {indicator_mae:.4f}, RMSE: {indicator_rmse:.4f}, R²: {indicator_r2:.4f}")
         
         # ===== 4.2 评估均值填充方法（复用基线模型）=====
-        print(f"\n--- 评估均值填充方法 (复用基线模型, 缺失率: {missing_rate*100:.0f}%) ---")
+        logger.info(f"\n--- 评估均值填充方法 (复用基线模型, 缺失率: {missing_rate*100:.0f}%) ---")
         
         # 直接用基线模型评估均值填充数据
-        fill_mae, fill_rmse, fill_r2, fill_preds = evaluate_mean_filling(
+        fill_mae, fill_rmse, fill_r2, fill_preds = evaluate_mean_filling_optimized(
             model_baseline, X_test, y_test, test_mask, device, batch_size=args.batch_size
         )
         
@@ -752,58 +756,58 @@ def main():
         improvement = (fill_mae - indicator_mae) / fill_mae * 100 if fill_mae > 0 else 0.0
         results['improvement'].append(improvement)
         
-        print(f"均值填充方法 (复用基线) - MAE: {fill_mae:.4f}, RMSE: {fill_rmse:.4f}, R²: {fill_r2:.4f}")
-        print(f"缺失指示器通用模型相对于均值填充方法的改进: {improvement:.1f}%")
+        logger.info(f"均值填充方法 (复用基线) - MAE: {fill_mae:.4f}, RMSE: {fill_rmse:.4f}, R²: {fill_r2:.4f}")
+        logger.info(f"缺失指示器通用模型相对于均值填充方法的改进: {improvement:.1f}%")
         
         # ===== 4.3 保存详细对比图 =====
-        print("\n--- 正在保存详细对比图表 ---")
+        logger.info("\n--- 正在保存详细对比图表 ---")
         
         # 预测结果对比
-        plot_comparison_results(y_test, indicator_preds, fill_preds, baseline_preds, missing_rate, args.results_dir)
+        plot_comparison_results_optimized(y_test, indicator_preds, fill_preds, baseline_preds, missing_rate, args.results_dir)
         
         # 误差分布
         indicator_errors = np.abs(indicator_preds - y_test)
         fill_errors = np.abs(fill_preds - y_test)
-        plot_error_distribution(indicator_errors, fill_errors, missing_rate, args.results_dir)
+        plot_error_distribution_optimized(indicator_errors, fill_errors, missing_rate, args.results_dir)
         
-        print(f"缺失率 {missing_rate*100:.0f}% 的详细图表已保存至 {args.results_dir}")
+        logger.info(f"缺失率 {missing_rate*100:.0f}% 的详细图表已保存至 {args.results_dir}")
     
     # ===== 5. 生成综合比较图 =====
-    print("\n" + "="*60)
-    print("正在生成综合对比图表")
-    print("="*60)
-    plot_comprehensive_results(results, args.results_dir)
+    logger.info("\n" + "="*60)
+    logger.info("正在生成综合对比图表")
+    logger.info("="*60)
+    plot_comprehensive_results_optimized(results, args.results_dir)
     
     # ===== 6. 保存结果到CSV =====
-    print("\n" + "="*60)
-    print("正在将结果保存至CSV文件")
-    print("="*60)
-    csv_path = save_results_to_csv(results, args.results_dir)
+    logger.info("\n" + "="*60)
+    logger.info("正在将结果保存至CSV文件")
+    logger.info("="*60)
+    csv_path = save_results_to_csv_optimized(results, args.results_dir)
     
     # ===== 7. 打印结果表格 =====
-    print("\n" + "="*100)
-    print("实验结果摘要")
-    print("="*100)
-    print(f"{'缺失率':<12} {'方法':<25} {'MAE':<10} {'RMSE':<10} {'R²':<10} {'改进率':<12}")
-    print("-"*100)
+    logger.info("\n" + "="*100)
+    logger.info("实验结果摘要")
+    logger.info("="*100)
+    logger.info(f"{'缺失率':<12} {'方法':<25} {'MAE':<10} {'RMSE':<10} {'R²':<10} {'改进率':<12}")
+    logger.info("-"*100)
     
     # 基线结果（单一值）
-    print(f"{'完整数据':<12} {'基线模型':<25} {results['baseline_mae']:<10.4f} {results['baseline_rmse']:<10.4f} {results['baseline_r2']:<10.4f} {'-':<12}")
-    print("-"*100)
+    logger.info(f"{'完整数据':<12} {'基线模型':<25} {results['baseline_mae']:<10.4f} {results['baseline_rmse']:<10.4f} {results['baseline_r2']:<10.4f} {'-':<12}")
+    logger.info("-"*100)
     
     for i, mr in enumerate(results['missing_rates']):
-        print(f"{mr*100:>10.0f}%  {'缺失指示器通用模型':<25} {results['indicator_mae'][i]:<10.4f} {results['indicator_rmse'][i]:<10.4f} {results['indicator_r2'][i]:<10.4f} {'-':<12}")
-        print(f"{'':<12} {'均值填充 (复用基线)':<25} {results['fill_mae'][i]:<10.4f} {results['fill_rmse'][i]:<10.4f} {results['fill_r2'][i]:<10.4f} {results['improvement'][i]:<10.1f}%")
-        print("-"*100)
+        logger.info(f"{mr*100:>10.0f}%  {'缺失指示器通用模型':<25} {results['indicator_mae'][i]:<10.4f} {results['indicator_rmse'][i]:<10.4f} {results['indicator_r2'][i]:<10.4f} {'-':<12}")
+        logger.info(f"{'':<12} {'均值填充 (复用基线)':<25} {results['fill_mae'][i]:<10.4f} {results['fill_rmse'][i]:<10.4f} {results['fill_r2'][i]:<10.4f} {results['improvement'][i]:<10.1f}%")
+        logger.info("-"*100)
     
-    print("\n" + "="*100)
-    print("实验成功完成！")
-    print("="*100)
-    print(f"结果时间戳: {timestamp}")
-    print(f"结果保存目录: {os.path.abspath(args.results_dir)}")
-    print(f"详细结果文件: {csv_path}")
-    print(f"核心改进: 均值填充方法现在复用基线模型，符合真实应用场景")
-    print("="*100)
+    logger.info("\n" + "="*100)
+    logger.info("实验成功完成！")
+    logger.info("="*100)
+    logger.info(f"结果时间戳: {timestamp}")
+    logger.info(f"结果保存目录: {os.path.abspath(args.results_dir)}")
+    logger.info(f"详细结果文件: {csv_path}")
+    logger.info(f"核心改进: 结合了最佳实践 - 安全模型加载、高效缺失生成、全面随机种子设置")
+    logger.info("="*100)
 
 if __name__ == "__main__":
     main()
