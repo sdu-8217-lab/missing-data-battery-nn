@@ -243,7 +243,13 @@ class OptimizedSOHNetwork(nn.Module):
             )
     
     def forward(self, x):
-        return self.net(x).squeeze()
+        output = self.net(x)
+        # 确保输出至少是一维的，防止0维张量问题
+        if output.dim() == 0:
+            output = output.unsqueeze(0)
+        elif output.size() == torch.Size([]):
+            output = output.view(1)
+        return output.squeeze()
 
 # =========================
 # 8. 优化的训练函数（包含早停机制和学习率调度）
@@ -340,6 +346,11 @@ def evaluate_model_optimized(model, loader, device):
         for inputs, target in loader:
             inputs = inputs.to(device)
             outputs = model(inputs)
+            # 确保输出是正确的维度
+            if outputs.dim() == 0:
+                outputs = outputs.unsqueeze(0)
+            elif outputs.dim() == 1 and outputs.size(0) == 1:
+                outputs = outputs.unsqueeze(0) if outputs.numel() == 1 else outputs
             predictions.extend(outputs.cpu().numpy())
             targets.extend(target.cpu().numpy())
     
