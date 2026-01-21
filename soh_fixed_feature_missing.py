@@ -1,6 +1,7 @@
 import os
 import datetime
 import logging
+import sys
 from pathlib import Path
 import argparse
 import numpy as np
@@ -24,13 +25,39 @@ NUM_FEATURES = 16  # 特征数量常量
 # =========================
 # 2. 日志配置
 # =========================
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# 配置日志处理器以支持UTF-8编码
+class UTF8FileHandler(logging.FileHandler):
+    def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
+        super().__init__(filename, mode, encoding, delay)
+
+# 创建日志记录器
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# 清除现有处理器
+for handler in logger.handlers[:]:
+    logger.removeHandler(handler)
+
+# 控制台处理器
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(console_formatter)
+
+# 文件处理器（UTF-8编码）
+log_file = f'fixed_missing_pattern_experiment_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+file_handler = UTF8FileHandler(log_file, mode='w', encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(file_formatter)
+
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 
 # =========================
 # 3. 命令行参数与配置
 # =========================
-parser = argparse.ArgumentParser(description='Optimized Fixed Missing Pattern Experiment for SOH Estimation')
+parser = argparse.ArgumentParser(description='优化固定缺失模式实验，用于SOH估计')
 parser.add_argument('--epochs', type=int, default=100, help='训练轮数')
 parser.add_argument('--data_dir', type=str, default='./data/XJTU data',
                    help='数据集根目录')
@@ -149,10 +176,10 @@ class OptimizedBatteryDatasetFixedMissing(Dataset):
         self.fixed_missing_mask = fixed_missing_mask  # 固定缺失掩码 (NUM_FEATURES,)
         
         # 创建缺失指示器 (1表示缺失, 0表示存在)
-        self.missing_indicators = 1 - fixed_missing_mask
+        self.missing_indicators = 1 - self.fixed_missing_mask
         
         # 应用缺失 (将缺失位置设为0)
-        self.X_with_missing = np.where(fixed_missing_mask == 1, self.X, 0)
+        self.X_with_missing = np.where(self.fixed_missing_mask == 1, self.X, 0)
         
     def __len__(self):
         return len(self.X)
@@ -229,10 +256,14 @@ def train_model_optimized(model, train_loader, val_loader, epochs, device, save_
     train_losses = []
     val_losses = []
     
+    logger.info(f"开始训练模型，总轮数: {epochs}")
+    start_time = datetime.datetime.now()
+    
     for epoch in range(epochs):
         # 训练阶段
         model.train()
         train_loss = 0.0
+        num_batches = 0
         for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
             
@@ -243,6 +274,7 @@ def train_model_optimized(model, train_loader, val_loader, epochs, device, save_
             optimizer.step()
             
             train_loss += loss.item() * inputs.size(0)
+            num_batches += 1
         
         train_loss = train_loss / len(train_loader.dataset)
         train_losses.append(train_loss)
@@ -270,11 +302,15 @@ def train_model_optimized(model, train_loader, val_loader, epochs, device, save_
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                logger.info(f"在第 {epoch+1} 轮提前停止训练")
+                logger.info(f"在第 {epoch+1} 轮提前停止训练，最佳验证损失: {best_val_loss:.6f}")
                 break
         
         if (epoch+1) % 10 == 0 or epoch == 0:
             logger.info(f"轮次 {epoch+1}/{epochs}, 训练损失: {train_loss:.6f}, 验证损失: {val_loss:.6f}")
+    
+    end_time = datetime.datetime.now()
+    training_duration = end_time - start_time
+    logger.info(f"模型训练完成，总耗时: {training_duration}, 最佳验证损失: {best_val_loss:.6f}")
     
     # 加载最佳模型（使用安全加载）
     if save_path and os.path.exists(save_path):
@@ -672,7 +708,7 @@ def main():
     logger.info(f"结果时间戳: {timestamp}")
     logger.info(f"结果保存目录: {os.path.abspath(args.results_dir)}")
     logger.info(f"详细结果文件: {csv_path}")
-    logger.info(f"核心改进: 结合了最佳实践 - 安全模型加载、高效缺失生成、全面随机种子设置")
+    logger.info(f"日志文件: {log_file}")
     logger.info("="*100)
 
 if __name__ == "__main__":
