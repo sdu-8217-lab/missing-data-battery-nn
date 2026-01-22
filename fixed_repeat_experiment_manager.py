@@ -1,323 +1,502 @@
 import os
 import subprocess
 import argparse
-import json
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pathlib import Path
 import datetime
-import glob
+import json
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from pathlib import Path
+import logging
 import re
-from collections import defaultdict
-import warnings
-warnings.filterwarnings('ignore')
 
-def run_single_experiment(config):
+# 配置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+def run_experiment(script_path, params):
     """
     运行单次实验
+    
+    Args:
+        script_path (str): 实验脚本路径
+        params (dict): 参数字典
+    
+    Returns:
+        dict: 实验结果
     """
-    cmd = [
-        "python", config['script_path'],
-        "--epochs", str(config['epochs']),
-        "--data_dir", config['data_dir'],
-        "--batch", config['batch'],
-        "--seed", str(config['seed']),
-        "--batch_size", str(config['batch_size']),
-        "--results_dir", config['results_dir']
-    ]
-    
-    if config.get('pretrained_model'):
-        cmd.extend(["--pretrained_model", config['pretrained_model']])
-    
-    if config.get('training_missing_rates'):
-        rates_str = " ".join(map(str, config['training_missing_rates']))
-        cmd.extend(["--training_missing_rates"] + [str(rate) for rate in config['training_missing_rates']])
-    
-    print(f"运行命令: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    
-    if result.returncode != 0:
-        print(f"实验失败: {result.stderr}")
-        return False
-    
-    print(f"实验完成: {config['results_dir']}")
-    return True
-
-def extract_results_from_csv(results_dir):
-    """
-    从结果目录提取CSV结果文件
-    """
-    csv_files = glob.glob(os.path.join(results_dir, "all_missing_combinations_*.csv"))
-    if not csv_files:
-        return None
-    
-    # 取最新的CSV文件
-    latest_csv = max(csv_files, key=os.path.getctime)
-    df = pd.read_csv(latest_csv)
-    return df
-
-def aggregate_results(results_dirs):
-    """
-    汇总多个实验结果
-    """
-    all_results = []
-    
-    for i, results_dir in enumerate(results_dirs):
-        df = extract_results_from_csv(results_dir)
-        if df is not None:
-            df['experiment_id'] = i
-            all_results.append(df)
+    # 构建命令
+    cmd = ["python", script_path]
+    for key, value in params.items():
+        if isinstance(value, bool):
+            if value:
+                cmd.append(f"--{key}")
+        elif isinstance(value, list):
+            cmd.append(f"--{key}")
+            for v in value:
+                cmd.append(str(v))
         else:
-            print(f"警告: 无法从 {results_dir} 提取结果")
+            cmd.append(f"--{key}")
+            cmd.append(str(value))
     
-    if not all_results:
-        return None
+    logger.info(f"执行命令: {' '.join(cmd)}")
     
-    return pd.concat(all_results, ignore_index=True)
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=7200  # 2小时超时
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"实验执行失败: {result.stderr}")
+            return {"status": "error", "error": result.stderr}
+        
+        return {
+            "status": "success",
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "params": params
+        }
+    except subprocess.TimeoutExpired:
+        logger.error("实验超时")
+        return {"status": "timeout", "error": "实验超时"}
+    except Exception as e:
+        logger.error(f"实验执行异常: {str(e)}")
+        return {"status": "error", "error": str(e)}
 
-def plot_distribution_analysis(aggregated_df, output_dir):
+def extract_metrics_from_log(log_content):
     """
-    绘制结果分布分析图
+    从日志内容中提取关键指标
+    
+    Args:
+        log_content (str): 日志内容
+    
+    Returns:
+        dict: 提取的指标
     """
+    metrics = {}
+    
+    # 提取MAE, RMSE, R²指标
+    lines = log_content.split('\n')
+    
+    # 查找缺失指示器模型的最终性能
+    for line in reversed(lines):  # 从最后开始查找，因为最终结果在末尾
+        if '缺失指示器通用模型:' in line:
+            # MAE=0.0045, RMSE=0.0052, R²=0.9991
+            mae_match = re.search(r'MAE=([0-9.]+)', line)
+            rmse_match = re.search(r'RMSE=([0-9.]+)', line)
+            r2_match = re.search(r'R²=([0-9.]+)', line)
+            
+            if mae_match:
+                metrics['indicator_mae'] = float(mae_match.group(1))
+            if rmse_match:
+                metrics['indicator_rmse'] = float(rmse_match.group(1))
+            if r2_match:
+                metrics['indicator_r2'] = float(r2_match.group(1))
+            break
+    
+    # 查找缩减模型的最终性能
+    for line in reversed(lines):
+        if '缩减模型 (' in line and 'MAE=' in line:
+            mae_match = re.search(r'MAE=([0-9.]+)', line)
+            rmse_match = re.search(r'RMSE=([0-9.]+)', line)
+            r2_match = re.search(r'R²=([0-9.]+)', line)
+            
+            if mae_match:
+                metrics['reduced_mae'] = float(mae_match.group(1))
+            if rmse_match:
+                metrics['reduced_rmse'] = float(rmse_match.group(1))
+            if r2_match:
+                metrics['reduced_r2'] = float(r2_match.group(1))
+            break
+    
+    # 统计实验完成情况
+    if "实验成功完成！" in log_content:
+        metrics['completed_successfully'] = True
+    else:
+        metrics['completed_successfully'] = False
+    
+    return metrics
+
+def parse_experiment_results(results):
+    """
+    解析实验结果，提取关键指标
+    
+    Args:
+        results: 实验结果列表
+    
+    Returns:
+        dict: 解析后的结果数据
+    """
+    parsed_results = []
+    
+    for i, result in enumerate(results):
+        experiment_result = {
+            "experiment_id": i,
+            "params": result["params"],
+            "status": result["status"]
+        }
+        
+        if result["status"] == "success":
+            # 从stdout中提取指标
+            metrics = extract_metrics_from_log(result.get("stdout", ""))
+            experiment_result.update(metrics)
+            
+            # 如果找不到指标，也尝试从stderr中查找
+            if not metrics.get('indicator_mae'):
+                stderr_metrics = extract_metrics_from_log(result.get("stderr", ""))
+                experiment_result.update(stderr_metrics)
+        
+        parsed_results.append(experiment_result)
+    
+    return parsed_results
+
+def plot_results_distribution(results, output_dir):
+    """
+    绘制实验结果分布图
+    
+    Args:
+        results: 解析后的实验结果
+        output_dir: 输出目录
+    """
+    if not results:
+        logger.warning("没有有效的实验结果可用于绘图")
+        return
+    
     # 创建输出目录
-    plots_dir = os.path.join(output_dir, "plots")
-    os.makedirs(plots_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
     
-    # 1. MAE分布箱线图
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    # 提取指标数据
+    indicator_maes = []
+    indicator_rmses = []
+    indicator_r2s = []
+    reduced_maes = []
+    reduced_rmses = []
+    reduced_r2s = []
+    seeds = []
     
-    # Indicator MAE分布
-    sns.boxplot(data=aggregated_df, y='Indicator_MAE', ax=axes[0,0])
-    axes[0,0].set_title('Indicator Model MAE Distribution')
-    axes[0,0].set_ylabel('MAE')
+    for result in results:
+        if result.get("completed_successfully", False):
+            if 'indicator_mae' in result:
+                indicator_maes.append(result['indicator_mae'])
+            if 'indicator_rmse' in result:
+                indicator_rmses.append(result['indicator_rmse'])
+            if 'indicator_r2' in result:
+                indicator_r2s.append(result['indicator_r2'])
+            if 'reduced_mae' in result:
+                reduced_maes.append(result['reduced_mae'])
+            if 'reduced_rmse' in result:
+                reduced_rmses.append(result['reduced_rmse'])
+            if 'reduced_r2' in result:
+                reduced_r2s.append(result['reduced_r2'])
+            seeds.append(result['params']['seed'])
     
-    # Reduced MAE分布
-    sns.boxplot(data=aggregated_df, y='Reduced_MAE', ax=axes[0,1])
-    axes[0,1].set_title('Reduced Model MAE Distribution')
-    axes[0,1].set_ylabel('MAE')
+    # 绘制结果分布图
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
     
-    # RMSE分布
-    sns.boxplot(data=aggregated_df[['Indicator_RMSE', 'Reduced_RMSE']], ax=axes[1,0])
-    axes[1,0].set_title('RMSE Distribution Comparison')
-    axes[1,0].set_ylabel('RMSE')
+    # 指标直方图
+    if indicator_maes:
+        axes[0, 0].hist(indicator_maes, bins=20, edgecolor='black', alpha=0.7, color='blue', label='Indicator Model')
+        axes[0, 0].set_title('MAE Distribution - Indicator Model')
+        axes[0, 0].set_xlabel('MAE')
+        axes[0, 0].set_ylabel('Frequency')
+        axes[0, 0].grid(True, alpha=0.3)
     
-    # R²分布
-    sns.boxplot(data=aggregated_df[['Indicator_R2', 'Reduced_R2']], ax=axes[1,1])
-    axes[1,1].set_title('R² Distribution Comparison')
-    axes[1,1].set_ylabel('R²')
+    if reduced_maes:
+        axes[0, 0].hist(reduced_maes, bins=20, edgecolor='black', alpha=0.7, color='orange', label='Reduced Model')
+        axes[0, 0].set_title('MAE Distribution - Both Models')
+        axes[0, 0].legend()
+    
+    if indicator_rmses:
+        axes[0, 1].hist(indicator_rmses, bins=20, edgecolor='black', alpha=0.7, color='blue', label='Indicator Model')
+        axes[0, 1].set_title('RMSE Distribution - Indicator Model')
+        axes[0, 1].set_xlabel('RMSE')
+        axes[0, 1].set_ylabel('Frequency')
+        axes[0, 1].grid(True, alpha=0.3)
+    
+    if reduced_rmses:
+        axes[0, 1].hist(reduced_rmses, bins=20, edgecolor='black', alpha=0.7, color='orange', label='Reduced Model')
+        axes[0, 1].set_title('RMSE Distribution - Both Models')
+        axes[0, 1].legend()
+    
+    if indicator_r2s:
+        axes[0, 2].hist(indicator_r2s, bins=20, edgecolor='black', alpha=0.7, color='blue', label='Indicator Model')
+        axes[0, 2].set_title('R² Distribution - Indicator Model')
+        axes[0, 2].set_xlabel('R²')
+        axes[0, 2].set_ylabel('Frequency')
+        axes[0, 2].grid(True, alpha=0.3)
+    
+    if reduced_r2s:
+        axes[0, 2].hist(reduced_r2s, bins=20, edgecolor='black', alpha=0.7, color='orange', label='Reduced Model')
+        axes[0, 2].set_title('R² Distribution - Both Models')
+        axes[0, 2].legend()
+    
+    # 指标随随机种子的变化趋势
+    if seeds and indicator_maes:
+        axes[1, 0].plot(seeds[:len(indicator_maes)], indicator_maes, 'bo-', label='Indicator Model', markersize=4)
+        if len(reduced_maes) > 0:
+            axes[1, 0].plot(seeds[:len(reduced_maes)], reduced_maes, 'ro-', label='Reduced Model', markersize=4)
+        axes[1, 0].set_title('MAE vs Random Seed')
+        axes[1, 0].set_xlabel('Random Seed')
+        axes[1, 0].set_ylabel('MAE')
+        axes[1, 0].legend()
+        axes[1, 0].grid(True, alpha=0.3)
+    
+    if seeds and indicator_rmses:
+        axes[1, 1].plot(seeds[:len(indicator_rmses)], indicator_rmses, 'bo-', label='Indicator Model', markersize=4)
+        if len(reduced_rmses) > 0:
+            axes[1, 1].plot(seeds[:len(reduced_rmses)], reduced_rmses, 'ro-', label='Reduced Model', markersize=4)
+        axes[1, 1].set_title('RMSE vs Random Seed')
+        axes[1, 1].set_xlabel('Random Seed')
+        axes[1, 1].set_ylabel('RMSE')
+        axes[1, 1].legend()
+        axes[1, 1].grid(True, alpha=0.3)
+    
+    if seeds and indicator_r2s:
+        axes[1, 2].plot(seeds[:len(indicator_r2s)], indicator_r2s, 'bo-', label='Indicator Model', markersize=4)
+        if len(reduced_r2s) > 0:
+            axes[1, 2].plot(seeds[:len(reduced_r2s)], reduced_r2s, 'ro-', label='Reduced Model', markersize=4)
+        axes[1, 2].set_title('R² vs Random Seed')
+        axes[1, 2].set_xlabel('Random Seed')
+        axes[1, 2].set_ylabel('R²')
+        axes[1, 2].legend()
+        axes[1, 2].grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, 'mae_rmse_r2_distributions.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'experiment_results_distribution.png'), dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 2. 每个缺失组合的性能对比
-    fig, ax = plt.subplots(figsize=(16, 10))
+    # 绘制箱线图
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
     
-    # 按缺失组合分组
-    grouped = aggregated_df.groupby('Missing_Combination').agg({
-        'Indicator_MAE': ['mean', 'std'],
-        'Reduced_MAE': ['mean', 'std']
-    }).round(4)
+    # MAE箱线图
+    if indicator_maes and reduced_maes:
+        box_data = [indicator_maes, reduced_maes]
+        ax[0].boxplot(box_data, labels=['Indicator Model', 'Reduced Model'])
+        ax[0].set_title('MAE Box Plot Comparison')
+        ax[0].set_ylabel('MAE')
+        ax[0].grid(True, alpha=0.3)
     
-    grouped.columns = ['Indicator_MAE_mean', 'Indicator_MAE_std', 'Reduced_MAE_mean', 'Reduced_MAE_std']
-    grouped = grouped.head(20)  # 只显示前20个组合以便观察
-    
-    x = np.arange(len(grouped))
-    width = 0.35
-    
-    ax.bar(x - width/2, grouped['Indicator_MAE_mean'], width, 
-           label='Indicator Model', yerr=grouped['Indicator_MAE_std'], capsize=5, alpha=0.8)
-    ax.bar(x + width/2, grouped['Reduced_MAE_mean'], width, 
-           label='Reduced Model', yerr=grouped['Reduced_MAE_std'], capsize=5, alpha=0.8)
-    
-    ax.set_xlabel('Missing Combination')
-    ax.set_ylabel('MAE')
-    ax.set_title('MAE Comparison by Missing Combination (with std error bars)')
-    ax.set_xticks(x)
-    ax.set_xticklabels([f"Comb{i}" for i in range(len(grouped))], rotation=45, ha='right')
-    ax.legend()
+    # R²箱线图
+    if indicator_r2s and reduced_r2s:
+        box_data = [indicator_r2s, reduced_r2s]
+        ax[1].boxplot(box_data, labels=['Indicator Model', 'Reduced Model'])
+        ax[1].set_title('R² Box Plot Comparison')
+        ax[1].set_ylabel('R²')
+        ax[1].grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, 'mae_comparison_by_combination.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, 'experiment_boxplots.png'), dpi=300, bbox_inches='tight')
     plt.close()
     
-    # 3. 改进率分布
-    fig, ax = plt.subplots(figsize=(12, 8))
-    sns.histplot(aggregated_df['Improvement_Percent'], bins=30, kde=True, ax=ax)
-    ax.axvline(aggregated_df['Improvement_Percent'].mean(), color='red', linestyle='--', 
-               label=f'Mean: {aggregated_df["Improvement_Percent"].mean():.2f}%')
-    ax.set_xlabel('Improvement Percentage (%)')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Distribution of Improvement Percentages')
-    ax.legend()
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, 'improvement_distribution.png'), dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    # 4. 性能散点图矩阵
-    performance_cols = ['Indicator_MAE', 'Reduced_MAE', 'Indicator_RMSE', 'Reduced_RMSE', 'Indicator_R2', 'Reduced_R2']
-    performance_df = aggregated_df[performance_cols]
-    
-    fig, ax = plt.subplots(figsize=(10, 8))
-    scatter = ax.scatter(aggregated_df['Indicator_MAE'], aggregated_df['Reduced_MAE'], 
-                        c=aggregated_df['Improvement_Percent'], cmap='viridis', alpha=0.6)
-    ax.plot([aggregated_df['Indicator_MAE'].min(), aggregated_df['Indicator_MAE'].max()], 
-            [aggregated_df['Indicator_MAE'].min(), aggregated_df['Indicator_MAE'].max()], 
-            'r--', alpha=0.5, label='Perfect Match')
-    ax.set_xlabel('Indicator Model MAE')
-    ax.set_ylabel('Reduced Model MAE')
-    ax.set_title('MAE Comparison: Indicator vs Reduced Models')
-    ax.legend()
-    plt.colorbar(scatter, ax=ax, label='Improvement Percentage (%)')
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(plots_dir, 'mae_scatter_comparison.png'), dpi=300, bbox_inches='tight')
-    plt.close()
+    logger.info(f"结果分布图已保存至: {output_dir}")
 
-def calculate_statistics(aggregated_df):
+def calculate_statistics(results):
     """
-    计算统计信息
-    """
-    stats = {}
+    计算实验结果的统计信息
     
-    # 整体统计
-    stats['overall'] = {
-        'indicator_mae_mean': aggregated_df['Indicator_MAE'].mean(),
-        'indicator_mae_std': aggregated_df['Indicator_MAE'].std(),
-        'reduced_mae_mean': aggregated_df['Reduced_MAE'].mean(),
-        'reduced_mae_std': aggregated_df['Reduced_MAE'].std(),
-        'improvement_mean': aggregated_df['Improvement_Percent'].mean(),
-        'improvement_std': aggregated_df['Improvement_Percent'].std()
+    Args:
+        results: 解析后的实验结果
+    
+    Returns:
+        dict: 统计信息
+    """
+    successful_results = [r for r in results if r.get("completed_successfully", False)]
+    
+    stats = {
+        "total_experiments": len(results),
+        "successful_experiments": len(successful_results),
+        "failed_experiments": len(results) - len(successful_results),
+        "success_rate": len(successful_results) / len(results) if results else 0
     }
     
-    # 按缺失组合分组统计
-    grouped_stats = aggregated_df.groupby('Missing_Combination').agg({
-        'Indicator_MAE': ['mean', 'std', 'min', 'max'],
-        'Reduced_MAE': ['mean', 'std', 'min', 'max'],
-        'Improvement_Percent': ['mean', 'std', 'min', 'max']
-    })
+    # 计算各项指标的统计信息
+    indicator_maes = [r['indicator_mae'] for r in successful_results if 'indicator_mae' in r]
+    indicator_rmses = [r['indicator_rmse'] for r in successful_results if 'indicator_rmse' in r]
+    indicator_r2s = [r['indicator_r2'] for r in successful_results if 'indicator_r2' in r]
+    reduced_maes = [r['reduced_mae'] for r in successful_results if 'reduced_mae' in r]
+    reduced_rmses = [r['reduced_rmse'] for r in successful_results if 'reduced_rmse' in r]
+    reduced_r2s = [r['reduced_r2'] for r in successful_results if 'reduced_r2' in r]
     
-    stats['by_combination'] = grouped_stats.round(4)
+    if indicator_maes:
+        stats['indicator_mae_mean'] = np.mean(indicator_maes)
+        stats['indicator_mae_std'] = np.std(indicator_maes)
+        stats['indicator_mae_min'] = np.min(indicator_maes)
+        stats['indicator_mae_max'] = np.max(indicator_maes)
+    
+    if indicator_rmses:
+        stats['indicator_rmse_mean'] = np.mean(indicator_rmses)
+        stats['indicator_rmse_std'] = np.std(indicator_rmses)
+        stats['indicator_rmse_min'] = np.min(indicator_rmses)
+        stats['indicator_rmse_max'] = np.max(indicator_rmses)
+    
+    if indicator_r2s:
+        stats['indicator_r2_mean'] = np.mean(indicator_r2s)
+        stats['indicator_r2_std'] = np.std(indicator_r2s)
+        stats['indicator_r2_min'] = np.min(indicator_r2s)
+        stats['indicator_r2_max'] = np.max(indicator_r2s)
+    
+    if reduced_maes:
+        stats['reduced_mae_mean'] = np.mean(reduced_maes)
+        stats['reduced_mae_std'] = np.std(reduced_maes)
+        stats['reduced_mae_min'] = np.min(reduced_maes)
+        stats['reduced_mae_max'] = np.max(reduced_maes)
+    
+    if reduced_rmses:
+        stats['reduced_rmse_mean'] = np.mean(reduced_rmses)
+        stats['reduced_rmse_std'] = np.std(reduced_rmses)
+        stats['reduced_rmse_min'] = np.min(reduced_rmses)
+        stats['reduced_rmse_max'] = np.max(reduced_rmses)
+    
+    if reduced_r2s:
+        stats['reduced_r2_mean'] = np.mean(reduced_r2s)
+        stats['reduced_r2_std'] = np.std(reduced_r2s)
+        stats['reduced_r2_min'] = np.min(reduced_r2s)
+        stats['reduced_r2_max'] = np.max(reduced_r2s)
     
     return stats
 
-def save_statistics(stats, output_dir):
-    """
-    保存统计信息到JSON和CSV
-    """
-    # 保存整体统计到JSON
-    with open(os.path.join(output_dir, 'statistics.json'), 'w') as f:
-        json_stats = {}
-        for key, value in stats['overall'].items():
-            if isinstance(value, (int, float)):
-                json_stats[key] = round(value, 4)
-            else:
-                json_stats[key] = value
-        json.dump(json_stats, f, indent=2)
-    
-    # 保存按组合统计到CSV
-    if 'by_combination' in stats:
-        stats['by_combination'].to_csv(os.path.join(output_dir, 'stats_by_combination.csv'))
-    
-    print(f"统计信息已保存到 {output_dir}")
-
 def main():
-    parser = argparse.ArgumentParser(description='重复实验管理器')
-    parser.add_argument('--script_path', type=str, required=True, 
-                       help='下位实验脚本路径')
-    parser.add_argument('--num_experiments', type=int, default=5,
-                       help='重复实验次数')
-    parser.add_argument('--base_results_dir', type=str, default='repeat_experiment_results',
-                       help='基础结果目录')
-    parser.add_argument('--data_dir', type=str, required=True,
-                       help='数据目录')
-    parser.add_argument('--batch', type=str, default='3C',
-                       choices=['2C','3C','R2.5','R3','RW','satellite'],
-                       help='电池批次')
+    parser = argparse.ArgumentParser(description='批量运行SOH估计实验（100次重复实验）')
+    
+    # 实验脚本路径
+    parser.add_argument('--script-path', type=str, default='soh_fixed_feature_missing.py',
+                        help='实验脚本路径 (默认: soh_fixed_feature_missing.py)')
+    
+    # 固定的训练缺失率
+    parser.add_argument('--training-missing-rates', type=str, 
+                        default='0.0 0.05 0.1 0.15 0.2 0.25 0.3 0.35 0.4 0.45 0.5 0.55 0.6 0.65 0.7 0.75 0.8 0.85 0.9 0.95',
+                        help='训练缺失率列表 (默认: 0.0 0.05 ... 0.95)')
+    
+    # 其他参数
+    parser.add_argument('--data-dir', type=str, default='./data/XJTU data',
+                        help='数据目录 (默认: ./data/XJTU data)')
+    parser.add_argument('--batch', type=str, default='2C',
+                        help='电池批次 (默认: 2C)')
     parser.add_argument('--epochs', type=int, default=100,
-                       help='训练轮数')
-    parser.add_argument('--batch_size', type=int, default=32,
-                       help='批次大小')
-    parser.add_argument('--seeds', type=int, nargs='+', 
-                       help='随机种子列表 (如果不提供则自动生成)')
+                        help='训练轮数 (默认: 100)')
+    parser.add_argument('--batch-size', type=int, default=32,
+                        help='批大小 (默认: 32)')
+    parser.add_argument('--start-seed', type=int, default=1,
+                        help='起始随机种子 (默认: 1)')
+    parser.add_argument('--num-experiments', type=int, default=100,
+                        help='实验次数 (默认: 100)')
+    parser.add_argument('--results-dir', type=str, default='batch_experiment_results',
+                        help='结果保存目录 (默认: batch_experiment_results)')
+    parser.add_argument('--output-dir', type=str, default='experiment_analysis',
+                        help='分析结果输出目录 (默认: experiment_analysis)')
     
     args = parser.parse_args()
     
-    # 创建主结果目录
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    main_results_dir = os.path.join(args.base_results_dir, f"repeat_experiment_{timestamp}")
-    os.makedirs(main_results_dir, exist_ok=True)
+    # 验证实验脚本是否存在
+    if not os.path.exists(args.script_path):
+        logger.error(f"实验脚本不存在: {args.script_path}")
+        return
     
-    # 设置随机种子
-    if args.seeds:
-        seeds = args.seeds
-    else:
-        seeds = [42 + i for i in range(args.num_experiments)]
+    # 创建结果目录
+    os.makedirs(args.results_dir, exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
     
-    if len(seeds) < args.num_experiments:
-        seeds = seeds + [seeds[-1] + i + 1 for i in range(args.num_experiments - len(seeds))]
+    # 解析训练缺失率
+    training_missing_rates = [float(r) for r in args.training_missing_rates.split()]
     
-    print(f"将运行 {args.num_experiments} 次重复实验")
-    print(f"使用种子: {seeds[:args.num_experiments]}")
+    logger.info(f"总共 {args.num_experiments} 次实验，每次使用不同的随机种子")
+    logger.info(f"训练缺失率: {training_missing_rates}")
     
     # 运行实验
-    experiment_dirs = []
+    all_results = []
     for i in range(args.num_experiments):
-        exp_results_dir = os.path.join(main_results_dir, f"experiment_{i+1}")
-        os.makedirs(exp_results_dir, exist_ok=True)
+        seed = args.start_seed + i
+        logger.info(f"运行实验 {i+1}/{args.num_experiments} (随机种子: {seed})")
         
-        config = {
-            'script_path': args.script_path,
+        # 每次实验都有独立的结果目录
+        exp_results_dir = os.path.join(args.results_dir, f"experiment_{i+1:03d}_seed_{seed}")
+        
+        params = {
             'epochs': args.epochs,
+            'batch_size': args.batch_size,
+            'seed': seed,
+            'training_missing_rates': training_missing_rates,
             'data_dir': args.data_dir,
             'batch': args.batch,
-            'seed': seeds[i],
-            'batch_size': args.batch_size,
-            'results_dir': exp_results_dir
+            'results_dir': exp_results_dir,
+            'pretrained_model': None  # 不使用预训练模型进行批量实验
         }
         
-        success = run_single_experiment(config)
-        if success:
-            experiment_dirs.append(exp_results_dir)
-            print(f"实验 {i+1} 完成")
-        else:
-            print(f"实验 {i+1} 失败")
+        result = run_experiment(args.script_path, params)
+        all_results.append(result)
+        
+        # 保存中间结果
+        with open(os.path.join(args.output_dir, f"experiment_{i+1:03d}_result.json"), 'w') as f:
+            json.dump(result, f, indent=2, default=str)
     
-    # 汇总结果
-    print("汇总实验结果...")
-    aggregated_df = aggregate_results(experiment_dirs)
+    # 解析结果
+    logger.info("解析实验结果...")
+    parsed_results = parse_experiment_results(all_results)
     
-    if aggregated_df is not None:
-        print(f"汇总了 {len(aggregated_df)} 个缺失组合的结果")
-        
-        # 保存汇总数据
-        aggregated_df.to_csv(os.path.join(main_results_dir, 'aggregated_results.csv'), index=False)
-        
-        # 绘制分析图
-        print("绘制分析图表...")
-        plot_distribution_analysis(aggregated_df, main_results_dir)
-        
-        # 计算并保存统计信息
-        print("计算统计信息...")
-        stats = calculate_statistics(aggregated_df)
-        save_statistics(stats, main_results_dir)
-        
-        # 打印摘要
-        print("\n" + "="*60)
-        print("重复实验摘要")
-        print("="*60)
-        overall = stats['overall']
-        print(f"Indicator Model MAE: {overall['indicator_mae_mean']:.4f} ± {overall['indicator_mae_std']:.4f}")
-        print(f"Reduced Model MAE: {overall['reduced_mae_mean']:.4f} ± {overall['reduced_mae_std']:.4f}")
-        print(f"Improvement: {overall['improvement_mean']:.2f}% ± {overall['improvement_std']:.2f}%")
-        print(f"实验总数: {args.num_experiments}")
-        print(f"结果保存至: {main_results_dir}")
-        print("="*60)
-    else:
-        print("未能汇总任何实验结果")
+    # 保存所有结果
+    results_summary = {
+        "total_experiments": len(all_results),
+        "successful_experiments": len([r for r in all_results if r["status"] == "success"]),
+        "failed_experiments": len([r for r in all_results if r["status"] != "success"]),
+        "parameters_used": {
+            "script_path": args.script_path,
+            "training_missing_rates": training_missing_rates,
+            "data_dir": args.data_dir,
+            "batch": args.batch,
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "start_seed": args.start_seed,
+            "num_experiments": args.num_experiments,
+            "results_dir": args.results_dir
+        },
+        "raw_results": all_results,
+        "parsed_results": parsed_results
+    }
+    
+    summary_path = os.path.join(args.output_dir, 'experiment_summary.json')
+    with open(summary_path, 'w') as f:
+        json.dump(results_summary, f, indent=2, default=str)
+    
+    logger.info(f"实验总结已保存至: {summary_path}")
+    
+    # 计算统计信息
+    stats = calculate_statistics(parsed_results)
+    stats_path = os.path.join(args.output_dir, 'experiment_statistics.json')
+    with open(stats_path, 'w') as f:
+        json.dump(stats, f, indent=2, default=str)
+    
+    logger.info(f"实验统计信息已保存至: {stats_path}")
+    
+    # 绘制结果分布图
+    logger.info("绘制结果分布图...")
+    plot_results_distribution(parsed_results, args.output_dir)
+    
+    # 打印统计摘要
+    logger.info("="*80)
+    logger.info("批量实验完成总结:")
+    logger.info(f"总实验数: {stats['total_experiments']}")
+    logger.info(f"成功实验数: {stats['successful_experiments']}")
+    logger.info(f"失败实验数: {stats['failed_experiments']}")
+    logger.info(f"成功率: {stats['success_rate']*100:.2f}%")
+    
+    if 'indicator_mae_mean' in stats:
+        logger.info(f"\n缺失指示器模型性能:")
+        logger.info(f"  MAE: 均值={stats['indicator_mae_mean']:.6f}, 标准差={stats['indicator_mae_std']:.6f}")
+        logger.info(f"  RMSE: 均值={stats['indicator_rmse_mean']:.6f}, 标准差={stats['indicator_rmse_std']:.6f}")
+        logger.info(f"  R²: 均值={stats['indicator_r2_mean']:.6f}, 标准差={stats['indicator_r2_std']:.6f}")
+    
+    if 'reduced_mae_mean' in stats:
+        logger.info(f"\n缩减模型性能:")
+        logger.info(f"  MAE: 均值={stats['reduced_mae_mean']:.6f}, 标准差={stats['reduced_mae_std']:.6f}")
+        logger.info(f"  RMSE: 均值={stats['reduced_rmse_mean']:.6f}, 标准差={stats['reduced_rmse_std']:.6f}")
+        logger.info(f"  R²: 均值={stats['reduced_r2_mean']:.6f}, 标准差={stats['reduced_r2_std']:.6f}")
+    
+    logger.info(f"\n结果保存目录: {args.results_dir}")
+    logger.info(f"分析结果保存目录: {args.output_dir}")
+    logger.info("="*80)
 
 if __name__ == "__main__":
     main()
