@@ -42,7 +42,7 @@ def main():
     # 模型选择
     parser.add_argument('--models', type=str, nargs='+',
                        default=['all'],
-                       help='要运行的模型 (mlp, lstm, gru, cnn1d, xgboost, all)')
+                       help='要运行的模型 (mlp, lstm, gru, cnn1d, all)')
     
     args = parser.parse_args()
     

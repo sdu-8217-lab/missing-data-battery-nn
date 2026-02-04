@@ -72,7 +72,8 @@ class ExperimentRunner:
             self.config.target_col,
             self.config.test_size,
             self.config.val_size,
-            self.config.random_seed
+            self.config.random_seed,
+            logger=self.logger
         )
         
         self.logger.info(f"训练集: {self.data['X_train'].shape}")

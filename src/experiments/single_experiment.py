@@ -89,10 +89,11 @@ class SingleExperimentRunner:
             target_col='capacity',
             test_size=0.25,
             val_size=0.25,
-            random_seed=self.seed
+            random_seed=self.seed,
+            logger=self.logger
         )
         
-        self.logger.info(f"数据加载完成 - 训练集: {self.data['X_train'].shape}, "
+        self.logger.info(f"数据形状 - 训练集: {self.data['X_train'].shape}, "
                         f"验证集: {self.data['X_val'].shape}, 测试集: {self.data['X_test'].shape}")
         return self.data
     
@@ -108,7 +109,7 @@ class SingleExperimentRunner:
         # 设置随机种子
         set_seeds(self.seed)
         
-        # 所有模型配置
+        # 所有模型配置 - 4模型 × 2策略 = 8配置 (已移除XGBoost)
         model_configs = [
             ModelConfig(model_type='mlp', use_mim=False, name='MLP', seq_len=5),
             ModelConfig(model_type='mlp', use_mim=True, name='MLP-MIM', seq_len=5),
@@ -118,8 +119,6 @@ class SingleExperimentRunner:
             ModelConfig(model_type='gru', use_mim=True, name='GRU-MIM', seq_len=5),
             ModelConfig(model_type='cnn1d', use_mim=False, name='CNN1D', seq_len=5),
             ModelConfig(model_type='cnn1d', use_mim=True, name='CNN1D-MIM', seq_len=5),
-            ModelConfig(model_type='xgboost', use_mim=False, name='XGBoost', seq_len=5),
-            ModelConfig(model_type='xgboost', use_mim=True, name='XGBoost-MIM', seq_len=5),
         ]
         
         all_results = []
@@ -208,34 +207,19 @@ class SingleExperimentRunner:
             # Baseline策略: 只用完整数据
             train_data, val_data = self._prepare_baseline_data(model_config)
         
-        # 训练
+        # 训练 - PyTorch模型
         start_time = time.time()
         
-        if model_type == 'xgboost':
-            # XGBoost特殊处理 - 从TensorDataset中提取numpy数组
-            if use_mim:
-                # MIM返回的是TensorDataset
-                X_train = train_data.tensors[0].numpy()
-                y_train = train_data.tensors[1].numpy()
-                X_val = val_data.tensors[0].numpy()
-                y_val = val_data.tensors[1].numpy()
-            else:
-                X_train, y_train = train_data.X, train_data.y
-                X_val, y_val = val_data.X, val_data.y
-            
-            model.fit(X_train, y_train, X_val, y_val)
-        else:
-            # PyTorch模型
-            train_loader = DataLoader(train_data, batch_size=self.config.batch_size, shuffle=True)
-            val_loader = DataLoader(val_data, batch_size=self.config.batch_size)
-            
-            trainer = NeuralNetworkTrainer(model.model if hasattr(model, 'model') else model, self.config.device)
-            trainer.train(
-                train_loader, val_loader,
-                epochs=self.config.epochs,
-                lr=self.config.lr,
-                patience=self.config.early_stopping_patience
-            )
+        train_loader = DataLoader(train_data, batch_size=self.config.batch_size, shuffle=True)
+        val_loader = DataLoader(val_data, batch_size=self.config.batch_size)
+        
+        trainer = NeuralNetworkTrainer(model.model if hasattr(model, 'model') else model, self.config.device)
+        trainer.train(
+            train_loader, val_loader,
+            epochs=self.config.epochs,
+            lr=self.config.lr,
+            patience=self.config.early_stopping_patience
+        )
         
         training_time = time.time() - start_time
         

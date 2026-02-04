@@ -57,24 +57,4 @@ class ModelEvaluator:
         
         return metrics, predictions, targets
     
-    def evaluate_xgboost(self, model, X_test, y_test) -> dict:
-        """
-        评估XGBoost模型
-        
-        Args:
-            model: XGBoost模型
-            X_test: 测试特征
-            y_test: 测试标签
-            
-        Returns:
-            dict: 评估指标
-        """
-        start_time = time.time()
-        predictions = model.predict(X_test)
-        inference_time = time.time() - start_time
-        
-        metrics = calculate_all_metrics(y_test, predictions)
-        metrics['inference_time'] = inference_time
-        metrics['n_samples'] = len(y_test)
-        
-        return metrics, predictions, y_test
+

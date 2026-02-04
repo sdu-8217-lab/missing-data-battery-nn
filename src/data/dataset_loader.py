@@ -24,7 +24,47 @@ class XJTUDatasetLoader:
         """获取该批次下所有电池文件"""
         pattern = f"{self.batch}_battery-*.csv"
         files = sorted(self.data_dir.glob(pattern))
+        
+        if len(files) == 0:
+            raise FileNotFoundError(
+                f"在目录 {self.data_dir} 中未找到匹配 '{pattern}' 的电池数据文件。"
+                f"请确认数据文件存在且命名格式正确（如：{self.batch}_battery-1.csv）"
+            )
+        
         return files
+    
+    def get_battery_id_range(self) -> Dict[str, any]:
+        """
+        获取该批次电池ID的范围信息
+        
+        Returns:
+            Dict: {
+                'min_id': 最小电池ID,
+                'max_id': 最大电池ID,
+                'count': 电池总数,
+                'ids': 所有电池ID列表
+            }
+        """
+        files = self.get_battery_files()
+        ids = []
+        
+        for file_path in files:
+            try:
+                # 从文件名提取电池ID (如: 2C_battery-5.csv -> 5)
+                battery_id = int(file_path.stem.split('-')[-1])
+                ids.append(battery_id)
+            except (ValueError, IndexError) as e:
+                raise ValueError(
+                    f"无法从文件名 '{file_path.name}' 提取电池ID。"
+                    f"期望格式: '{{batch}}_battery-{{id}}.csv'"
+                ) from e
+        
+        return {
+            'min_id': min(ids),
+            'max_id': max(ids),
+            'count': len(ids),
+            'ids': sorted(ids)
+        }
     
     def load_battery(self, file_path: Path, feature_cols: List[str], 
                      target_col: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -104,14 +144,33 @@ class XJTUDatasetLoader:
         Returns:
             train_ids, val_ids, test_ids
         """
+        # 验证电池数量是否足够
+        n_batteries = len(battery_ids)
+        min_required = 4  # 至少4个电池才能进行合理划分
+        
+        if n_batteries < min_required:
+            raise ValueError(
+                f"电池数量({n_batteries})不足，无法进行训练/验证/测试集划分。"
+                f"至少需要{min_required}个电池。"
+                f"建议：收集更多电池数据或调整划分比例。"
+            )
+        
+        # 计算划分数量，确保每个集合至少有1个电池
+        n_test = max(1, int(n_batteries * test_size))
+        n_val = max(1, int(n_batteries * val_size))
+        n_train = n_batteries - n_test - n_val
+        
+        if n_train < 1:
+            raise ValueError(
+                f"划分后训练集为空。电池总数={n_batteries}, "
+                f"测试集={n_test}, 验证集={n_val}。"
+                f"请调整test_size和val_size参数。"
+            )
+        
+        # 随机打乱并划分
         np.random.seed(random_seed)
         ids = np.array(sorted(battery_ids))
         np.random.shuffle(ids)
-        
-        n = len(ids)
-        n_test = int(n * test_size)
-        n_val = int(n * val_size)
-        n_train = n - n_test - n_val
         
         test_ids = ids[:n_test].tolist()
         val_ids = ids[n_test:n_test+n_val].tolist()
@@ -121,9 +180,18 @@ class XJTUDatasetLoader:
     
     def prepare_data(self, feature_cols: List[str], target_col: str,
                     test_size: float = 0.25, val_size: float = 0.25,
-                    random_seed: int = 42) -> Dict:
+                    random_seed: int = 42,
+                    logger=None) -> Dict:
         """
         准备完整数据集
+        
+        Args:
+            feature_cols: 特征列名列表
+            target_col: 目标列名
+            test_size: 测试集比例
+            val_size: 验证集比例
+            random_seed: 随机种子
+            logger: 日志记录器（可选）
         
         Returns:
             Dict包含：
@@ -133,14 +201,31 @@ class XJTUDatasetLoader:
                 - scaler
                 - battery_info
         """
+        import logging
+        if logger is None:
+            logger = logging.getLogger(__name__)
+        
+        # 获取电池ID范围信息
+        battery_range = self.get_battery_id_range()
+        logger.info(f"批次 '{self.batch}' 检测到 {battery_range['count']} 个电池文件")
+        logger.info(f"电池ID范围: {battery_range['min_id']} - {battery_range['max_id']}")
+        logger.info(f"电池ID列表: {battery_range['ids']}")
+        
         # 加载所有电池
         batteries = self.load_all_batteries(feature_cols, target_col)
         battery_ids = list(batteries.keys())
+        
+        logger.info(f"成功加载 {len(batteries)} 个电池数据")
         
         # 划分电池
         train_ids, val_ids, test_ids = self.split_batteries(
             battery_ids, test_size, val_size, random_seed
         )
+        
+        logger.info(f"数据集划分 (seed={random_seed}):")
+        logger.info(f"  - 训练集: {len(train_ids)} 个电池 {train_ids}")
+        logger.info(f"  - 验证集: {len(val_ids)} 个电池 {val_ids}")
+        logger.info(f"  - 测试集: {len(test_ids)} 个电池 {test_ids}")
         
         # 合并数据
         def merge_batteries(ids):

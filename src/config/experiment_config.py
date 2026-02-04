@@ -5,7 +5,7 @@ from typing import List, Dict
 
 @dataclass
 class ModelConfig:
-    """模型配置"""
+    """模型配置 - 使用configs_v3最佳参数"""
     name: str
     model_type: str
     use_mim: bool = False
@@ -13,15 +13,12 @@ class ModelConfig:
     hidden_layers: List[int] = None
     # LSTM/GRU参数
     hidden_size: int = 64
-    num_layers: int = 1
+    num_layers: int = 2  # configs_v3最佳: 2层
     seq_len: int = 5
     # CNN参数
     channels: List[int] = None
     kernel_size: int = 3
-    # XGBoost参数
-    n_estimators: int = 100
-    max_depth: int = 6
-    learning_rate: float = 0.1
+    dropout: float = 0.1  # 添加dropout参数
 
 
 @dataclass
@@ -70,81 +67,79 @@ class ExperimentConfig:
     # 路径设置
     results_dir: str = "./results"
     
-    # 模型配置
+    # 模型配置 - configs_v3最佳参数 (已移除XGBoost)
     def get_model_configs(self) -> List[ModelConfig]:
-        """获取所有模型配置"""
+        """获取所有模型配置 - 使用configs_v3架构搜索最佳参数"""
         configs = [
+            # MLP: [192,96,48,24] 4层, dropout=0.15, MAE=0.0128
             ModelConfig(
                 name='MLP', 
                 model_type='mlp',
-                hidden_layers=[100, 64, 32],
+                hidden_layers=[192, 96, 48, 24],
+                dropout=0.15,
                 use_mim=False
             ),
             ModelConfig(
                 name='MLP-MIM', 
                 model_type='mlp',
-                hidden_layers=[100, 64, 32],
+                hidden_layers=[192, 96, 48, 24],
+                dropout=0.15,
                 use_mim=True
             ),
-            ModelConfig(
-                name='XGBoost',
-                model_type='xgboost',
-                n_estimators=60,
-                max_depth=5,
-                use_mim=False
-            ),
-            ModelConfig(
-                name='XGBoost-MIM',
-                model_type='xgboost',
-                n_estimators=60,
-                max_depth=5,
-                use_mim=True
-            ),
+            # LSTM: h=48, l=2, dropout=0.2, MAE=0.0077
             ModelConfig(
                 name='LSTM',
                 model_type='lstm',
-                hidden_size=42,
-                num_layers=1,
+                hidden_size=48,
+                num_layers=2,
+                dropout=0.2,
                 seq_len=self.seq_len,
                 use_mim=False
             ),
             ModelConfig(
                 name='LSTM-MIM',
                 model_type='lstm',
-                hidden_size=42,
-                num_layers=1,
+                hidden_size=48,
+                num_layers=2,
+                dropout=0.2,
                 seq_len=self.seq_len,
                 use_mim=True
             ),
+            # GRU: h=64, l=2, dropout=0.2, MAE=0.0069
             ModelConfig(
                 name='GRU',
                 model_type='gru',
-                hidden_size=48,
-                num_layers=1,
+                hidden_size=64,
+                num_layers=2,
+                dropout=0.2,
                 seq_len=self.seq_len,
                 use_mim=False
             ),
             ModelConfig(
                 name='GRU-MIM',
                 model_type='gru',
-                hidden_size=48,
-                num_layers=1,
+                hidden_size=64,
+                num_layers=2,
+                dropout=0.2,
                 seq_len=self.seq_len,
                 use_mim=True
             ),
+            # CNN1D: [72,32], kernel=4, dropout=0.1, MAE=0.0057 (最佳)
             ModelConfig(
                 name='CNN1D',
                 model_type='cnn1d',
-                channels=[48, 32],
-                kernel_size=3,
+                channels=[72, 32],
+                kernel_size=4,
+                dropout=0.1,
                 seq_len=self.seq_len,
                 use_mim=False
             ),
             ModelConfig(
                 name='CNN1D-MIM',
                 model_type='cnn1d',
-                channels=[48, 32],
-                kernel_size=3,
+                channels=[72, 32],
+                kernel_size=4,
+                dropout=0.1,
                 seq_len=self.seq_len,
                 use_mim=True
             ),
