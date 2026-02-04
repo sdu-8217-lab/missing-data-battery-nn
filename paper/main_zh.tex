@@ -79,7 +79,7 @@
 
 然而，一个长期被忽视但在实际工程中普遍存在的问题是：电池管理系统（BMS）采集的传感器数据往往存在不同程度的缺失。这种缺失可能源于多种因素：传感器硬件故障或老化导致的测量失效、通信链路的不稳定造成的数据丢包、采样策略的优化调整引起的部分通道间歇性关闭，以及极端工况下某些保护机制触发导致的数据记录中断等。在大型储能电站或规模化电动汽车应用中，由于电池数量众多、监测点密集，数据缺失问题尤为突出。当输入特征存在缺失时，传统的数据驱动模型往往面临输入维度不匹配、特征分布偏移、预测置信度下降等问题，严重影响预测性能甚至导致模型失效。如图\ref{fig:problem_scenario}所示，实际BMS监测链路中的多源故障会导致循环级特征矩阵中出现随机缺失，如何在存在缺失的条件下保持预测性能是本文关注的核心问题。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{fig1_problem_scenario.png}
     \caption{电池SOH预测中的数据缺失问题示意图。(a) BMS监测链路与潜在故障源；(b) 循环级特征矩阵与MCAR缺失模式。}
@@ -175,7 +175,7 @@ MIM方法在多个应用领域已有成功实践。在医疗数据分析中，�
 
 表\ref{tab:features}汇总了本文提取的16维循环级特征及其物理意义。这些特征涵盖了电压特性、充电过程特性和电流特性三个维度，能够较全面地刻画电池在单次循环中的老化状态。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{循环级特征提取详情}
 \label{tab:features}
@@ -248,7 +248,7 @@ Z-score标准化公式定义为：
 
 算法\ref{alg:mim}给出了缺失指示器构造与输入表示生成的完整流程。
 
-\begin{algorithm}[htbp]
+\begin{algorithm}[H]
 \caption{缺失指示器构造与输入表示生成}
 \label{alg:mim}
 \begin{algorithmic}[1]
@@ -271,7 +271,7 @@ Z-score标准化公式定义为：
 
 图\ref{fig:baseline_vs_mim}直观展示了Baseline与MIM两种输入策略的对比。Baseline仅使用插补后的16维特征，而MIM将插补特征与16维缺失指示器拼接，形成32维扩展输入，使模型能够同时获知特征值和缺失信息。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{fig2_baseline_vs_mim.png}
     \caption{Baseline与MIM输入策略对比。(a) Baseline：仅使用插补后的特征$\hat{X} \in \mathbb{R}^{n \times 16}$；(b) MIM：将插补特征与缺失指示器拼接$[\hat{X} \,|\, M] \in \mathbb{R}^{n \times 32}$。}
@@ -290,7 +290,7 @@ Z-score标准化公式定义为：
 
 一维卷积神经网络（1D-CNN）包含两层卷积层，通道数依次为72和32，卷积核大小为4（经实验验证优于常用的3），时序维度采用AdaptiveAvgPool1d进行自适应池化，最后通过全连接层输出预测结果，Dropout率为0.1。Baseline版本参数量约为16,713，MIM版本参数量约为21,321。值得注意的是，CNN在架构搜索中表现出最佳的性能-参数量效率。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{模型架构与参数配置（基于架构搜索确定的最优配置）}
 \label{tab:model_config}
@@ -313,7 +313,7 @@ GRU & 2层GRU$\rightarrow$全连接 & hidden=64, seq\_len=5, Dropout=0.2 & 40,76
 
 图\ref{fig:model_architectures}展示了四种模型架构的结构对比。所有模型的参数量控制在15,000--45,000的同一量级，以确保实验比较的公平性。当使用MIM输入时，由于输入维度从16增加到32，参数量相应增加，但这种增加是输入维度变化的必然结果。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{fig3_model_architectures.png}
     \caption{四种深度学习模型架构对比。(a) MLP：四层全连接网络；(b) LSTM：双层长短期记忆网络；(c) GRU：双层门控循环单元；(d) 1D-CNN：两层卷积神经网络。}
@@ -326,7 +326,7 @@ GRU & 2层GRU$\rightarrow$全连接 & hidden=64, seq\_len=5, Dropout=0.2 & 40,76
 \end{equation}
 其中$d_{\text{in}}$为输入维度（Baseline: 16，MIM: 32），括号内第二项为偏置参数。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{训练超参数配置}
 \label{tab:training_config}
@@ -350,7 +350,7 @@ Batch size & 32 & 小批量梯度下降 \\
 
 在数据集划分方面，我们按照电池单元进行划分，将不同电池的数据分别划入训练集、验证集和测试集，比例约为60\%、20\%和20\%。这种划分方式确保了评估时模型面对的是从未见过的电池，能够更好地检验模型的泛化能力。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{数据集划分详情}
 \label{tab:data_split}
@@ -371,7 +371,7 @@ Batch size & 32 & 小批量梯度下降 \\
 
 算法\ref{alg:training}描述了MIM模型的多缺失率联合训练流程。
 
-\begin{algorithm}[htbp]
+\begin{algorithm}[H]
 \caption{MIM模型多缺失率联合训练}
 \label{alg:training}
 \begin{algorithmic}[1]
@@ -399,7 +399,7 @@ Batch size & 32 & 小批量梯度下降 \\
 
 图\ref{fig:joint_training}形象地展示了算法\ref{alg:training}中多缺失率联合训练的具体过程。原始训练集按照10个缺失率分别生成副本，每个副本经过MIM构造后合并形成一个扩充10倍的训练集，最终训练出一个能够处理任意缺失率的统一MIM模型。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{fig4_joint_training.png}
     \caption{多缺失率联合训练流程。原始训练集按照缺失率$\{0.0, 0.1, \ldots, 0.9\}$生成10个副本，经MIM构造后合并为$\mathcal{D}_{\text{augmented}}$，用于训练统一的MIM模型$f_{\text{MIM}}$。}
@@ -436,7 +436,7 @@ Batch size & 32 & 小批量梯度下降 \\
 
 图\ref{fig:mae_curves}展示了九档缺失率下各模型的MAE表现曲线，其中实线代表使用MIM策略的模型，虚线代表仅使用插补的基线模型，阴影区域表示95\%置信区间。从图中可以观察到几个明显的趋势：首先，所有模型的预测误差都随着缺失率的增加而单调上升，这符合直观预期——数据信息量减少必然导致预测难度增加；其次，对于所有深度学习模型，MIM版本（实线）的曲线始终位于基线版本（虚线）的下方，表明引入缺失指示器确实能够带来性能提升；第三，在中高缺失率区域（$\geq 0.5$），两条曲线之间的差距明显拉大，说明MIM在数据更稀缺的场景下优势更为突出。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{mae_curves_ci.png}
     \caption{不同缺失率下各模型的MAE表现对比。实线表示使用MIM策略的模型，虚线表示仅使用插补的基线模型，阴影区域表示95\%置信区间。可以观察到MIM版本在大多数缺失率下均优于基线版本，且在高缺失率时优势更为明显。}
@@ -445,7 +445,7 @@ Batch size & 32 & 小批量梯度下降 \\
 
 表\ref{tab:mae_comparison}给出了缺失率为0.5和0.9两个关键节点的详细数值对比。在缺失率0.5时，MLP的基线MAE为0.189$\pm$0.042，而MIM版本降至0.029$\pm$0.008，改进幅度超过84\%；LSTM从0.137$\pm$0.035降至0.015$\pm$0.004，改进约89\%；GRU从0.098$\pm$0.028降至0.014$\pm$0.004，改进约86\%；1D-CNN从0.357$\pm$0.062降至0.014$\pm$0.004，改进高达96\%。所有深度学习模型均从MIM中获得了显著的性能提升。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{缺失率0.5和0.9时的MAE对比（均值$\pm$标准差，100随机种子）。粗体表示该条件下两种策略中的较优者。}
 \label{tab:mae_comparison}
@@ -465,7 +465,7 @@ GRU & 0.098$\pm$0.028 & \textbf{0.014}$\pm$0.004 & 0.131$\pm$0.039 & \textbf{0.0
 
 图\ref{fig:mae_heatmap}以热力图形式直观展示了不同模型在不同缺失率下的MAE表现。图中每一行代表一个模型配置，每一列代表一个缺失率，颜色深浅表示MAE的大小（浅色表示更低的MAE）。从热力图可以清晰地观察到两个趋势：首先，上半部分（Baseline版本）的颜色随缺失率增加而明显加深，表明基线模型性能随缺失率增加而快速退化；其次，下半部分（MIM版本）的颜色始终保持较浅，表明MIM方法能够有效抑制高缺失率下的性能退化。这种可视化的对比进一步验证了MIM方法的稳健性。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{fig5_mae_heatmap.png}
     \caption{不同模型在不同缺失率下的MAE热力图（高分辨率版本，带数值标注）。行表示模型（上半部分为Baseline，下半部分为MIM），列表示缺失率。颜色越浅表示MAE越低（性能越好）。}
@@ -484,7 +484,7 @@ GRU & 0.098$\pm$0.028 & \textbf{0.014}$\pm$0.004 & 0.131$\pm$0.039 & \textbf{0.0
 
 图\ref{fig:improvement}展示了各模型的改进率随缺失率变化的曲线。表\ref{tab:improvement_summary}汇总了各模型在关键缺失率点的改进率数值。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{MIM相比Baseline的MAE改进率汇总（\%）}
 \label{tab:improvement_summary}
@@ -502,7 +502,7 @@ GRU & 65.5 & 79.7 & 85.7 & 86.8 & 87.0 & 80.9 \\
 
 从表\ref{tab:improvement_summary}可以清晰地看到，MLP、LSTM、GRU、1D-CNN四种神经网络模型的改进率在缺失率$\geq 0.4$时均为显著正值，且随着缺失率的增加，改进幅度总体呈上升趋势。1D-CNN的改进幅度最大，平均改进率达93.9\%，表明CNN架构对于缺失指示器信号的利用最为充分。LSTM和GRU的改进率曲线较为接近，平均改进率分别为85.4\%和80.9\%。MLP的平均改进率为80.0\%，虽然绝对值较高，但相比时序和卷积模型略低，这可能与MLP缺乏对特征间局部关系的建模能力有关。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{mae_improvement_rate.png}
     \caption{MIM相比Baseline的MAE改进率。正值表示MIM表现优于基线，负值表示劣于基线。可以观察到神经网络模型（MLP、LSTM、GRU、CNN）在缺失率$\geq 0.4$时均有显著正向改进。}
@@ -513,7 +513,7 @@ GRU & 65.5 & 79.7 & 85.7 & 86.8 & 87.0 & 80.9 \\
 
 图\ref{fig:individual_improvement}以2×2子图的形式展示了每个模型单独的改进率分析。从图中可以更清晰地观察到各个模型的改进率随缺失率变化的具体模式：MLP在缺失率0.4之后改进率快速上升；LSTM和GRU在各缺失率点均保持较高的改进率；1D-CNN在所有缺失率下改进率均超过85/%，表现出最稳定的改进效果。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{individual_models/all_models_individual_improvement.png}
     \caption{各模型单独的MIM改进率分析。每个子图展示一个模型在不同缺失率下的改进率柱状图，正值（绿色）表示MIM优于基线。}
@@ -537,7 +537,7 @@ GRU & 65.5 & 79.7 & 85.7 & 86.8 & 87.0 & 80.9 \\
 \end{equation}
 其中，$t_{0.975, K-1}$为自由度为$K-1$的$t$分布的97.5\%分位数（$K=100$时，$t_{0.975, 99} \approx 1.984$）。采用基于多次重复试验与不同比例划分的验证策略有助于提升结果的可重复性和解释性\cite{vos2025validation}，本研究借鉴类似思想，在多缺失率、多模型组合下构建统一的评测框架\cite{vos2025validation}。图\ref{fig:seed_stability}展示了各模型在100个种子下的MAE曲线，其中灰色细线代表单个种子的表现，彩色粗线代表跨种子的均值。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{seed_stability.png}
     \caption{种子稳定性分析（100个随机种子）。灰色细线表示单个种子的MAE曲线，彩色实线表示MIM版本的跨种子均值，彩色虚线表示基线版本的跨种子均值。MIM版本不仅均值更低，而且波动更小，显示出更好的稳定性。}
@@ -548,7 +548,7 @@ GRU & 65.5 & 79.7 & 85.7 & 86.8 & 87.0 & 80.9 \\
 
 为进一步验证MIM效果在其他评价指标上的一致性，我们补充了RMSE和R²两个指标的实验分析。除了关注平均误差外，还需要考察不同随机种子下预测性能的波动，以确保结论的稳健性。表\ref{tab:full_results}展示了四个关键缺失率（0.3, 0.5, 0.7, 0.9）下的MAE结果，RMSE和R²呈现相同趋势（详见补充材料）。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{不同缺失率下的MAE对比与改进率（100随机种子，最优值加粗）}
@@ -584,7 +584,7 @@ GRU & 65.5 & 79.7 & 85.7 & 86.8 & 87.0 & 80.9 \\
 
 为进一步验证MIM效果的统计显著性，我们对100个随机种子下的MAE结果进行了Wilcoxon符号秩检验。表\ref{tab:significance}展示了关键缺失率条件下的检验结果，所有模型-MIM组合的$p$值均小于0.001，表明MIM带来的性能提升具有高度统计显著性。
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \small
 \caption{Wilcoxon符号秩检验结果（MIM vs Baseline）}
@@ -605,7 +605,7 @@ GRU & $<$0.001*** & $<$0.001*** & $<$0.001*** & $<$0.001*** \\
 
 图\ref{fig:three_metrics}直观展示了三种指标下的表现对比。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \begin{subfigure}[t]{0.48\textwidth}
         \centering
@@ -633,7 +633,7 @@ GRU & $<$0.001*** & $<$0.001*** & $<$0.001*** & $<$0.001*** \\
 
 图\ref{fig:distribution}展示了不同缺失率下MAE的分布情况（小提琴图）。可以观察到，随着缺失率增加，基线模型的MAE分布逐渐向右偏移且展宽，表明不仅平均误差增大，而且稳定性下降；相比之下，MIM版本的分布中心始终保持在较低水平，且分布形态更为集中，说明MIM方法能够有效抑制高缺失率下的性能退化。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{mae_distribution.png}
     \caption{不同缺失率下MAE的分布情况（小提琴图）。每个子图对应一个缺失率，展示了各模型在该缺失率下的MAE分布密度。基线模型的分布随缺失率增加明显右偏，而MIM版本保持稳定。}
@@ -667,7 +667,7 @@ GRU & $<$0.001*** & $<$0.001*** & $<$0.001*** & $<$0.001*** \\
 
 图\ref{fig:model_selection}直观地展示了基于缺失率的模型选择建议，可作为工程部署的决策参考。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth]{fig6_model_selection.png}
     \caption{基于缺失率的模型选择决策建议。MR$\leq$0.3时基线模型已能满足需求；0.3$<$MR$\leq$0.6时推荐MLP-MIM或GRU-MIM（改进率75\%--86\%）；MR$\geq$0.7时强烈推荐1D-CNN-MIM（改进率$>$90\%）。}
@@ -676,7 +676,7 @@ GRU & $<$0.001*** & $<$0.001*** & $<$0.001*** & $<$0.001*** \\
 
 图\ref{fig:performance_params}展示了各模型在MR=0.5时的性能-参数量权衡分析。1D-CNN-MIM位于帕累托前沿，以仅约21,300的参数实现了最低的MAE（0.014），体现了最佳的性能-参数量效率。这一特性使其特别适合在资源受限的嵌入式BMS中部署。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{fig7_performance_params.png}
     \caption{性能-参数量权衡分析（MR=0.5）。横轴为参数量，纵轴为MAE。圆圈表示MIM策略，叉号表示Baseline。1D-CNN-MIM位于帕累托前沿，实现了最佳的性能-参数量平衡。}
