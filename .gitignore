@@ -1,7 +1,9 @@
-*.png
+# 全局排除（但允许paper目录下的png）
 *.csv
 *.json
 *.xdv
+!paper/**/*.png
+!paper/**/*.html
 # ======================
 # 项目特定忽略 (PyTorch/深度学习)
 # ======================
@@ -24,7 +26,8 @@ runs/                  # PyTorch Lightning/TensorBoard 默认日志目录
 lightning_logs/
 tensorboard/
 wandb/                 # Weights & Biases 本地目录
-figures/
+/figures/          # 仅排除根目录的figures
+!/paper/figures/    # 但允许paper/figures
 output/
 
 # 数据集相关
