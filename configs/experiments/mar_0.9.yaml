@@ -1,0 +1,53 @@
+experiment:
+  name: "mar_0.9_cnn1d_mim"
+  description: "MAR missing, target MR=0.9, 1D-CNN + MIM, 20 seeds"
+
+data:
+  dataset: "XJTU"
+  batch: "3C"
+  missing_mode: "mar"
+  missing_rate: 0.9
+
+mar_params:
+  alpha: null      # None 表示由代码自动反推
+  beta: 2.0
+  gamma: 0.05
+
+model:
+  name: "cnn1d"
+  input_size: 32
+  hidden_channels: [32, 64, 64]
+  kernel_sizes: [3, 3, 3]
+  dropout: 0.1
+
+training:
+  epochs: 200
+  batch_size: 64
+  optimizer: "adam"
+  learning_rate: 1e-3
+  weight_decay: 0.0
+  seeds:
+    - 42
+    - 101
+    - 102
+    - 103
+    - 104
+    - 105
+    - 106
+    - 107
+    - 108
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 115
+    - 116
+    - 117
+    - 118
+    - 119
+
+logging:
+  log_dir: "logs/mar/mr_0.9"
+  result_csv: "results/csv/mar_0.9_cnn1d_mim.csv"

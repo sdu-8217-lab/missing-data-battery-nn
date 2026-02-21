@@ -1,0 +1,38 @@
+# 基础配置文件
+# 全局通用参数
+
+project:
+  name: "missing-data-battery-nn"
+  version: "2.0"
+  description: "电池SOH预测中的MIM系统评测"
+
+paths:
+  data_dir: "data/raw/XJTU"
+  processed_dir: "data/processed"
+  experiments_dir: "data/experiments"
+  results_dir: "results"
+  logs_dir: "logs/experiments"
+  figures_dir: "results/images"
+
+# 数据配置
+data:
+  feature_cols: [
+    "voltage", "current", "temperature", 
+    "cycle", "charge_capacity", "discharge_capacity"
+  ]
+  target_col: "SOH"
+  test_size: 0.2
+  val_size: 0.1
+
+# 实验默认配置
+experiment:
+  batch: "3C"
+  n_repeats: 100
+  epochs: 200
+  batch_size: 32
+  lr: 0.001
+  device: "auto"  # auto, cpu, cuda
+  seed: 42
+
+# 缺失率范围
+missing_rates: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
