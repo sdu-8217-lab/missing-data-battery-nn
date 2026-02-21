@@ -1,52 +1,54 @@
-"""缺失率-性能曲线"""
-import numpy as np
-import matplotlib.pyplot as plt
+"""
+缺失率-性能曲线绘制模块
+"""
+
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from pathlib import Path
 
 
-def plot_missing_rate_curves(results_df: pd.DataFrame, save_path: str = None):
+def plot_missing_rate_curves(
+    csv_path: str,
+    output_dir: str = "results/images",
+    metrics: list = None,
+):
     """
-    绘制缺失率-性能曲线
+    绘制性能指标随缺失率变化的曲线
     
-    Args:
-        results_df: 结果DataFrame
-        save_path: 保存路径
+    参数:
+        csv_path: 结果 CSV 文件路径
+        output_dir: 图像输出目录
+        metrics: 要绘制的指标列表
     """
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    if metrics is None:
+        metrics = ["mae", "rmse", "r2"]
     
-    metrics = ['mae', 'rmse', 'r2']
-    titles = ['MAE vs Missing Rate', 'RMSE vs Missing Rate', 'R² vs Missing Rate']
+    df = pd.read_csv(csv_path)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
     
-    for idx, (metric, title) in enumerate(zip(metrics, titles)):
-        ax = axes[idx]
+    for metric in metrics:
+        plt.figure(figsize=(10, 6))
         
-        # 按模型分组
-        for model_name in results_df['model'].unique():
-            model_data = results_df[results_df['model'] == model_name]
-            
-            # 按缺失率聚合
-            grouped = model_data.groupby('missing_rate')[metric].agg(['mean', 'std'])
-            
-            ax.plot(grouped.index, grouped['mean'], marker='o', label=model_name)
-            ax.fill_between(
-                grouped.index,
-                grouped['mean'] - grouped['std'],
-                grouped['mean'] + grouped['std'],
-                alpha=0.2
-            )
+        # 按 missing_rate 分组计算均值和标准差
+        grouped = df.groupby("missing_rate")[metric].agg(["mean", "std"])
         
-        ax.set_xlabel('Missing Rate')
-        ax.set_ylabel(metric.upper())
-        ax.set_title(title)
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    else:
-        plt.show()
-    
-    plt.close()
+        plt.errorbar(
+            grouped.index,
+            grouped["mean"],
+            yerr=grouped["std"],
+            marker='o',
+            capsize=5,
+        )
+        
+        plt.xlabel("Missing Rate")
+        plt.ylabel(metric.upper())
+        plt.title(f"{metric.upper()} vs Missing Rate")
+        plt.grid(True, alpha=0.3)
+        
+        output_path = output_dir / f"{metric}_vs_mr.png"
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"Saved: {output_path}")

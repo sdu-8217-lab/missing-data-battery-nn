@@ -1,10 +1,18 @@
-"""数据模块"""
-from .dataset_loader import XJTUDatasetLoader
-from .datasets import BatteryDataset, SequenceDataset, MIMDataset
+"""
+数据模块
+
+负责数据加载、预处理、特征工程和划分
+"""
+
+from .loader import load_dataset
+from .preprocessing import clean_dataframe, standardize_features
+from .features import build_features
+from .splits import train_val_test_split
 
 __all__ = [
-    'XJTUDatasetLoader',
-    'BatteryDataset', 
-    'SequenceDataset',
-    'MIMDataset'
+    "load_dataset",
+    "clean_dataframe",
+    "standardize_features",
+    "build_features",
+    "train_val_test_split",
 ]

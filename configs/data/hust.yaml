@@ -1,0 +1,24 @@
+# HUST 数据集配置 (占位)
+
+dataset: "hust"
+data_dir: "data/raw/HUST"
+
+# 数据划分
+split:
+  test_size: 0.2
+  val_size: 0.2
+  random_state: 42
+
+# 特征列 (需要根据实际数据调整)
+features: []
+
+# 目标列
+target: "capacity"
+
+# 预处理参数
+preprocessing:
+  remove_outliers: true
+  outlier_method: "3sigma"
+  standardize: true
+  fill_na: true
+  fill_na_method: "mean"

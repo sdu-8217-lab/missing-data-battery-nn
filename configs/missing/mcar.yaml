@@ -1,0 +1,9 @@
+# MCAR (Missing Completely At Random) 配置
+
+mode: "mcar"
+
+# 要测试的缺失率列表
+missing_rates: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+# 是否使用 MIM (Missing Indicator Method)
+use_mim: true

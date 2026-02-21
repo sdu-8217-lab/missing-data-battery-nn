@@ -1,0 +1,41 @@
+# XJTU 数据集配置
+
+dataset: "xjtu"
+data_dir: "data/raw/XJTU"
+batch: "3C"  # 可选: "2C", "3C", "R2.5", "R3", "RW", "Sim_satellite"
+
+# 数据划分
+split:
+  test_size: 0.2
+  val_size: 0.2
+  random_state: 42
+
+# 特征列 (16个特征)
+features:
+  - "voltage_mean"
+  - "voltage_std"
+  - "voltage_kurtosis"
+  - "voltage_skewness"
+  - "current_mean"
+  - "current_std"
+  - "current_kurtosis"
+  - "current_skewness"
+  - "cc_q"              # CC 充电容量
+  - "cc_charge_time"    # CC 充电时间
+  - "cv_q"              # CV 充电容量
+  - "cv_charge_time"    # CV 充电时间
+  - "voltage_slope"     # 电压变化率
+  - "current_slope"     # 电流变化率
+  - "voltage_entropy"   # 电压熵
+  - "current_entropy"   # 电流熵
+
+# 目标列
+target: "capacity"  # SOH 通过 capacity / nominal_capacity 计算
+
+# 预处理参数
+preprocessing:
+  remove_outliers: true
+  outlier_method: "3sigma"  # 可选: "3sigma", "iqr"
+  standardize: true
+  fill_na: true
+  fill_na_method: "mean"

@@ -1,0 +1,15 @@
+# MAR (Missing At Random) 配置
+
+mode: "mar"
+
+# 要测试的缺失率列表
+missing_rates: [0.3, 0.6, 0.9]
+
+# MAR 参数
+# alpha: null 表示由代码根据目标 missing_rate 自动反推
+alpha: null
+beta: 2.0
+gamma: 0.05
+
+# 是否使用 MIM
+use_mim: true
