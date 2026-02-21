@@ -72,7 +72,7 @@ def append_result_row(
         mode = 'a' if file_exists else 'w'
         
         # 写入文件
-        with open(result_csv, mode, newline='', encoding='utf-8') as f:
+        with open(result_csv, mode, newline='', encoding='utf-8-sig') as f:
             writer = csv.DictWriter(f, fieldnames=row_data.keys())
             
             if not file_exists:
@@ -163,20 +163,20 @@ def _get_result_path(cfg: DictConfig) -> Path:
         ValueError: 当配置中缺少必要的输出路径时
     """
     # 尝试从多种可能的配置结构中获取路径
-    if hasattr(cfg, 'experiment') and hasattr(cfg.experiment, 'output'):
-        if hasattr(cfg.experiment.output, 'result_csv'):
-            return Path(cfg.experiment.output.result_csv)
+    if hasattr(cfg, 'experiments') and hasattr(cfg.experiments, 'output'):
+        if hasattr(cfg.experiments.output, 'result_csv'):
+            return Path(cfg.experiments.output.result_csv)
     
     # 备选路径配置
     if hasattr(cfg, 'results_dir'):
         return Path(cfg.results_dir) / "results.csv"
     
-    if hasattr(cfg, 'experiment') and hasattr(cfg.experiment, 'results_dir'):
-        return Path(cfg.experiment.results_dir) / "results.csv"
+    if hasattr(cfg, 'experiments') and hasattr(cfg.experiments, 'results_dir'):
+        return Path(cfg.experiments.results_dir) / "results.csv"
     
     # 默认路径
-    if hasattr(cfg, 'experiment') and hasattr(cfg.experiment, 'name'):
-        exp_name = cfg.experiment.name
+    if hasattr(cfg, 'experiments') and hasattr(cfg.experiments, 'experiment') and hasattr(cfg.experiments.experiment, 'name'):
+        exp_name = cfg.experiments.experiment.name
     else:
         exp_name = "experiment"
     

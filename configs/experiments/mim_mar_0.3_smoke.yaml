@@ -1,0 +1,49 @@
+experiment:
+  name: "mim_mar_0.3_cnn1d_smoke"
+  description: "SMOKE TEST: XJTU, MAR, MR=0.3, 1D-CNN + MIM, 1 seed, 3 epochs"
+
+  # 实验类型
+  type: "mim"
+  use_mim: true
+  missing_mode: "mar"
+
+  # 目标缺失率
+  missing_rate: 0.3
+
+# MAR 参数
+mar_params:
+  alpha: null  # 自动反推
+  beta: 2.0
+  gamma: 0.05
+
+# 训练配置（小规模）
+training:
+  epochs: 3
+  batch_size: 32
+  optimizer: "adam"
+  learning_rate: 1.0e-3
+  weight_decay: 0.0
+  
+  # 早停
+  early_stopping:
+    enabled: true
+    monitor: "val_loss"
+    patience: 3
+    mode: "min"
+  
+  # 学习率调度
+  lr_scheduler:
+    enabled: true
+    type: "reduce_on_plateau"
+    factor: 0.5
+    patience: 2
+  
+  # 随机种子列表（仅1个）
+  seeds:
+    - 42
+
+# 输出配置
+output:
+  result_csv: "results/csv/mar_0.3_cnn1d_mim_smoke.csv"
+  save_models: false
+  log_dir: "logs/experiments/mim_mar_0.3_smoke"

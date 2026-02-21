@@ -210,7 +210,7 @@ def run_experiment(cfg: DictConfig) -> None:
         logger.info(f"Will run experiments for missing_rates: {missing_rates}")
         
         # 获取种子列表
-        seeds = cfg.training.get("seeds", [42])
+        seeds = cfg.experiments.training.get("seeds", [42])
         if isinstance(seeds, int):
             seeds = [seeds]
         
@@ -241,7 +241,7 @@ def run_experiment(cfg: DictConfig) -> None:
                     )
                     
                     # 创建 DataLoader
-                    batch_size = cfg.training.get("batch_size", 32)
+                    batch_size = cfg.experiments.training.get("batch_size", 32)
                     train_loader = DataLoader(
                         TensorDataset(train_input, y_train),
                         batch_size=batch_size,
@@ -260,7 +260,7 @@ def run_experiment(cfg: DictConfig) -> None:
                     
                     # 创建模型
                     model = create_model(cfg)
-                    logger.debug(f"Model created: {cfg.model.name}")
+                    logger.debug(f"Model created: {cfg.models.name}")
                     
                     # 创建 trainer 并训练
                     trainer = get_trainer(cfg)
@@ -279,9 +279,9 @@ def run_experiment(cfg: DictConfig) -> None:
                     result_row = {
                         "seed": seed,
                         "missing_rate": mr,
-                        "model": cfg.model.name,
+                        "model": cfg.models.name,
                         "missing_mode": cfg.missing.mode,
-                        "use_mim": cfg.experiment.use_mim,
+                        "use_mim": cfg.experiments.experiment.use_mim,
                     }
                     result_row.update(test_results)
                     
@@ -314,7 +314,7 @@ def _validate_config(cfg: DictConfig) -> None:
     Raises:
         ValueError: 当配置缺失必要字段时
     """
-    required_sections = ["data", "model", "training", "experiment", "missing"]
+    required_sections = ["data", "models", "experiments", "missing"]
     
     for section in required_sections:
         if not hasattr(cfg, section):
@@ -343,9 +343,9 @@ def _get_missing_rates(cfg: DictConfig) -> List[float]:
     Returns:
         缺失率列表
     """
-    if hasattr(cfg.experiment, 'missing_rate'):
+    if hasattr(cfg.experiments.experiment, 'missing_rate'):
         # 单一 MR 场景
-        mr = cfg.experiment.missing_rate
+        mr = cfg.experiments.experiment.missing_rate
         return [mr] if not isinstance(mr, (list, tuple)) else list(mr)
     else:
         # 多 MR 场景
@@ -380,7 +380,7 @@ def _apply_missing_mechanism(
     Raises:
         ValueError: 当缺失机制未知时
     """
-    use_mim = cfg.experiment.get("use_mim", False)
+    use_mim = cfg.experiments.experiment.get("use_mim", False)
     
     if cfg.missing.mode == "mcar":
         # MCAR: 完全随机缺失

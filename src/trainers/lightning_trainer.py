@@ -212,8 +212,8 @@ def get_trainer(cfg: DictConfig) -> pl.Trainer:
         callbacks: List[pl.Callback] = []
         
         # 早停回调
-        if cfg.training.get("early_stopping", {}).get("enabled", False):
-            early_stopping_config = cfg.training.early_stopping
+        if cfg.experiments.training.get("early_stopping", {}).get("enabled", False):
+            early_stopping_config = cfg.experiments.training.early_stopping
             callbacks.append(EarlyStopping(
                 monitor=early_stopping_config.get("monitor", "val_loss"),
                 patience=early_stopping_config.get("patience", 15),
@@ -229,8 +229,8 @@ def get_trainer(cfg: DictConfig) -> pl.Trainer:
         callbacks.append(LearningRateMonitor(logging_interval="epoch"))
         
         # 模型检查点（如果配置中启用）
-        if cfg.training.get("checkpoint", {}).get("enabled", False):
-            checkpoint_config = cfg.training.checkpoint
+        if cfg.experiments.training.get("checkpoint", {}).get("enabled", False):
+            checkpoint_config = cfg.experiments.training.checkpoint
             checkpoint_dir = Path(checkpoint_config.get("dir", "./checkpoints"))
             checkpoint_dir.mkdir(parents=True, exist_ok=True)
             
@@ -253,7 +253,7 @@ def get_trainer(cfg: DictConfig) -> pl.Trainer:
                 pl_logger = WandbLogger(
                     project=cfg.wandb.get("project", "battery-soh"),
                     entity=cfg.wandb.get("entity", None),
-                    name=cfg.experiment.get("name", "unnamed_experiment"),
+                    name=cfg.experiments.experiment.get("name", "unnamed_experiment"),
                     mode=wandb_mode,
                 )
                 logger.info(f"WandB logger initialized: project={cfg.wandb.get('project', 'battery-soh')}")
@@ -262,11 +262,11 @@ def get_trainer(cfg: DictConfig) -> pl.Trainer:
                 pl_logger = None
         
         # 创建 Trainer
-        max_epochs = cfg.training.get("epochs", 100)
-        accelerator = cfg.training.get("accelerator", "auto")
-        devices = cfg.training.get("devices", 1)
-        enable_progress_bar = cfg.training.get("enable_progress_bar", True)
-        log_every_n_steps = cfg.training.get("log_every_n_steps", 10)
+        max_epochs = cfg.experiments.training.get("epochs", 100)
+        accelerator = cfg.experiments.training.get("accelerator", "auto")
+        devices = cfg.experiments.training.get("devices", 1)
+        enable_progress_bar = cfg.experiments.training.get("enable_progress_bar", False)
+        log_every_n_steps = cfg.experiments.training.get("log_every_n_steps", 10)
         
         trainer = pl.Trainer(
             max_epochs=max_epochs,

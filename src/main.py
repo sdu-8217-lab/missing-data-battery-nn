@@ -48,7 +48,7 @@ def main(cfg: DictConfig):
     # 设置日志
     logger = setup_logger(
         name="battery_soh",
-        log_file=Path(cfg.logging.log_dir) / f"{cfg.experiment.name}.log",
+        log_file=Path(cfg.experiments.output.log_dir) / f"{cfg.experiments.experiment.name}.log",
         level=cfg.logging.level,
     )
     
@@ -94,9 +94,9 @@ def _validate_config(cfg: DictConfig):
     # 检查必需的配置项
     required_keys = [
         "data.dataset",
-        "model.name",
+        "models.name",
         "missing.mode",
-        "experiment.name",
+        "experiments.experiment.name",
     ]
     
     for key in required_keys:
@@ -114,23 +114,23 @@ def _validate_config(cfg: DictConfig):
     
     # 检查模型名称是否有效
     valid_models = ["mlp", "lstm", "gru", "cnn1d"]
-    if cfg.model.name not in valid_models:
+    if cfg.models.name not in valid_models:
         raise ValueError(f"Invalid model name: {cfg.model.name}. Must be one of {valid_models}")
     
     # 检查缺失率范围
-    if hasattr(cfg.experiment, 'missing_rate'):
-        mr = cfg.experiment.missing_rate
+    if hasattr(cfg.experiments.experiment, 'missing_rate'):
+        mr = cfg.experiments.experiment.missing_rate
         if not 0 <= mr <= 1:
             raise ValueError(f"Missing rate must be in [0, 1], got {mr}")
     
     # 检查训练参数
-    if cfg.training.batch_size <= 0:
+    if cfg.experiments.training.batch_size <= 0:
         raise ValueError(f"Batch size must be positive, got {cfg.training.batch_size}")
     
-    if cfg.training.epochs <= 0:
+    if cfg.experiments.training.epochs <= 0:
         raise ValueError(f"Epochs must be positive, got {cfg.training.epochs}")
     
-    if cfg.training.learning_rate <= 0:
+    if cfg.experiments.training.learning_rate <= 0:
         raise ValueError(f"Learning rate must be positive, got {cfg.training.learning_rate}")
 
 

@@ -3,9 +3,8 @@
 
 defaults:
   - data: xjtu
-  - model: cnn1d
+  - models: cnn1d
   - missing: mar
-  - experiment: mim_mar_0.3
   - _self_
 
 # 全局设置
@@ -16,7 +15,7 @@ seed: 42
 wandb:
   project: "battery-soh-missing"
   entity: null  # 你的 WandB 用户名或团队名
-  mode: "online"  # 可选: "online", "offline", "disabled"
+  mode: "disabled"  # 可选: "online", "offline", "disabled"
   tags: []
 
 # 日志配置

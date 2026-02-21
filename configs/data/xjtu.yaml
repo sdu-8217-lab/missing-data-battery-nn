@@ -10,24 +10,24 @@ split:
   val_size: 0.2
   random_state: 42
 
-# 特征列 (16个特征)
+# 特征列 (16个特征) - 注意：实际CSV列名包含空格
 features:
-  - "voltage_mean"
-  - "voltage_std"
-  - "voltage_kurtosis"
-  - "voltage_skewness"
-  - "current_mean"
-  - "current_std"
-  - "current_kurtosis"
-  - "current_skewness"
-  - "cc_q"              # CC 充电容量
-  - "cc_charge_time"    # CC 充电时间
-  - "cv_q"              # CV 充电容量
-  - "cv_charge_time"    # CV 充电时间
-  - "voltage_slope"     # 电压变化率
-  - "current_slope"     # 电流变化率
-  - "voltage_entropy"   # 电压熵
-  - "current_entropy"   # 电流熵
+  - "voltage mean"
+  - "voltage std"
+  - "voltage kurtosis"
+  - "voltage skewness"
+  - "current mean"
+  - "current std"
+  - "current kurtosis"
+  - "current skewness"
+  - "CC Q"              # CC 充电容量
+  - "CC charge time"    # CC 充电时间
+  - "CV Q"              # CV 充电容量
+  - "CV charge time"    # CV 充电时间
+  - "voltage slope"     # 电压变化率
+  - "current slope"     # 电流变化率
+  - "voltage entropy"   # 电压熵
+  - "current entropy"   # 电流熵
 
 # 目标列
 target: "capacity"  # SOH 通过 capacity / nominal_capacity 计算
