@@ -5,6 +5,11 @@ defaults:
   - model: mlp
   - missing: mcar
 
+# 方法选择: mim, mean, median, knn, zero
+# - mim: MIM 方法（混合缺失率训练，输入 32 维）
+# - mean/median/knn/zero: 传统插补 baseline（输入 16 维）
+method: "mim"
+
 experiment:
   name: "battery_soh_experiment"
   seeds: [42, 43, 44, 45, 46]
@@ -16,7 +21,7 @@ training:
   learning_rate: 0.001
   weight_decay: 0.0
   patience: 15
-  device: "auto"  # auto, cuda, cpu
+  device: "auto"
 
 wandb:
   enabled: true

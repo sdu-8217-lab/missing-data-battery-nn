@@ -1,7 +1,9 @@
 # @package model
 type: "cnn1d"
-channels: [72, 32]
+
+# 配置会根据 method 自动调整：
+# - method=mim: channels=[64,32], input_dim=32
+# - method=mean/knn/etc: channels=[72,32], input_dim=16
+
 kernel_size: 4
 dropout: 0.1
-
-use_mim: false

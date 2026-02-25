@@ -1,15 +1,8 @@
 # @package model
 type: "mlp"
-hidden_dims: [100, 64, 32]
+
+# MLP 配置会根据 method 自动调整：
+# - method=mim: hidden_dims=[84,56,28], input_dim=32, ~9K params
+# - method=mean/knn/etc: hidden_dims=[100,64,32], input_dim=16, ~10K params
+
 dropout: 0.15
-
-# MIM doubles input dimension (16 -> 32)
-# First layer params: (32 * 100) vs (16 * 100)
-# To keep total params ~10K, adjust hidden_dims when use_mim=true
-use_mim: false
-
-# When use_mim=true, use [72, 48, 24] to keep similar param count:
-# No MIM: 16*100 + 100*64 + 64*32 + 32*1 = 1600 + 6400 + 2048 + 32 = 10,080
-# With MIM: 32*72 + 72*48 + 48*24 + 24*1 = 2304 + 3456 + 1152 + 24 = 6,936
-# (Need to adjust to match ~10K)
-mim_hidden_dims: [84, 56, 28]  # 32*84 + 84*56 + 56*28 + 28*1 = 2688 + 4704 + 1568 + 28 = 8,988
