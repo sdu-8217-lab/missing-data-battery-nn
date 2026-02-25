@@ -5,6 +5,7 @@ defaults:
   - data: xjtu
   - models: cnn1d
   - missing: mar
+  # experiments 不设置默认，通过命令行指定
   - _self_
 
 # 全局设置

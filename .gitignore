@@ -3,8 +3,15 @@
 *.json
 *.xdv
 *.png
+*.yaml
+*.yml
+!configs/**/*.yaml
+!configs/**/*.yml
 !paper/**/*.png
 !paper/**/*.html
+!paper/**/*.yaml
+!paper/**/*.yml
+
 # ======================
 # 项目特定忽略 (PyTorch/深度学习)
 # ======================
@@ -27,9 +34,10 @@ runs/                  # PyTorch Lightning/TensorBoard 默认日志目录
 lightning_logs/
 tensorboard/
 wandb/                 # Weights & Biases 本地目录
-/figures/          # 仅排除根目录的figures
-!/paper/figures/    # 但允许paper/figures
+/figures/              # 仅排除根目录的figures
+!/paper/figures/       # 但允许paper/figures
 output/
+outputs/               # Hydra 默认输出目录
 
 # 数据集相关
 data/cache/
@@ -40,6 +48,18 @@ datasets/
 *.npz                  # 压缩的 NumPy 数组
 *.hdf5
 *.h5
+
+# ======================
+# 临时文件和目录
+# ======================
+
+tmp_legacy/            # 旧代码备份
+22602_140541/          # 临时实验目录
+tmp_*.py               # 临时脚本
+*_backup_*.csv         # 备份文件
+# 临时问题分析文件
+PROBLEM_ANALYSIS.txt
+QUICK_FIX_INSTRUCTIONS.md
 
 # ======================
 # 开发环境
@@ -118,4 +138,4 @@ htmlcov/
 .Thumbs.db
 *.swp
 *.swo
-*～
+*~

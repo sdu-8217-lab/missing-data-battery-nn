@@ -1,15 +1,13 @@
-# MIM + MAR (MR=0.6) 实验配置
+# MIM + MAR (MR=0.6) + CNN1D 实验配置
+# 使用方式: python src/main.py experiments=mim_mar_0.6
 
-name: "mim_mar_0.6"
-description: "MIM with MAR missing mechanism, target MR=0.6"
-
-# 实验类型
-type: "mim"
-use_mim: true
-missing_mode: "mar"
-
-# 目标缺失率
-missing_rate: 0.6
+experiment:
+  name: "mim_mar_0.6_cnn1d"
+  description: "XJTU, MAR, MR=0.6, 1D-CNN + MIM, 20 seeds"
+  type: "mim"
+  use_mim: true
+  missing_mode: "mar"
+  missing_rate: 0.6
 
 # MAR 参数
 mar_params:
@@ -64,6 +62,6 @@ training:
 
 # 输出配置
 output:
-  result_csv: "results/csv/mim_mar_0.6.csv"
+  result_csv: "results/csv/mar_0.6_cnn1d_mim.csv"
   save_models: false
   log_dir: "logs/experiments/mim_mar_0.6"

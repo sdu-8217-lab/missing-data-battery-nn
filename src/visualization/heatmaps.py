@@ -1,94 +1,210 @@
 """
-热力图绘制模块
+热力图可视化脚本
+
+绘制 MIM 相对 Baseline 的 MAE 改善百分比热力图。
+
+Usage:
+    python src/visualization/heatmaps.py
 """
 
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 from pathlib import Path
+from typing import Dict, List, Optional
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
+plt.rcParams['axes.unicode_minus'] = False
 
 
-def plot_mim_improvement_heatmap(
-    baseline_csv: str,
-    mim_csv: str,
-    output_path: str = "results/images/mim_improvement.png",
-    metric: str = "mae",
-):
+def load_mar_results(csv_dir: Path) -> Dict[str, pd.DataFrame]:
     """
-    绘制 MIM 相对于 Baseline 的改善热力图
+    加载 MAR 实验结果文件
     
-    参数:
-        baseline_csv: Baseline 结果 CSV
-        mim_csv: MIM 结果 CSV
-        output_path: 输出图像路径
-        metric: 评估指标（越小越好，如 mae/rmse）
+    Args:
+        csv_dir: CSV 文件目录
+        
+    Returns:
+        字典，键为配置名，值为 DataFrame
     """
-    df_base = pd.read_csv(baseline_csv)
-    df_mim = pd.read_csv(mim_csv)
+    results = {}
     
-    # 按 missing_rate 计算均值
-    base_mean = df_base.groupby("missing_rate")[metric].mean()
-    mim_mean = df_mim.groupby("missing_rate")[metric].mean()
+    files = {
+        'mim_0.3': 'mar_0.3_cnn1d_mim.csv',
+        'mim_0.6': 'mar_0.6_cnn1d_mim.csv',
+        'mim_0.9': 'mar_0.9_cnn1d_mim.csv',
+        'baseline_0.3': 'mar_0.3_cnn1d_baseline.csv',
+        'baseline_0.6': 'mar_0.6_cnn1d_baseline.csv',
+        'baseline_0.9': 'mar_0.9_cnn1d_baseline.csv',
+    }
     
-    # 计算改善率（百分比）
-    improvement = (base_mean - mim_mean) / base_mean * 100
+    for key, filename in files.items():
+        filepath = csv_dir / filename
+        if filepath.exists():
+            results[key] = pd.read_csv(filepath)
+            print(f"[OK] Loaded {filename}: {len(results[key])} rows")
+        else:
+            print(f"[MISSING] File not found: {filename}")
+    
+    return results
+
+
+def compute_improvement(baseline_df: pd.DataFrame, mim_df: pd.DataFrame) -> Dict[str, float]:
+    """
+    计算 MIM 相对 Baseline 的改善百分比
+    
+    improvement = (MAE_baseline - MAE_mim) / MAE_baseline * 100%
+    
+    Args:
+        baseline_df: Baseline 结果 DataFrame
+        mim_df: MIM 结果 DataFrame
+        
+    Returns:
+        字典，包含各指标的改善百分比
+    """
+    baseline_mae = baseline_df['test_mae'].mean()
+    mim_mae = mim_df['test_mae'].mean()
+    
+    baseline_rmse = baseline_df['test_rmse'].mean()
+    mim_rmse = mim_df['test_rmse'].mean()
+    
+    baseline_r2 = baseline_df['test_r2'].mean()
+    mim_r2 = mim_df['test_r2'].mean()
+    
+    return {
+        'mae': (baseline_mae - mim_mae) / baseline_mae * 100 if baseline_mae != 0 else 0,
+        'rmse': (baseline_rmse - mim_rmse) / baseline_rmse * 100 if baseline_rmse != 0 else 0,
+        'r2': (mim_r2 - baseline_r2) / abs(baseline_r2) * 100 if baseline_r2 != 0 else 0,
+    }
+
+
+def plot_improvement_heatmap(
+    results: Dict[str, pd.DataFrame],
+    output_dir: Path,
+    model_name: str = "CNN1D",
+    missing_mode: str = "MAR"
+) -> None:
+    """
+    绘制改善百分比热力图
+    
+    Args:
+        results: 结果字典
+        output_dir: 输出目录
+        model_name: 模型名称
+        missing_mode: 缺失机制
+    """
+    # 计算改善百分比
+    missing_rates = [0.3, 0.6, 0.9]
+    
+    improvements = {'mae': [], 'rmse': [], 'r2': []}
+    
+    for mr in missing_rates:
+        baseline_key = f'baseline_{mr}'
+        mim_key = f'mim_{mr}'
+        
+        if baseline_key in results and mim_key in results:
+            imp = compute_improvement(results[baseline_key], results[mim_key])
+            improvements['mae'].append(imp['mae'])
+            improvements['rmse'].append(imp['rmse'])
+            improvements['r2'].append(imp['r2'])
+        else:
+            improvements['mae'].append(np.nan)
+            improvements['rmse'].append(np.nan)
+            improvements['r2'].append(np.nan)
+    
+    # 创建热力图数据 (1×3)
+    data = np.array([improvements['mae']])
+    
+    # 创建图形
+    fig, ax = plt.subplots(figsize=(10, 3))
     
     # 绘制热力图
-    plt.figure(figsize=(10, 6))
+    sns.heatmap(
+        data,
+        annot=True,
+        fmt='.1f',
+        cmap='RdYlGn',
+        center=0,
+        vmin=-20,
+        vmax=50,
+        cbar_kws={'label': 'Improvement (%)'},
+        ax=ax,
+        linewidths=1,
+        linecolor='white'
+    )
     
-    # 创建 2D 数据用于热力图（这里用条形图代替）
-    plt.bar(improvement.index, improvement.values, color='steelblue', alpha=0.7)
-    plt.axhline(y=0, color='r', linestyle='--', alpha=0.5)
+    # 设置标签
+    ax.set_xticklabels([f'{mr}' for mr in missing_rates], fontsize=12)
+    ax.set_yticklabels([model_name], fontsize=12, rotation=0)
     
-    plt.xlabel("Missing Rate")
-    plt.ylabel(f"{metric.upper()} Improvement (%)")
-    plt.title(f"MIM Improvement over Baseline ({metric.upper()})")
-    plt.grid(True, alpha=0.3, axis='y')
+    ax.set_xlabel('Missing Rate', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Model', fontsize=14, fontweight='bold')
+    ax.set_title(
+        f'MIM Improvement over Baseline ({missing_mode})\nMAE Reduction (%)',
+        fontsize=14,
+        fontweight='bold',
+        pad=15
+    )
     
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.tight_layout()
+    
+    # 保存
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    for fmt in ['png', 'pdf']:
+        filepath = output_dir / f'mim_improvement_cnn1d_mar.{fmt}'
+        plt.savefig(filepath, dpi=300, bbox_inches='tight', format=fmt)
+        print(f"[SAVED] {filepath}")
+    
     plt.close()
     
-    print(f"Saved: {output_path}")
+    # 打印数值表格
+    print("\n" + "=" * 60)
+    print("MIM Improvement over Baseline (%)")
+    print("=" * 60)
+    print(f"{'Missing Rate':<15} {'MAE':<12} {'RMSE':<12} {'R2':<12}")
+    print("-" * 60)
+    for i, mr in enumerate(missing_rates):
+        mae_imp = improvements['mae'][i]
+        rmse_imp = improvements['rmse'][i]
+        r2_imp = improvements['r2'][i]
+        print(f"{mr:<15} {mae_imp:>10.1f}% {rmse_imp:>10.1f}% {r2_imp:>10.1f}%")
+    print("=" * 60)
 
 
-def plot_model_comparison_heatmap(
-    results_dict: dict,
-    output_path: str = "results/images/model_comparison.png",
-    metric: str = "mae",
-):
-    """
-    多模型对比热力图
+def main():
+    """主函数"""
+    # 路径设置
+    project_root = Path(__file__).parent.parent.parent
+    csv_dir = project_root / 'results' / 'csv'
+    output_dir = project_root / 'results' / 'images'
     
-    参数:
-        results_dict: 模型名到CSV路径的映射
-        output_path: 输出路径
-        metric: 评估指标
-    """
-    # 收集数据
-    data = []
-    model_names = []
+    print("=" * 60)
+    print("Improvement Heatmap Visualization")
+    print("=" * 60)
+    print(f"CSV directory: {csv_dir}")
+    print(f"Output directory: {output_dir}")
+    print()
     
-    for model_name, csv_path in results_dict.items():
-        df = pd.read_csv(csv_path)
-        mean_by_mr = df.groupby("missing_rate")[metric].mean()
-        data.append(mean_by_mr.values)
-        model_names.append(model_name)
+    # 加载数据
+    results = load_mar_results(csv_dir)
     
-    # 创建 DataFrame
-    missing_rates = mean_by_mr.index
-    df_plot = pd.DataFrame(data, index=model_names, columns=missing_rates)
+    if not results:
+        print("No data files found. Please run experiments first.")
+        return
+    
+    print()
     
     # 绘制热力图
-    plt.figure(figsize=(12, 6))
-    sns.heatmap(df_plot, annot=True, fmt=".4f", cmap="YlOrRd", cbar_kws={"label": metric.upper()})
-    plt.title(f"Model Comparison ({metric.upper()})")
-    plt.xlabel("Missing Rate")
-    plt.ylabel("Model")
+    plot_improvement_heatmap(results, output_dir)
     
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    print(f"Saved: {output_path}")
+    print()
+    print("=" * 60)
+    print("Visualization completed!")
+    print("=" * 60)
+
+
+if __name__ == '__main__':
+    main()

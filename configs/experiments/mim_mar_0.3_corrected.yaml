@@ -1,9 +1,9 @@
-# MIM + MAR (MR=0.3) + CNN1D 实验配置
-# 使用方式: python src/main.py experiments=mim_mar_0.3
+# MIM + MAR (MR=0.3) + CNN1D 实验配置（修正版）
+# 训练集使用多缺失率混合（0.0, 0.1, ..., 0.9）
 
 experiment:
-  name: "mim_mar_0.3_cnn1d"
-  description: "XJTU, MAR, MR=0.3, 1D-CNN + MIM, 20 seeds"
+  name: "mim_mar_0.3_cnn1d_corrected"
+  description: "XJTU, MAR, MR=0.3, 1D-CNN + MIM (corrected multi-MR training), 3 seeds"
   type: "mim"
   use_mim: true
   missing_mode: "mar"
@@ -17,7 +17,7 @@ mar_params:
 
 # 训练配置
 training:
-  epochs: 200
+  epochs: 10  # 冒烟测试用10轮
   batch_size: 64
   optimizer: "adam"
   learning_rate: 1.0e-3
@@ -27,7 +27,7 @@ training:
   early_stopping:
     enabled: true
     monitor: "val_loss"
-    patience: 15
+    patience: 5
     mode: "min"
   
   # 学习率调度
@@ -35,33 +35,16 @@ training:
     enabled: true
     type: "reduce_on_plateau"
     factor: 0.5
-    patience: 5
+    patience: 3
   
-  # 随机种子列表 (20个)
+  # 随机种子列表
   seeds:
     - 42
     - 101
     - 102
-    - 103
-    - 104
-    - 105
-    - 106
-    - 107
-    - 108
-    - 109
-    - 110
-    - 111
-    - 112
-    - 113
-    - 114
-    - 115
-    - 116
-    - 117
-    - 118
-    - 119
 
 # 输出配置
 output:
-  result_csv: "results/csv/mar_0.3_cnn1d_mim.csv"
+  result_csv: "results/csv/mar_0.3_cnn1d_mim_corrected.csv"
   save_models: false
-  log_dir: "logs/experiments/mim_mar_0.3"
+  log_dir: "logs/experiments/mim_mar_0.3_corrected"

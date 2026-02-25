@@ -171,7 +171,7 @@ def run_experiment(cfg: DictConfig) -> None:
     根据配置执行完整实验流程，包括:
     1. 加载数据
     2. 对每个 missing_rate 和 seed:
-       - 生成缺失数据
+       - 生成缺失数据（MIM模式下训练集使用多缺失率混合）
        - 训练模型
        - 评估并记录结果
     
@@ -217,6 +217,11 @@ def run_experiment(cfg: DictConfig) -> None:
         total_runs = len(missing_rates) * len(seeds)
         run_count = 0
         
+        # 检查是否使用 MIM 方法
+        use_mim = cfg.experiments.experiment.get("use_mim", False)
+        if use_mim:
+            logger.info("[MIM Mode] Training set will use multi-missing-rate augmentation (0.0, 0.1, ..., 0.9)")
+        
         for mr in missing_rates:
             logger.info(f"\n{'='*60}")
             logger.info(f"Running experiments with missing_rate = {mr}")
@@ -235,18 +240,29 @@ def run_experiment(cfg: DictConfig) -> None:
                     X_val, y_val = data["X_val"], data["y_val"]
                     X_test, y_test = data["X_test"], data["y_test"]
                     
-                    # 应用缺失机制
-                    train_input, val_input, test_input = _apply_missing_mechanism(
-                        cfg, X_train, y_train, X_val, y_val, X_test, y_test, mr, seed
-                    )
-                    
                     # 创建 DataLoader
                     batch_size = cfg.experiments.training.get("batch_size", 32)
-                    train_loader = DataLoader(
-                        TensorDataset(train_input, y_train),
-                        batch_size=batch_size,
-                        shuffle=True,
-                    )
+                    
+                    if use_mim:
+                        # MIM模式：训练集使用多缺失率混合（0.0, 0.1, ..., 0.9）
+                        train_loader = _create_mim_train_loader(
+                            cfg, X_train, y_train, batch_size, seed
+                        )
+                        # 验证集和测试集使用当前 missing_rate
+                        _, val_input, test_input = _apply_missing_mechanism(
+                            cfg, X_train, y_train, X_val, y_val, X_test, y_test, mr, seed
+                        )
+                    else:
+                        # Baseline模式：所有数据集使用当前 missing_rate
+                        train_input, val_input, test_input = _apply_missing_mechanism(
+                            cfg, X_train, y_train, X_val, y_val, X_test, y_test, mr, seed
+                        )
+                        train_loader = DataLoader(
+                            TensorDataset(train_input, y_train),
+                            batch_size=batch_size,
+                            shuffle=True,
+                        )
+                    
                     val_loader = DataLoader(
                         TensorDataset(val_input, y_val),
                         batch_size=batch_size,
@@ -281,7 +297,7 @@ def run_experiment(cfg: DictConfig) -> None:
                         "missing_rate": mr,
                         "model": cfg.models.name,
                         "missing_mode": cfg.missing.mode,
-                        "use_mim": cfg.experiments.experiment.use_mim,
+                        "use_mim": use_mim,
                     }
                     result_row.update(test_results)
                     
@@ -291,6 +307,8 @@ def run_experiment(cfg: DictConfig) -> None:
                     
                 except Exception as e:
                     logger.error(f"Error in run with seed={seed}, mr={mr}: {e}")
+                    import traceback
+                    logger.error(traceback.format_exc())
                     # 继续下一个种子，不中断整个实验
                     continue
         
@@ -301,6 +319,8 @@ def run_experiment(cfg: DictConfig) -> None:
         
     except Exception as e:
         logger.error(f"Experiment failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise
 
 
@@ -350,6 +370,72 @@ def _get_missing_rates(cfg: DictConfig) -> List[float]:
     else:
         # 多 MR 场景
         return cfg.missing.get("missing_rates", [0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
+
+
+def _create_mim_train_loader(
+    cfg: DictConfig,
+    X_train: torch.Tensor,
+    y_train: torch.Tensor,
+    batch_size: int,
+    seed: int
+) -> DataLoader:
+    """
+    创建 MIM 模式的训练 DataLoader
+    
+    将训练集复制多份，每份应用不同的缺失率（0.0, 0.1, ..., 0.9），
+    然后合并成一个大训练集。
+    
+    Args:
+        cfg: 配置对象
+        X_train: 原始训练特征 [N, D]
+        y_train: 原始训练目标 [N]
+        batch_size: 批次大小
+        seed: 随机种子
+        
+    Returns:
+        训练用的 DataLoader
+    """
+    # MIM 训练缺失率：0.0, 0.1, 0.2, ..., 0.9（共10份）
+    training_missing_rates = [i / 10.0 for i in range(10)]  # [0.0, 0.1, ..., 0.9]
+    
+    all_train_inputs = []
+    all_train_targets = []
+    
+    # 获取 MAR 参数（如果使用 MAR 模式）
+    beta = cfg.missing.get('beta', 2.0)
+    gamma = cfg.missing.get('gamma', 0.05)
+    alpha = cfg.missing.get('alpha', None)
+    
+    for i, mr in enumerate(training_missing_rates):
+        # 为每份使用不同的种子，确保多样性
+        mr_seed = seed + i * 100
+        
+        # 应用 MCAR 缺失（训练时使用 MCAR 即可）
+        # MIM 的核心是 mask，缺失机制本身不重要
+        X_imp, mask, mim_input = simulate_mcar(X_train, mr, mr_seed)
+        
+        all_train_inputs.append(mim_input)
+        all_train_targets.append(y_train)
+        
+        logger.debug(f"MIM training copy {i}: missing_rate={mr:.1f}, shape={mim_input.shape}")
+    
+    # 合并所有训练集
+    combined_train_input = torch.cat(all_train_inputs, dim=0)  # [10*N, 2D]
+    combined_train_target = torch.cat(all_train_targets, dim=0)  # [10*N]
+    
+    logger.info(
+        f"MIM training set created: {len(training_missing_rates)} copies, "
+        f"original size={len(X_train)}, augmented size={len(combined_train_input)}"
+    )
+    
+    # 创建 DataLoader
+    train_loader = DataLoader(
+        TensorDataset(combined_train_input, combined_train_target),
+        batch_size=batch_size,
+        shuffle=True,
+    )
+    
+    return train_loader
 
 
 def _apply_missing_mechanism(

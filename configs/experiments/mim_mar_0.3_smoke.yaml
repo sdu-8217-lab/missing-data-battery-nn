@@ -1,13 +1,12 @@
+# MIM + MAR (MR=0.3) + CNN1D 冒烟测试配置
+# 使用方式: python src/main.py experiments=mim_mar_0.3_smoke
+
 experiment:
   name: "mim_mar_0.3_cnn1d_smoke"
   description: "SMOKE TEST: XJTU, MAR, MR=0.3, 1D-CNN + MIM, 1 seed, 3 epochs"
-
-  # 实验类型
   type: "mim"
   use_mim: true
   missing_mode: "mar"
-
-  # 目标缺失率
   missing_rate: 0.3
 
 # MAR 参数
@@ -16,7 +15,7 @@ mar_params:
   beta: 2.0
   gamma: 0.05
 
-# 训练配置（小规模）
+# 训练配置
 training:
   epochs: 3
   batch_size: 32
@@ -38,7 +37,7 @@ training:
     factor: 0.5
     patience: 2
   
-  # 随机种子列表（仅1个）
+  # 随机种子列表 (1个)
   seeds:
     - 42
 
