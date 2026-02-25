@@ -206,6 +206,11 @@ def create_dataloaders(
         X_val = data_dict['X_val']
         y_val = data_dict['y_val']
         
+        # MIM 模式下，验证集也需要 32 维（添加零掩码表示无缺失）
+        if method == 'mim':
+            mask_val = torch.zeros_like(X_val)
+            X_val = torch.cat([X_val, mask_val], dim=1)
+        
         X_train = to_sequence(X_train)
         X_val = to_sequence(X_val)
         
@@ -217,6 +222,12 @@ def create_dataloaders(
     elif mode == 'val':
         X_val = data_dict['X_val']
         y_val = data_dict['y_val']
+        
+        # MIM 模式下，验证集也需要 32 维
+        if method == 'mim':
+            mask_val = torch.zeros_like(X_val)
+            X_val = torch.cat([X_val, mask_val], dim=1)
+        
         X_val = to_sequence(X_val)
         return DataLoader(TensorDataset(X_val, y_val), batch_size=batch_size, shuffle=False)
     
