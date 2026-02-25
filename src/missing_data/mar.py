@@ -1,8 +1,8 @@
 """
-MAR (Missing At Random) 缺失模拟
+MAR (Missing At Random) 缺失模拟 - 修正版
 
 MAR 机制：缺失概率依赖于 SOH
-公式: p_i = alpha * (1 - SOH_i)^beta + gamma
+修正公式: p_i = alpha * SOH_i^beta + gamma
 """
 
 import torch
@@ -19,14 +19,22 @@ def simulate_mar(
     seed: int = 42,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
-    生成 MAR 缺失模式（依赖 SOH）
+    生成 MAR 缺失模式（依赖 SOH）- 修正版
+    
+    修正说明:
+        原公式: p_i = alpha * (1-SOH)^beta + gamma (beta<0)
+        新公式: p_i = alpha * SOH^beta + gamma (beta>0)
+        
+        新公式更符合直觉：
+        - SOH 高（新电池）→ 缺失率低
+        - SOH 低（老电池）→ 缺失率高
     
     参数:
         X: 原始特征张量 [N, D]
         sohs: SOH 值 [N]，范围 [0, 1]
         missing_rate: 目标整体缺失率
         alpha: 缺失强度，None 则自动计算
-        beta: 非线性参数
+        beta: 非线性参数 (>0)
         gamma: 基础缺失率
         seed: 随机种子
         
@@ -34,10 +42,6 @@ def simulate_mar(
         X_imputed: 均值插补后的特征 [N, D]
         mask: 缺失掩码 [N, D], 1=观测, 0=缺失
         mim_input: MIM 输入 [N, 2D]
-        
-    说明:
-        当 alpha=None 时，根据目标 missing_rate 和 SOH 分布自动反推 alpha:
-        alpha = (missing_rate - gamma) / E[(1-SOH)^beta]
     """
     torch.manual_seed(seed)
     N, D = X.shape
@@ -47,21 +51,20 @@ def simulate_mar(
     
     # 计算 alpha
     if alpha is None:
-        # 计算 E[(1-SOH)^beta]
-        expected_term = ((1.0 - sohs) ** beta).mean()
+        # 计算 E[SOH^beta]
+        expected_term = (sohs ** beta).mean()
         
         # 处理除零情况
         if expected_term < 1e-10:
-            # 如果所有 SOH 都接近 1，使用均匀缺失
             alpha = 0.0
-            effective_missing_rate = missing_rate
         else:
-            # 反推 alpha
+            # 反推 alpha: E[p] = alpha * E[SOH^beta] + gamma = missing_rate
             alpha = (missing_rate - gamma) / expected_term
             alpha = max(alpha, 0.0)  # 确保非负
+            alpha = min(alpha, 1.0)  # 确保不超过1
     
-    # 计算每个样本的缺失概率: p = alpha * (1-SOH)^beta + gamma
-    p = alpha * ((1.0 - sohs) ** beta) + gamma
+    # 计算每个样本的缺失概率: p = alpha * SOH^beta + gamma
+    p = alpha * (sohs ** beta) + gamma
     
     # 限制概率在 [0, 1] 范围内
     p = torch.clamp(p, 0.0, 1.0)

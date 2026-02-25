@@ -1,6 +1,6 @@
 """数据加载和 DataLoader 创建."""
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -69,7 +69,7 @@ def _load_csv_files(data_dir: Path, pattern: str, cfg: DictConfig, recursive: bo
 def _load_xjtu(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     """加载 XJTU 数据集."""
     data_dir = Path(cfg.data.data_dir)
-    batch = cfg.data.get("batch_id", "3C")
+    batch = cfg.data.get("batch_id", "2C")
     pattern = cfg.data.get("file_pattern", f"{batch}_battery-*.csv").format(batch_id=batch)
     X, y = _load_csv_files(data_dir, pattern, cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
@@ -80,7 +80,6 @@ def _load_tju(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     data_dir = Path(cfg.data.data_dir)
     batch = cfg.data.get("batch_id", "Dataset_1_NCA_battery")
     pattern = cfg.data.get("file_pattern", "*.csv")
-    # TJU 数据在子目录中
     X, y = _load_csv_files(data_dir / batch, pattern, cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
 
@@ -98,66 +97,166 @@ def _load_mit(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     data_dir = Path(cfg.data.data_dir)
     batch = cfg.data.get("batch_id", "2017-05-12")
     pattern = cfg.data.get("file_pattern", "*battery*.csv")
-    # MIT 数据在子目录中
     X, y = _load_csv_files(data_dir / batch, pattern, cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
+
+
+def create_mim_training_data(
+    X: torch.Tensor,
+    y: torch.Tensor,
+    missing_rates: List[float],
+    cfg: DictConfig,
+    seed: int = 42
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    创建 MIM 训练数据：将训练集复制多份，每份施加不同缺失率
+    
+    Args:
+        X: 原始特征 [N, D]
+        y: 目标 [N]
+        missing_rates: 缺失率列表，如 [0.0, 0.1, ..., 0.9]
+        cfg: 配置
+        seed: 随机种子
+        
+    Returns:
+        X_mim: MIM 输入 [N * len(missing_rates), 2D]
+        y_mim: 目标 [N * len(missing_rates)]
+    """
+    from ..missing_data.mcar import simulate_mcar
+    from ..missing_data.mar import simulate_mar
+    
+    all_inputs = []
+    all_targets = []
+    
+    for i, mr in enumerate(missing_rates):
+        mr_seed = seed + i * 100
+        
+        if cfg.missing.mode == 'mar':
+            _, _, mim_input = simulate_mar(X, y, mr, seed=mr_seed)
+        else:
+            _, _, mim_input = simulate_mcar(X, mr, seed=mr_seed)
+        
+        all_inputs.append(mim_input)
+        all_targets.append(y)
+    
+    X_mim = torch.cat(all_inputs, dim=0)
+    y_mim = torch.cat(all_targets, dim=0)
+    
+    return X_mim, y_mim
 
 
 def create_dataloaders(
     data_dict: Dict[str, torch.Tensor],
     cfg: DictConfig,
     mode: str = 'train',
-    missing_rate: float = 0.0
+    missing_rate: float = 0.0,
+    use_mim: bool = False,
+    mim_train_rates: List[float] = None
 ) -> Tuple[DataLoader, ...]:
-    """创建 DataLoader，可选应用缺失机制."""
+    """创建 DataLoader，支持 MIM 训练.
+    
+    Args:
+        data_dict: 包含 X_train, y_train, X_val, y_val, X_test, y_test
+        cfg: 配置
+        mode: 'train', 'val', 或 'eval'
+        missing_rate: 应用的缺失率（非 MIM 模式）
+        use_mim: 是否使用 MIM 训练
+        mim_train_rates: MIM 训练时的缺失率列表
+    
+    Returns:
+        train_loader, val_loader (mode='train')
+        或 val_loader (mode='val')
+        或 None, None, test_loader (mode='eval')
+    """
     from ..missing_data.mcar import simulate_mcar
     from ..missing_data.mar import simulate_mar
     
     seq_len = cfg.data.get('seq_len', 5)
     batch_size = cfg.training.batch_size
-    use_mim = cfg.model.use_mim
-    
-    def apply_missing(X, y, mr):
-        """应用缺失机制."""
-        if mr == 0:
-            if use_mim:
-                mask = torch.zeros_like(X)
-                return torch.cat([X, mask], dim=1), y
-            return X, y
-        
-        # X is already a tensor
-        if cfg.missing.mode == 'mar':
-            X_imp, mask, mim_input = simulate_mar(X, mr, seed=42)
-        else:
-            X_imp, mask, mim_input = simulate_mcar(X, mr, seed=42)
-        
-        if use_mim:
-            return mim_input, y
-        return X_imp, y
+    model_type = cfg.model.type
     
     def to_sequence(X):
-        """Convert to sequence format for LSTM/GRU/CNN."""
-        if X.dim() == 2:
+        """Convert to sequence format for LSTM/GRU/CNN using sliding window."""
+        if X.dim() == 2 and model_type in ['lstm', 'gru', 'cnn1d']:
+            # TODO: Implement sliding window
+            # For now, use simple repeat
             X = X.unsqueeze(1).repeat(1, seq_len, 1)
         return X
     
     if mode == 'train':
-        X_train, y_train = apply_missing(data_dict['X_train'], data_dict['y_train'], missing_rate)
-        X_val, y_val = apply_missing(data_dict['X_val'], data_dict['y_val'], 0)
+        X_train = data_dict['X_train']
+        y_train = data_dict['y_train']
         
-        if cfg.model.type in ['lstm', 'gru', 'cnn1d']:
-            X_train = to_sequence(X_train)
-            X_val = to_sequence(X_val)
+        if use_mim and mim_train_rates:
+            # MIM 训练：混合多种缺失率
+            X_train, y_train = create_mim_training_data(
+                X_train, y_train, mim_train_rates, cfg, seed=42
+            )
+        elif missing_rate > 0:
+            # 非 MIM，单一缺失率
+            if cfg.missing.mode == 'mar':
+                _, _, X_train = simulate_mar(X_train, y_train, missing_rate, seed=42)
+            else:
+                _, _, X_train = simulate_mcar(X_train, missing_rate, seed=42)
+        else:
+            # 无缺失，添加零掩码
+            mask = torch.zeros_like(X_train)
+            X_train = torch.cat([X_train, mask], dim=1)
         
-        train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=batch_size, shuffle=False)
+        X_val = data_dict['X_val']
+        y_val = data_dict['y_val']
+        # 验证集始终使用完整数据（添加零掩码）
+        mask_val = torch.zeros_like(X_val)
+        X_val = torch.cat([X_val, mask_val], dim=1)
+        
+        # 转换为序列
+        X_train = to_sequence(X_train)
+        X_val = to_sequence(X_val)
+        
+        train_loader = DataLoader(
+            TensorDataset(X_train, y_train),
+            batch_size=batch_size,
+            shuffle=True
+        )
+        val_loader = DataLoader(
+            TensorDataset(X_val, y_val),
+            batch_size=batch_size,
+            shuffle=False
+        )
         return train_loader, val_loader
     
-    else:
-        X_test, y_test = apply_missing(data_dict['X_test'], data_dict['y_test'], missing_rate)
+    elif mode == 'val':
+        X_val = data_dict['X_val']
+        y_val = data_dict['y_val']
+        mask_val = torch.zeros_like(X_val)
+        X_val = torch.cat([X_val, mask_val], dim=1)
+        X_val = to_sequence(X_val)
         
-        if cfg.model.type in ['lstm', 'gru', 'cnn1d']:
-            X_test = to_sequence(X_test)
+        val_loader = DataLoader(
+            TensorDataset(X_val, y_val),
+            batch_size=batch_size,
+            shuffle=False
+        )
+        return val_loader
+    
+    else:  # eval mode
+        X_test = data_dict['X_test']
+        y_test = data_dict['y_test']
         
-        test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size=batch_size, shuffle=False)
+        if missing_rate > 0:
+            if cfg.missing.mode == 'mar':
+                _, _, X_test = simulate_mar(X_test, y_test, missing_rate, seed=42)
+            else:
+                _, _, X_test = simulate_mcar(X_test, missing_rate, seed=42)
+        else:
+            mask_test = torch.zeros_like(X_test)
+            X_test = torch.cat([X_test, mask_test], dim=1)
+        
+        X_test = to_sequence(X_test)
+        
+        test_loader = DataLoader(
+            TensorDataset(X_test, y_test),
+            batch_size=batch_size,
+            shuffle=False
+        )
         return None, None, test_loader

@@ -14,10 +14,59 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
 from src.data.loader import load_dataset, create_dataloaders
-from src.missing_data.mcar import simulate_mcar
-from src.missing_data.mar import simulate_mar
 from src.models.lightning_module import BatterySOHModule
 from src.utils.seed_manager import set_seed
+
+
+def get_model_config(cfg: DictConfig) -> dict:
+    """
+    根据 use_mim 获取模型配置
+    保持模型参数量大致一致（~10K）
+    """
+    model_type = cfg.model.type
+    use_mim = cfg.model.use_mim
+    
+    if model_type == 'mlp':
+        # No MIM (16 -> 100): ~10K params
+        # With MIM (32 -> 84): ~9K params (close enough)
+        if use_mim:
+            return {
+                'hidden_dims': cfg.model.get('mim_hidden_dims', [84, 56, 28]),
+                'dropout': cfg.model.get('dropout', 0.15)
+            }
+        else:
+            return {
+                'hidden_dims': cfg.model.get('hidden_dims', [100, 64, 32]),
+                'dropout': cfg.model.get('dropout', 0.15)
+            }
+    
+    elif model_type in ['lstm', 'gru']:
+        # LSTM/GRU 参数主要来自隐藏层，输入维度影响较小
+        # 保持隐藏层配置一致
+        return {
+            'hidden_size': cfg.model.get('hidden_size', 48 if model_type == 'lstm' else 64),
+            'num_layers': cfg.model.get('num_layers', 2),
+            'dropout': cfg.model.get('dropout', 0.2)
+        }
+    
+    elif model_type == 'cnn1d':
+        # CNN 参数主要来自卷积核，输入维度影响 channels[0]
+        # No MIM: [72, 32], With MIM: [64, 32] to balance params
+        if use_mim:
+            return {
+                'channels': cfg.model.get('mim_channels', [64, 32]),
+                'kernel_size': cfg.model.get('kernel_size', 4),
+                'dropout': cfg.model.get('dropout', 0.1)
+            }
+        else:
+            return {
+                'channels': cfg.model.get('channels', [72, 32]),
+                'kernel_size': cfg.model.get('kernel_size', 4),
+                'dropout': cfg.model.get('dropout', 0.1)
+            }
+    
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="config")
@@ -28,7 +77,7 @@ def main(cfg: DictConfig):
     print("=" * 60)
     print(f"\nConfig:\n{OmegaConf.to_yaml(cfg)}")
     
-    # Determine input dimension
+    # Determine input dimension (16 features + 16 mask = 32)
     input_dim = 32 if cfg.model.use_mim else 16
     
     # Load data once
@@ -44,12 +93,10 @@ def main(cfg: DictConfig):
         
         set_seed(seed)
         
-        # Create model
+        # Create model with appropriate config
         print("[2/4] Creating model...")
-        model_kwargs = {
-            'hidden_dims': cfg.model.get('hidden_dims', [100, 64, 32]),
-            'dropout': cfg.model.get('dropout', 0.15),
-        }
+        model_kwargs = get_model_config(cfg)
+        print(f"  Model config: {model_kwargs}")
         
         module = BatterySOHModule(
             model_type=cfg.model.type,
@@ -59,17 +106,21 @@ def main(cfg: DictConfig):
             **model_kwargs
         )
         
+        # Count parameters
+        total_params = sum(p.numel() for p in module.parameters())
+        print(f"  Total parameters: {total_params:,}")
+        
         # Setup logger
         wandb_logger = None
         if cfg.wandb.enabled:
             wandb_logger = WandbLogger(
                 project=cfg.wandb.project,
                 entity=cfg.wandb.entity,
-                tags=cfg.wandb.tags + [f"seed_{seed}", cfg.model.type],
-                name=f"{cfg.experiment.name}_{cfg.model.type}_seed{seed}"
+                tags=cfg.wandb.tags + [f"seed_{seed}", cfg.model.type, f"mim_{cfg.model.use_mim}"],
+                name=f"{cfg.experiment.name}_{cfg.model.type}_mim{cfg.model.use_mim}_seed{seed}"
             )
         
-        # Setup callbacks
+        # Setup callbacks with adjusted patience
         callbacks = [
             EarlyStopping(
                 monitor='val_loss',
@@ -100,9 +151,24 @@ def main(cfg: DictConfig):
         
         # Train
         print("[3/4] Training...")
-        train_loader, val_loader = create_dataloaders(
-            data_dict, cfg, mode='train', missing_rate=cfg.missing.missing_rate_train
-        )
+        
+        # MIM 训练：混合多种缺失率
+        if cfg.model.use_mim:
+            mim_rates = cfg.missing.get('mim_train_rates', [i/10.0 for i in range(10)])
+            print(f"  MIM training with missing rates: {mim_rates}")
+            train_loader, val_loader = create_dataloaders(
+                data_dict, cfg, mode='train', 
+                use_mim=True, mim_train_rates=mim_rates
+            )
+        else:
+            # Baseline：使用训练时指定的单一缺失率
+            train_mr = cfg.missing.get('missing_rate_train', 0.0)
+            print(f"  Baseline training with missing rate: {train_mr}")
+            train_loader, val_loader = create_dataloaders(
+                data_dict, cfg, mode='train', 
+                missing_rate=train_mr, use_mim=False
+            )
+        
         trainer.fit(module, train_loader, val_loader)
         
         # Evaluate across missing rates
@@ -128,7 +194,8 @@ def main(cfg: DictConfig):
     results_df = pd.DataFrame(results_all)
     output_dir = Path(cfg.experiment.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    results_file = output_dir / f"{cfg.experiment.name}_{cfg.model.type}.csv"
+    mim_tag = "mim" if cfg.model.use_mim else "baseline"
+    results_file = output_dir / f"{cfg.experiment.name}_{cfg.model.type}_{mim_tag}.csv"
     results_df.to_csv(results_file, index=False)
     print(f"\n✓ Results saved to: {results_file}")
 
