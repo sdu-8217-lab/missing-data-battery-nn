@@ -132,15 +132,15 @@ def create_dataloaders(
                 return torch.cat([X, mask], dim=1), y
             return X, y
         
-        # Apply missing mechanism
+        # Apply missing mechanism (X is already a tensor)
         if cfg.missing.mode == 'mar':
-            X_imp, mask, mim_input = simulate_mar(X.numpy(), y.numpy(), mr, seed=42)
+            X_imp, mask, mim_input = simulate_mar(X, mr, seed=42)
         else:
-            X_imp, mask, mim_input = simulate_mcar(X.numpy(), mr, seed=42)
+            X_imp, mask, mim_input = simulate_mcar(X, mr, seed=42)
         
         if use_mim:
-            return torch.from_numpy(mim_input).float(), y
-        return torch.from_numpy(X_imp).float(), y
+            return mim_input, y
+        return X_imp, y
     
     def to_sequence(X):
         """Convert to sequence format for LSTM/GRU/CNN."""
