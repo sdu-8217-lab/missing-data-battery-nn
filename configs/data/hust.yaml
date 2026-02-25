@@ -3,11 +3,14 @@ dataset: "hust"
 batch_id: "hust"
 data_dir: "./data/HUST data"
 
-test_size: 0.25
-val_size: 0.25
+split:
+  test_size: 0.25
+  val_size: 0.25
+  random_state: 42
+
 seq_len: 5
 
-feature_cols:
+features:
   - 'voltage mean'
   - 'voltage std' 
   - 'voltage kurtosis'
@@ -25,4 +28,10 @@ feature_cols:
   - 'voltage entropy'
   - 'current entropy'
 
-target_col: 'capacity'
+target: 'capacity'
+nominal_capacity: 2.0
+
+preprocessing:
+  outlier_method: "3sigma"
+  fill_method: "mean"
+  standardize: true

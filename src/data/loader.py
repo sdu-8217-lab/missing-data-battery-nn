@@ -32,9 +32,12 @@ def load_dataset(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     return loaders[dataset](cfg)
 
 
-def _load_csv_files(data_dir: Path, pattern: str, cfg: DictConfig) -> Tuple[np.ndarray, np.ndarray]:
+def _load_csv_files(data_dir: Path, pattern: str, cfg: DictConfig, recursive: bool = True) -> Tuple[np.ndarray, np.ndarray]:
     """加载匹配模式的CSV文件."""
-    files = sorted(data_dir.rglob(pattern))
+    if recursive:
+        files = sorted(data_dir.rglob(pattern))
+    else:
+        files = sorted(data_dir.glob(pattern))
     
     if not files:
         available = list(data_dir.rglob("*.csv"))[:10]
@@ -67,22 +70,22 @@ def _load_xjtu(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     """加载 XJTU 数据集."""
     data_dir = Path(cfg.data.data_dir)
     batch = cfg.data.get("batch_id", "3C")
-    X, y = _load_csv_files(data_dir, f"{batch}_battery-*.csv", cfg)
+    X, y = _load_csv_files(data_dir, f"{batch}_battery-*.csv", cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
 
 
 def _load_tju(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     """加载 TJU 数据集."""
     data_dir = Path(cfg.data.data_dir)
-    batch = cfg.data.get("batch_id", "2C")
-    X, y = _load_csv_files(data_dir, f"{batch}_battery-*.csv", cfg)
+    batch = cfg.data.get("batch_id", "Dataset_1_NCA_battery")
+    # TJU 数据在子目录中，使用通配符匹配
+    X, y = _load_csv_files(data_dir / batch, "*.csv", cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
 
 
 def _load_hust(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     """加载 HUST 数据集."""
     data_dir = Path(cfg.data.data_dir)
-    # HUST 可能有不同的文件命名模式
     X, y = _load_csv_files(data_dir, "*.csv", cfg)
     return train_val_test_split(X, y, cfg)
 
