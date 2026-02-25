@@ -2,40 +2,37 @@
 dataset: "xjtu"
 batch_id: "3C"
 data_dir: "./data/XJTU data"
+file_pattern: "{batch_id}_battery-*.csv"
 
-# Train/Val/Test split
 split:
   test_size: 0.25
   val_size: 0.25
   random_state: 42
 
-# Sequence length for LSTM/GRU/CNN
 seq_len: 5
 
-# Feature columns (16 total)
 features:
   - 'voltage mean'
   - 'voltage std' 
   - 'voltage kurtosis'
   - 'voltage skewness'
+  - 'CC Q'
+  - 'CC charge time'
+  - 'voltage slope'
+  - 'voltage entropy'
   - 'current mean'
   - 'current std'
   - 'current kurtosis'
   - 'current skewness'
-  - 'CC Q'
-  - 'CC charge time'
   - 'CV Q'
   - 'CV charge time'
-  - 'voltage slope'
   - 'current slope'
-  - 'voltage entropy'
   - 'current entropy'
 
 target: 'capacity'
-nominal_capacity: 2.0  # XJTU battery nominal capacity
+nominal_capacity: 2.0
 
-# Preprocessing settings
 preprocessing:
-  outlier_method: "3sigma"  # none, 3sigma, iqr
-  fill_method: "mean"       # mean, median
+  outlier_method: "3sigma"
+  fill_method: "mean"
   standardize: true

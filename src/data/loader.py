@@ -32,7 +32,7 @@ def load_dataset(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     return loaders[dataset](cfg)
 
 
-def _load_csv_files(data_dir: Path, pattern: str, cfg: DictConfig, recursive: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+def _load_csv_files(data_dir: Path, pattern: str, cfg: DictConfig, recursive: bool = False) -> Tuple[np.ndarray, np.ndarray]:
     """加载匹配模式的CSV文件."""
     if recursive:
         files = sorted(data_dir.rglob(pattern))
@@ -43,7 +43,7 @@ def _load_csv_files(data_dir: Path, pattern: str, cfg: DictConfig, recursive: bo
         available = list(data_dir.rglob("*.csv"))[:10]
         raise FileNotFoundError(
             f"No files matching '{pattern}' in {data_dir}\n"
-            f"Available: {[f.name for f in available]}"
+            f"Available: {[str(f.relative_to(data_dir)) for f in available]}"
         )
     
     X_list, y_list = [], []
@@ -57,7 +57,7 @@ def _load_csv_files(data_dir: Path, pattern: str, cfg: DictConfig, recursive: bo
             X_list.append(X)
             y_list.append(y)
         except Exception as e:
-            print(f"Warning: Failed to load {fp}: {e}")
+            print(f"Warning: Failed to load {fp.name}: {e}")
             continue
     
     if not X_list:
@@ -70,7 +70,8 @@ def _load_xjtu(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     """加载 XJTU 数据集."""
     data_dir = Path(cfg.data.data_dir)
     batch = cfg.data.get("batch_id", "3C")
-    X, y = _load_csv_files(data_dir, f"{batch}_battery-*.csv", cfg, recursive=False)
+    pattern = cfg.data.get("file_pattern", f"{batch}_battery-*.csv").format(batch_id=batch)
+    X, y = _load_csv_files(data_dir, pattern, cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
 
 
@@ -78,22 +79,27 @@ def _load_tju(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     """加载 TJU 数据集."""
     data_dir = Path(cfg.data.data_dir)
     batch = cfg.data.get("batch_id", "Dataset_1_NCA_battery")
-    # TJU 数据在子目录中，使用通配符匹配
-    X, y = _load_csv_files(data_dir / batch, "*.csv", cfg, recursive=False)
+    pattern = cfg.data.get("file_pattern", "*.csv")
+    # TJU 数据在子目录中
+    X, y = _load_csv_files(data_dir / batch, pattern, cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
 
 
 def _load_hust(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     """加载 HUST 数据集."""
     data_dir = Path(cfg.data.data_dir)
-    X, y = _load_csv_files(data_dir, "*.csv", cfg)
+    pattern = cfg.data.get("file_pattern", "*.csv")
+    X, y = _load_csv_files(data_dir, pattern, cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
 
 
 def _load_mit(cfg: DictConfig) -> Dict[str, torch.Tensor]:
     """加载 MIT 数据集."""
     data_dir = Path(cfg.data.data_dir)
-    X, y = _load_csv_files(data_dir, "*battery*.csv", cfg)
+    batch = cfg.data.get("batch_id", "2017-05-12")
+    pattern = cfg.data.get("file_pattern", "*battery*.csv")
+    # MIT 数据在子目录中
+    X, y = _load_csv_files(data_dir / batch, pattern, cfg, recursive=False)
     return train_val_test_split(X, y, cfg)
 
 
@@ -103,19 +109,7 @@ def create_dataloaders(
     mode: str = 'train',
     missing_rate: float = 0.0
 ) -> Tuple[DataLoader, ...]:
-    """创建 DataLoader，可选应用缺失机制.
-    
-    Args:
-        data_dict: 包含 X_train, y_train, X_val, y_val, X_test, y_test
-        cfg: 配置
-        mode: 'train' 返回 (train_loader, val_loader)
-              'eval' 返回 (None, None, test_loader)
-        missing_rate: 应用的缺失率
-    
-    Returns:
-        train_loader, val_loader (mode='train')
-        None, None, test_loader (mode='eval')
-    """
+    """创建 DataLoader，可选应用缺失机制."""
     from ..missing_data.mcar import simulate_mcar
     from ..missing_data.mar import simulate_mar
     
@@ -127,12 +121,11 @@ def create_dataloaders(
         """应用缺失机制."""
         if mr == 0:
             if use_mim:
-                # Add zero mask for MIM
                 mask = torch.zeros_like(X)
                 return torch.cat([X, mask], dim=1), y
             return X, y
         
-        # Apply missing mechanism (X is already a tensor)
+        # X is already a tensor
         if cfg.missing.mode == 'mar':
             X_imp, mask, mim_input = simulate_mar(X, mr, seed=42)
         else:
@@ -145,41 +138,26 @@ def create_dataloaders(
     def to_sequence(X):
         """Convert to sequence format for LSTM/GRU/CNN."""
         if X.dim() == 2:
-            # [batch, features] -> [batch, seq_len, features]
-            # Simple: repeat the same feature vector
             X = X.unsqueeze(1).repeat(1, seq_len, 1)
         return X
     
     if mode == 'train':
         X_train, y_train = apply_missing(data_dict['X_train'], data_dict['y_train'], missing_rate)
-        X_val, y_val = apply_missing(data_dict['X_val'], data_dict['y_val'], 0)  # Validation always clean
+        X_val, y_val = apply_missing(data_dict['X_val'], data_dict['y_val'], 0)
         
-        # Convert to sequences for sequential models
         if cfg.model.type in ['lstm', 'gru', 'cnn1d']:
             X_train = to_sequence(X_train)
             X_val = to_sequence(X_val)
         
-        train_loader = DataLoader(
-            TensorDataset(X_train, y_train),
-            batch_size=batch_size,
-            shuffle=True
-        )
-        val_loader = DataLoader(
-            TensorDataset(X_val, y_val),
-            batch_size=batch_size,
-            shuffle=False
-        )
+        train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=batch_size, shuffle=False)
         return train_loader, val_loader
     
-    else:  # eval mode
+    else:
         X_test, y_test = apply_missing(data_dict['X_test'], data_dict['y_test'], missing_rate)
         
         if cfg.model.type in ['lstm', 'gru', 'cnn1d']:
             X_test = to_sequence(X_test)
         
-        test_loader = DataLoader(
-            TensorDataset(X_test, y_test),
-            batch_size=batch_size,
-            shuffle=False
-        )
+        test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size=batch_size, shuffle=False)
         return None, None, test_loader

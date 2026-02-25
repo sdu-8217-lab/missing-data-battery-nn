@@ -1,7 +1,8 @@
 # @package data
 dataset: "mit"
-batch_id: "mit"
+batch_id: "2017-05-12"
 data_dir: "./data/MIT data"
+file_pattern: "*battery*.csv"
 
 split:
   test_size: 0.25
@@ -15,21 +16,21 @@ features:
   - 'voltage std' 
   - 'voltage kurtosis'
   - 'voltage skewness'
+  - 'CC Q'
+  - 'CC charge time'
+  - 'voltage slope'
+  - 'voltage entropy'
   - 'current mean'
   - 'current std'
   - 'current kurtosis'
   - 'current skewness'
-  - 'CC Q'
-  - 'CC charge time'
   - 'CV Q'
   - 'CV charge time'
-  - 'voltage slope'
   - 'current slope'
-  - 'voltage entropy'
   - 'current entropy'
 
 target: 'capacity'
-nominal_capacity: 1.1  # MIT battery nominal capacity
+nominal_capacity: 1.1
 
 preprocessing:
   outlier_method: "3sigma"
