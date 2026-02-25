@@ -1,24 +1,28 @@
-# MIT 数据集配置 (占位)
-
+# @package data
 dataset: "mit"
-data_dir: "data/raw/MIT"
+batch_id: "mit"
+data_dir: "./data/MIT data"
 
-# 数据划分
-split:
-  test_size: 0.2
-  val_size: 0.2
-  random_state: 42
+test_size: 0.25
+val_size: 0.25
+seq_len: 5
 
-# 特征列 (需要根据实际数据调整)
-features: []
+feature_cols:
+  - 'voltage mean'
+  - 'voltage std' 
+  - 'voltage kurtosis'
+  - 'voltage skewness'
+  - 'current mean'
+  - 'current std'
+  - 'current kurtosis'
+  - 'current skewness'
+  - 'CC Q'
+  - 'CC charge time'
+  - 'CV Q'
+  - 'CV charge time'
+  - 'voltage slope'
+  - 'current slope'
+  - 'voltage entropy'
+  - 'current entropy'
 
-# 目标列
-target: "capacity"
-
-# 预处理参数
-preprocessing:
-  remove_outliers: true
-  outlier_method: "3sigma"
-  standardize: true
-  fill_na: true
-  fill_na_method: "mean"
+target_col: 'capacity'

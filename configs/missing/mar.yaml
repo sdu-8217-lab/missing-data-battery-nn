@@ -1,15 +1,16 @@
-# MAR (Missing At Random) 配置
-
+# @package missing
 mode: "mar"
 
-# 要测试的缺失率列表
-missing_rates: [0.3, 0.6, 0.9]
+# Missing At Random - depends on SOH value
+# Formula: p_i = alpha * (1 - SOH_i)^beta + gamma
+# Higher SOH (healthier) = lower missing probability
 
-# MAR 参数
-# alpha: null 表示由代码根据目标 missing_rate 自动反推
-alpha: null
+# Parameters for MAR mechanism
+alpha: null  # Auto-calculated to achieve target missing rate
 beta: 2.0
 gamma: 0.05
 
-# 是否使用 MIM
-use_mim: true
+# Target missing rates
+missing_rate_train: 0.0
+missing_rates_eval: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+mim_train_rates: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]

@@ -1,0 +1,7 @@
+# @package model
+type: "lstm"
+hidden_size: 48
+num_layers: 2
+dropout: 0.2
+
+use_mim: false

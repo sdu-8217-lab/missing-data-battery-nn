@@ -1,25 +1,28 @@
-# Hydra 主配置文件
-# 使用方式: python src/main.py experiment=mim_mar_0.3 model=cnn1d
-
+# @package _global_
 defaults:
-  - data: xjtu
-  - models: cnn1d
-  - missing: mar
-  # experiments 不设置默认，通过命令行指定
   - _self_
+  - data: xjtu
+  - model: mlp
+  - missing: mcar
 
-# 全局设置
-device: "cuda"  # 可选: "cuda", "cpu", "auto"
-seed: 42
+experiment:
+  name: "battery_soh_experiment"
+  seeds: [42, 43, 44, 45, 46]
+  output_dir: "./results"
 
-# Weights & Biases 配置
+training:
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.001
+  weight_decay: 0.0
+  patience: 15
+  device: "auto"  # auto, cuda, cpu
+
 wandb:
-  project: "battery-soh-missing"
-  entity: null  # 你的 WandB 用户名或团队名
-  mode: "disabled"  # 可选: "online", "offline", "disabled"
+  enabled: true
+  project: "battery-soh"
+  entity: null
   tags: []
 
-# 日志配置
 logging:
   level: "INFO"
-  log_dir: "logs/experiments"

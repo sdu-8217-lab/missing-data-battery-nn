@@ -1,0 +1,8 @@
+# @package model
+type: "mlp"
+hidden_dims: [100, 64, 32]
+dropout: 0.15
+
+# For MLP: input is flattened features (not sequence)
+# When use_mim=True, input_dim = 32, else 16
+use_mim: false

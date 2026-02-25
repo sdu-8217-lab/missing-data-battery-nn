@@ -1,0 +1,7 @@
+# @package model
+type: "gru"
+hidden_size: 64
+num_layers: 2
+dropout: 0.2
+
+use_mim: false

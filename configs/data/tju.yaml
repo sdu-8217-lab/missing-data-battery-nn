@@ -1,16 +1,12 @@
 # @package data
-dataset: "xjtu"
-batch_id: "3C"
-data_dir: "./data/XJTU data"
+dataset: "tju"
+batch_id: "2C"
+data_dir: "./data/TJU data"
 
-# Train/Val/Test split ratios
 test_size: 0.25
 val_size: 0.25
-
-# Sequence length for LSTM/GRU/CNN
 seq_len: 5
 
-# Feature columns (16 total)
 feature_cols:
   - 'voltage mean'
   - 'voltage std' 
