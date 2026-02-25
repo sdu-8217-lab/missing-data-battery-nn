@@ -1,6 +1,6 @@
 # @package data
 dataset: "xjtu"
-batch_id: "3C"
+batch_id: "2C"
 data_dir: "./data/XJTU data"
 file_pattern: "{batch_id}_battery-*.csv"
 
@@ -16,17 +16,17 @@ features:
   - 'voltage std' 
   - 'voltage kurtosis'
   - 'voltage skewness'
-  - 'CC Q'
-  - 'CC charge time'
-  - 'voltage slope'
-  - 'voltage entropy'
   - 'current mean'
   - 'current std'
   - 'current kurtosis'
   - 'current skewness'
+  - 'CC Q'
+  - 'CC charge time'
   - 'CV Q'
   - 'CV charge time'
+  - 'voltage slope'
   - 'current slope'
+  - 'voltage entropy'
   - 'current entropy'
 
 target: 'capacity'
