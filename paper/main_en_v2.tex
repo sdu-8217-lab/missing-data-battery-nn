@@ -1,0 +1,114 @@
+\documentclass[10pt,a4paper]{article}
+
+% Page settings
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+
+% Math and symbols
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{bm}
+
+% Figures and tables
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{float}
+
+% Colors and links
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue
+}
+
+% Algorithms
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\floatname{algorithm}{Algorithm}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+% Code and citations
+\usepackage{listings}
+\usepackage[numbers,sort&compress]{natbib}
+
+% Others
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{threeparttable}
+
+% Figure path
+\graphicspath{{figures/}}
+
+% Title information
+\title{\textbf{Comparative Study of Missing Indicator Method for Battery State of Health Prediction: Deep Learning Models and Multi-Missing-Rate Experiments on XJTU Dataset}}
+\author{Author Name$^{1}$ \quad Corresponding Author$^{2}$}
+\date{$^{1}$Author Institution \\ $^{2}$Corresponding Author Institution \\ \texttt{email@example.com}}
+
+\begin{document}
+
+\maketitle
+
+%==============================================================================
+\begin{abstract}
+% TODO: Translate abstract (300 words)
+% Key points to include:
+% 1. Problem: SOH prediction with missing data in BMS
+% 2. Method: Missing Indicator Method (MIM) vs traditional imputation
+% 3. Experiments: 4 models (MLP, LSTM, GRU, 1D-CNN), 9 missing rates (0.1-0.9)
+% 4. Results: MIM reduces MAE by 26-57\% compared to baseline
+% 5. Conclusion: MIM provides robust solution for missing data in SOH prediction
+
+\textbf{Keywords:} Lithium-ion battery; State of Health (SOH) prediction; Missing data; Missing Indicator Method (MIM); XJTU dataset; Deep learning
+\end{abstract}
+
+%==============================================================================
+\section{Introduction}\label{sec:intro}
+% TODO: Translate introduction (~1000 words)
+% Structure:
+% 1.1 Background and significance
+% 1.2 Research status and limitations
+% 1.3 Research objectives and contributions
+
+%==============================================================================
+\section{Related Work}\label{sec:related}
+% TODO: Translate related work
+% 2.1 Missing data handling methods and MIM
+% 2.2 Deep learning architectures for SOH prediction
+% 2.3 Position and distinction of this study
+
+%==============================================================================
+\section{Methodology}\label{sec:method}
+% TODO: Translate methodology
+% 3.1 Dataset and sample construction
+% 3.2 Feature engineering
+% 3.3 Missing simulation and imputation
+% 3.4 MIM construction and input representation
+% 3.5 Model architecture and parameter configuration
+% 3.6 Training strategy and evaluation metrics
+
+%==============================================================================
+\section{Experimental Results and Analysis}\label{sec:results}
+% TODO: Translate results
+% 4.1 Experimental setup and overall performance
+% 4.2 MIM improvement rate analysis
+% 4.3 Seed stability and statistical significance
+
+%==============================================================================
+\section{Discussion}\label{sec:discussion}
+% TODO: Translate discussion
+
+%==============================================================================
+\section{Conclusion}\label{sec:conclusion}
+% TODO: Translate conclusion (~500 words)
+
+%==============================================================================
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}
