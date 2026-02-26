@@ -1,0 +1,180 @@
+\documentclass[10pt,a4paper]{article}
+
+% Page settings
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+
+% Math and symbols
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{bm}
+
+% Figures and tables
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{float}
+
+% Colors and links
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue
+}
+
+% Algorithms
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\floatname{algorithm}{Algorithm}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+% Code and citations
+\usepackage{listings}
+\usepackage[numbers,sort&compress]{natbib}
+
+% Others
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{threeparttable}
+
+% Figure path
+\graphicspath{{figures/}}
+
+% Title information
+\title{\textbf{Comparative Study of Missing Indicator Method for Battery State of Health Prediction: Deep Learning Models and Multi-Missing-Rate Experiments on XJTU Dataset}}
+\author{Author Name$^{1}$ \quad Corresponding Author$^{2}$}
+\date{$^{1}$Author Institution \\ $^{2}$Corresponding Author Institution \\ \texttt{email@example.com}}
+
+\begin{document}
+
+\maketitle
+
+%==============================================================================
+\begin{abstract}
+Accurate prediction of battery State of Health (SOH) is crucial for ensuring safe and reliable operation of electric vehicles and energy storage systems. However, in practical engineering applications, battery monitoring data often exhibits varying degrees of missingness due to sensor failures, communication interruptions, and data acquisition anomalies. Traditional missing data handling methods typically treat missing values as noise to be repaired, overlooking the potentially useful signal contained in ``which information is missing'' itself, which particularly limits the performance ceiling of prediction models under high missing rate scenarios.
+
+This study investigates the publicly available XJTU lithium-ion battery dataset and introduces the Missing Indicator Method (MIM), a simple yet effective approach, to systematically evaluate its impact on SOH prediction performance and robustness across various commonly used model architectures and different missing rate conditions. In the data preprocessing stage, we extract 16 cycle-level statistical features with cycles as sample units and construct cycle-level SOH labels. In the missing simulation stage, nine missing rates (MR) $\{0.1, 0.2, \ldots, 0.9\}$ are randomly injected at the feature level, and mean imputation is employed to fill missing values. In the feature enhancement stage, binary missing indicators are constructed for each feature, and the concatenation of ``imputed values with indicators'' serves as the MIM input. We select four representative deep learning models: MLP, LSTM, GRU, and 1D-CNN, and conduct unified training and evaluation under the PyTorch 2.5.1 deep learning framework, comparing and analyzing the differences in SOH prediction error and robustness between ``imputation-only'' and ``MIM input'' strategies under different missing rates.
+
+Experimental results demonstrate that under conditions with missing rates $\geq 0.4$, the MIM versions with missing indicators significantly reduce SOH prediction errors across all four neural network models (improvement rates: 26\%--57\%). Specifically, at MR=0.5, 1D-CNN-MIM reduces MAE from 0.034 to 0.015 (55.3\% improvement), while LSTM-MIM reduces MAE from 0.022 to 0.016 (29.0\% improvement). Under extreme conditions at MR=0.9, baseline models generally exhibit degraded performance with MAE exceeding 0.029, whereas MIM versions can maintain relatively low MAE (below 0.025), demonstrating significant missing data robustness. Further comparative analysis reveals that performance differences among various imputation methods are relatively limited, while whether to use missing indicators has a more critical impact on prediction performance. This study provides a concise yet effective technical solution for data missing problems in practical battery management systems, offering important theoretical and practical value for enhancing the applicability of data-driven SOH prediction methods in real-world engineering environments.
+
+\textbf{Keywords:} Lithium-ion battery; State of Health (SOH) prediction; Missing data; Missing Indicator Method (MIM); XJTU dataset; Deep learning
+\end{abstract}
+
+%==============================================================================
+\section{Introduction}\label{sec:intro}
+
+\subsection{Background and Significance}
+
+In the context of global energy structure transformation and rapid development of transportation electrification, lithium-ion batteries, as key energy storage units, have been deployed at large scale in electric vehicles, grid-side energy storage, and distributed energy systems. Accurate estimation and prediction of battery State of Health (SOH) is a core aspect for ensuring system operational safety, optimizing energy management strategies, and controlling full lifecycle costs.
+
+In recent years, with the rapid advancement of machine learning and deep learning technologies, data-driven SOH prediction methods have received widespread attention\cite{luo2022review}. These methods learn complex nonlinear mappings between features and SOH from historical operational data, avoiding the need to construct and identify complex electrochemical mechanism models, and demonstrate significant advantages in adaptability and scalability. From traditional shallow models such as Support Vector Machines and Random Forests to deep neural architectures including Multi-Layer Perceptrons (MLP), Convolutional Neural Networks (CNN), and Recurrent Neural Networks (RNN/LSTM/GRU), various algorithms have continuously improved prediction accuracy on public benchmark datasets\cite{liu2025deep}, laying a solid foundation for engineering applications of SOH prediction.
+
+However, in practical engineering scenarios, a long-underestimated yet prevalent issue is that sensor data collected by Battery Management Systems (BMS) often exhibits varying degrees of missingness. Causes of data missingness include: measurement failures due to sensor hardware malfunctions or aging, data packet loss caused by unstable communication links, intermittent shutdown of certain channels due to sampling strategy optimization, and data recording interruptions triggered by protection mechanisms under vehicle or operational conditions. In large-scale energy storage stations or fleet-level application scenarios, this problem is particularly prominent due to the large number of batteries and dense monitoring points.
+
+When input features exhibit significant missingness, traditional data-driven models often face issues such as inconsistent input dimensions, feature distribution shifts, and increased prediction uncertainty; in extreme cases, model outputs may become distorted or completely invalid. Figure~\ref{fig:problem_scenario} illustrates the BMS monitoring chain and the corresponding cycle-level feature matrix, where multi-source failures lead to random missingness in the feature matrix. How to maintain or even improve SOH prediction performance under conditions with missing data has become a critical issue that data-driven methods must address for engineering deployment.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig1_problem_scenario.png}
+    \caption{Schematic illustration of data missingness problem in battery SOH prediction. (a) BMS monitoring chain and potential failure sources; (b) Cycle-level feature matrix with MCAR missingness pattern.}
+    \label{fig:problem_scenario}
+\end{figure}
+
+Facing data missingness, existing processing approaches can be roughly categorized into three types: deletion methods, imputation methods, and model-based methods. Deletion methods directly discard samples or features containing missing values; while simple to implement, they can lead to substantial information loss and introduce significant selection bias when missingness is prevalent and potentially correlated with battery aging state. Imputation methods estimate and fill missing values through statistical measures (such as mean, median) or predictive models (such as regression, K-nearest neighbors), and are currently most widely applied in industry. However, such methods struggle to characterize the uncertainty introduced by missingness and cannot explicitly encode the potentially useful information of ``which features are missing where.'' Model-based methods (such as multiple imputation, missing mechanism modeling based on probabilistic graphical models) are theoretically more rigorous but often require complex distributional assumptions, with high computational costs and implementation difficulty, making direct deployment difficult in resource-constrained BMS environments with real-time requirements.
+
+The aforementioned traditional methods share a common assumption: missingness is noise that should be ``repaired,'' and thus the core objective is to ``complete'' the data itself, with less attention to the information contained in the ``missing pattern'' itself. In many practical scenarios, this assumption is insufficient. During battery aging, certain sensor channels are more prone to anomalies or failures under high-temperature, high-load conditions, creating potential correlations between missing patterns and SOH. In such cases, the missing pattern itself can be regarded as an indirect observation about aging state, possessing potential diagnostic value.
+
+In this context, this study attempts to introduce and systematically evaluate a simpler yet more engineering-implementable missing data processing strategy---the Missing Indicator Method (MIM)\cite{jones1996indicator,van2023missing}---in the task of battery SOH prediction. This method constructs corresponding binary indicator variables for each potentially missing feature on the basis of conventional imputation, and feeds them into the prediction model together with the imputed features. Unlike traditional approaches that focus only on ``filling in missing values,'' the MIM method emphasizes explicitly encoding ``which values are missing'' and allows the model to jointly learn the relationships between feature values, missing patterns, and SOH during training. Existing studies have shown that when missing patterns are informative, MIM can significantly improve prediction performance in fields such as medical data analysis and recommendation systems\cite{sisk2023imputation,ehrig2025imputation}. This study will verify the effectiveness of the MIM method in battery SOH prediction tasks through a series of well-controlled experiments based on the publicly available XJTU lithium-ion battery dataset, and provide quantitative references for handling missing data in engineering practice.
+
+\subsection{Research Status and Limitations}
+
+In the field of battery SOH prediction, most existing research has been conducted under the premise of assuming basically complete data, with systematic attention to missing data issues still limited\cite{shao2025soh}. Early studies mainly focused on feature engineering and model construction under standard operating conditions and complete data scenarios, such as extracting capacity, internal resistance, voltage plateau and other features based on complete discharge curves and complete cycle data, and employing machine learning or deep learning models for regression prediction. Typical electrical signal feature modeling methods include Independent Component Analysis (ICA) and Differential Voltage Analysis (DVA), which are used to extract key features characterizing aging degree from voltage and current curves\cite{deng2025novel}. These methods can achieve high prediction accuracy when data is complete, but their strong dependence on data integrity makes them difficult to directly migrate to actual operating scenarios with widespread missingness.
+
+In terms of missing data handling, existing research has mainly concentrated on improvements to imputation methods. One category of work utilizes the similarity of battery aging trajectories, employing K-nearest neighbors and other methods to estimate missing values based on similar batteries or similar cycles with complete data; another category employs deep generative models such as Generative Adversarial Networks (GAN) and Variational Autoencoders (VAE) to synthesize ``reasonable'' filled values for missing points in feature space. These methods can generally improve imputation accuracy to some extent, but the research focus still revolves around ``more accurately filling in missing values.'' In the processing flow, once missing values are filled, the fact that they ``were once missing'' is often no longer explicitly utilized.
+
+From the perspective of statistics and machine learning, this ``filling-only without explicitly modeling missing patterns'' approach is reasonable when the missing mechanism is Missing Completely at Random (MCAR); however, under more common conditions of Missing at Random (MAR) or Missing Not at Random (MNAR), the occurrence of missingness itself is often related to observed or unobserved variables, and thus the missing pattern itself carries additional information about the target variable. Taking the battery aging process as an example, certain sensors are more prone to drift, saturation, or failure under high-temperature, high-rate conditions, causing samples with high aging degrees or specific operating conditions to more frequently generate missing records. The correlation between such missing patterns and SOH, if only addressed through filling without explicit encoding, is likely to be ``smoothed out'' by traditional imputation workflows, thereby losing valuable diagnostic signals.
+
+The Missing Indicator Method (MIM) has a long research history in statistics and machine learning, and has been widely applied and validated in tasks such as medical data analysis and online recommendation systems\cite{jones1996indicator,van2023missing}. Its core idea is: while appropriately imputing missing values, add a binary indicator variable (1 for missing, 0 for observed) for each potentially missing feature, and feed the ``imputed features + indicator vector'' together into the downstream prediction model. Existing theoretical and empirical studies have shown that when the missing mechanism is correlated with the target variable, introducing missing indicators can significantly improve the model's ability to model the missing mechanism, thereby enhancing prediction performance\cite{sisk2023imputation,ehrig2025imputation}.
+
+However, in the specific domain of battery SOH prediction, systematic research on MIM methods is still relatively scarce, mainly manifested in the following aspects:
+
+\begin{enumerate}[label=(\arabic*)]
+    \item \textbf{Lack of unified multi-missing-rate evaluation framework:}\\
+    Most existing works have only been validated under single or a few missing rates, making it difficult to systematically observe performance evolution as missing rates vary from low to high (e.g., MR from 0.1 to 0.9), particularly lacking systematic evaluation of high missing rate scenarios (MR$\geq 0.6$).
+    
+    \item \textbf{Lack of cross-architecture systematic comparison of MIM:}\\
+    Deep learning architectures commonly used for battery SOH prediction include MLP, LSTM, GRU, 1D-CNN, etc. Different architectures have respective advantages in temporal dependency modeling, local pattern extraction, and parameter scale, but their adaptability and degree of benefit from MIM methods have not been compared horizontally under unified settings.
+    
+    \item \textbf{Insufficient control variables in publicly comparable experiments:}\\
+    Across existing literature, data preprocessing workflows, missing simulation strategies, model hyperparameters, and training settings vary considerably, often making it difficult to fairly compare the merits of missing handling strategies on the same baseline. The lack of standardized comparative experiments under unified datasets, unified missing patterns, and unified training configurations makes conclusions about MIM's actual benefits lack sufficient comparability and persuasiveness.
+\end{enumerate}
+
+In summary, for battery SOH prediction tasks, existing research still has obvious gaps in unified multi-missing-rate evaluation frameworks, cross-architecture MIM effect comparisons, and publicly comparable experiments with strictly controlled variables. Filling these gaps will help clarify MIM's real benefits and applicable boundaries under missing data conditions on one hand, and provide quantitative bases for selecting BMS missing data processing strategies in engineering practice on the other hand. This is also the main motivation for this work.
+
+\subsection{Research Objectives and Contributions}
+
+Addressing the aforementioned research status and limitations, this study takes the publicly available XJTU lithium-ion battery dataset as the experimental platform and the Missing Indicator Method (MIM) as the core, constructing a battery SOH prediction experimental framework oriented toward different missing rates and multiple neural network architectures, systematically evaluating MIM's impact on prediction performance and robustness under multi-missing-rate conditions. Under unified data preprocessing, missing simulation, and training configurations, this study attempts to answer the following three core research questions (RQ):
+
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{RQ1 (Performance Gain):} Under the XJTU battery dataset and set random missing conditions, how much SOH prediction performance improvement can introducing MIM bring compared to ``imputation-only'' baseline input strategies at different missing rates (MR=0.1--0.9)? Is this improvement consistent and stable across different missing rate intervals?
+    
+    \item \textbf{RQ2 (Architecture Differences):} For typical neural network architectures such as MLP, LSTM, GRU, and 1D-CNN, after integrating MIM into the input representation, do the degrees of benefit obtained by each architecture differ significantly? Are there ``preferred architecture'' combinations that are more sensitive or robust to MIM?
+    
+    \item \textbf{RQ3 (High Missing Rate Robustness):} When missing rates further increase to extreme conditions such as 0.9, which ``model architecture + MIM'' combinations can still maintain acceptable prediction accuracy and stability? How do their error and uncertainty performance manifest, and to what extent can they meet engineering application requirements?
+\end{itemize}
+
+Centering on the above research questions, the main contributions of this study can be summarized in the following three aspects:
+
+\begin{enumerate}[label=(\arabic*)]
+    \item \textbf{Methodology and Framework Construction:}\\
+    This study proposes and implements an experimental workflow for battery SOH prediction oriented toward missing data scenarios, integrating the missing indicator method system into four representative deep learning architectures: MLP, LSTM, GRU, and 1D-CNN. The experimental framework supports multiple missing settings (including random missing, segment missing, etc.) and two comparable input strategies (imputation-only vs. imputation+indicator [MIM]), providing a unified and reproducible experimental benchmark for subsequent related research.
+    
+    \item \textbf{Systematic Empirical Study and Pattern Revelation:}\\
+    Under unified data preprocessing and training settings, this study systematically quantifies MIM's performance gains in different missing rate regions through multi-missing-rate (MR=0.1--0.9) control-variable large-scale comparative experiments based on 100 random seeds, analyzes the performance differences and seed stability when different network architectures are combined with MIM, and reveals the relationship patterns between MIM gains and missing rates, model structures.
+    
+    \item \textbf{Engineering Application Guidance:}\\
+    Based on experimental results, this study comprehensively weighs error metrics (such as MAE, RMSE, R$^2$) and model complexity, summarizes model selection recommendations oriented toward different missing rate intervals and computational resource constraints, provides data-driven SOH prediction schemes suitable for deployment in actual BMS, and offers actionable guidance for handling missing data and selecting appropriate ``model+MIM'' combinations in engineering practice.
+\end{enumerate}
+
+%==============================================================================
+\section{Related Work}\label{sec:related}
+
+\subsection{Missing Data Handling Methods and Missing Indicators}
+
+In practical data analysis tasks, data missingness is a ubiquitous challenge, and its handling approach directly affects subsequent model training and inference performance. From a statistical perspective, missing mechanisms are typically classified into three categories: Missing Completely at Random (MCAR), where missingness is unrelated to any observed or unobserved variables; Missing at Random (MAR), where missingness can be explained by observed variables; and Missing Not at Random (MNAR), where missingness is related to the unobserved variable values themselves\cite{little2002statistical}. In practical modeling, it is usually assumed that missing mechanisms satisfy MCAR or MAR conditions to simplify inference processes and obtain better statistical properties\cite{little2002statistical}. Appropriate handling strategies vary under different missing mechanisms.
+
+Traditional missing data handling methods can be mainly categorized into three types: deletion methods, single-value imputation methods, and model-based methods. Deletion methods include listwise deletion (deleting entire rows of samples containing missing values) and feature deletion (deleting feature columns with excessive missing values). These methods are simple and effective when missing rates are low, but when missing rates are high, they can lose substantial information and may introduce selection bias. Single-value imputation methods include mean imputation, median imputation, forward/backward filling, and regression-based imputation, which fill missing positions with single values. While preserving sample size, they underestimate variance and distort relationships between variables. Model-based methods such as Expectation-Maximization (EM) algorithms and Multiple Imputation establish probability models to handle missingness. While theoretically more rigorous, they have high computational complexity and usually require certain assumptions about data distributions or missing mechanisms.
+
+The Missing Indicator Method (MIM) provides a modeling approach distinct from traditional deletion and imputation strategies\cite{jones1996indicator,van2023missing}. The core idea of this method is to explicitly encode missing information as additional binary features, inputting them into the model together with original features, allowing the model to learn how to utilize missing pattern information during training\cite{ipsen2022deal}. Specifically, for every feature that may potentially be missing, a corresponding indicator variable is constructed. When the feature value is missing, the indicator is 1; otherwise, it is 0. Thus, the original feature vector $X$ is extended to $[X, M]$, where $M$ is the indicator vector. The advantage of this representation is that the model can not only utilize the values of original features (after imputation) but also know the extra information of ``whether this value was observed.''
+
+From a theoretical perspective, the effectiveness of MIM methods depends on the correlation between missing mechanisms and target variables. When missingness is completely random (MCAR), indicators contain no information about the target variable, and MIM may only bring marginal improvement or even no improvement; but when missingness is correlated with the target variable (MAR or MNAR), indicators become valuable predictive signals, and models can improve prediction by learning missing patterns. In battery SOH prediction scenarios, some sensors gradually fail with the aging process, or are more prone to record interruptions and data missingness under specific operating conditions. At this time, missing patterns are often correlated with battery aging degree (for example, batteries with higher aging degrees are more prone to measurement anomalies or data loss). Therefore, missing patterns themselves can be regarded as indirect observations about SOH, possessing potential value in both theoretical analysis and engineering applications.
+
+MIM methods have already seen successful applications in multiple domains. In medical data analysis, due to the selective nature of patient examination items, electronic medical record data ubiquitously exhibits structured missingness. Studies have shown that introducing missing indicators can significantly improve disease prediction model performance\cite{sisk2023imputation,ehrig2025imputation}. In the deep learning field, recent work has explicitly modeled missing patterns through feature masking or indicator vectors, incorporating them as part of network input\cite{ipsen2022deal,che2018recurrent}. Such methods usually need to make certain assumptions about data distributions or missing mechanisms to ensure training process feasibility and convergence. In recommendation systems, the sparsity of user rating matrices can be regarded as a special type of data missingness. By modeling the signal of ``whether the user has rated,'' collaborative filtering algorithms can achieve better recommendation effects.
+
+However, systematic evaluation of MIM methods represented by explicit missing modeling in battery SOH prediction tasks is still scarce, lacking comparative conclusions under unified datasets and multi-missing-rate conditions. Especially in battery SOH prediction, which is a complex engineering problem with strong temporal characteristics and multi-physics coupling, systematic research on MIM methods is still blank, and their applicability and actual benefits under different deep learning architectures have not been fully verified. This constitutes one of the core motivations for the empirical research conducted in this study.
+
+\subsection{Commonly Used Model Architectures for Battery SOH Prediction}
+
+Battery SOH prediction, as a typical regression problem, has seen its modeling methods evolve from physics-based mechanisms to data-driven approaches\cite{liu2025deep}. Early physics-based model methods described battery internal aging mechanisms through establishing electrochemical impedance spectroscopy, equivalent circuit models, etc., possessing clear physical interpretability, but having numerous model parameters that are difficult to identify, and struggling to adapt to different chemical systems and operating conditions. With the development of machine learning technology, data-driven methods have gradually become mainstream\cite{liu2025deep}. According to model structure characteristics, they can be roughly divided into three categories: feedforward networks (MLP), recurrent neural networks (LSTM/GRU), and one-dimensional convolutional neural networks (1D-CNN).
+
+Multi-Layer Perceptron (MLP), as the most basic neural network structure, learns complex mapping relationships between features and SOH through multi-layer nonlinear transformations, possessing characteristics of simple implementation and fast training speed, making it suitable as a baseline method\cite{bairwa2025cycle}. Architectures such as MLP, LSTM, GRU, and one-dimensional convolution (1D-CNN/TCN) have been used for battery remaining life prediction and capacity reconstruction tasks on unified datasets, achieving good results in real systems\cite{bairwa2025cycle}, indicating that different architectures have respective advantages in capturing temporal dependencies and cross-cycle features. The advantage of MLP is that its parameter scale is relatively controllable, with high training and inference efficiency, making it suitable for deployment in resource-constrained embedded BMS. However, MLP typically treats each cycle as an independent sample, making it difficult to capture temporal dependencies between cycles.
+
+Temporal models are represented by Long Short-Term Memory (LSTM) and Gated Recurrent Unit (GRU), specifically designed for processing sequence data\cite{bairwa2025cycle}. Compared with MLP, RNN-type models can explicitly model temporal dependencies between capacity and features of adjacent cycles. This temporal modeling capability is their main advantage in SOH prediction tasks. LSTM solves the gradient vanishing problem of traditional RNNs through gated mechanisms, capable of effectively capturing long-range dependencies; GRU reduces parameter scale and computational complexity while maintaining performance by simplifying gated structures. In SOH prediction, feature sequences of recent cycles are usually taken as input to predict the SOH value of the current cycle. Temporal models can utilize historical information to assist current prediction, exhibiting better stability under complex situations such as capacity regeneration and aging trend turning points.
+
+\subsection{Position and Distinction of This Study}
+
+Compared with existing literature, the positioning and main distinctions of this study are reflected in the following three aspects. First, from the research perspective, existing works mostly focus on improving SOH prediction accuracy itself, with less attention to the universal problem of data missingness in actual engineering; this study takes missing data handling as core research content, exploring how to maintain prediction performance under conditions with missing data. Second, in terms of method selection, existing missing data research mostly focuses on improvements to imputation methods, attempting to more accurately estimate and fill missing values; this study adopts a different approach, explicitly encoding missing information through MIM methods, allowing models to autonomously learn how to utilize this signal. Third, in experimental design, existing studies usually only validate methods under single or few missing rates, while this study covers nine missing rates from 0.1 to 0.9, enabling more comprehensive evaluation of method performance under different missing degrees.
+
+In summary, this study systematically compares the comprehensive performance of MIM methods across multiple typical neural network architectures (MLP, LSTM, GRU, 1D-CNN) and various missing rate conditions for the first time in the field of battery SOH prediction. Through large-scale reproducible experiments under unified datasets and controlled parameter scales, it provides empirical evidence and engineering guidance for the selection of missing data handling strategies.
+
+%==============================================================================
+\section{Methodology}\label{sec:method}
+
+% TODO: Continue with methodology section
+
+\end{document}
