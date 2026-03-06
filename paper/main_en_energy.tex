@@ -47,11 +47,15 @@
 
 \title{Comparative Study of Missing Indicator-Based State of Health Prediction for Lithium-Ion Batteries: Deep Learning Models and Multi-Missing-Rate Experiments on XJTU Dataset}
 
-\author[inst1]{Qingyang Chen\ead{202414544@mail.sdu.edu.cn}}
+\author[inst1]{Qingyang Chen}
+\ead{202414544@mail.sdu.edu.cn}
 \author[inst1]{Qiang Zhang\corref{cor1}}
-\cortext[cor1]{Corresponding author. Email: \texttt{sduzhangqiang@sdu.edu.cn}}
+\ead{sduzhangqiang@sdu.edu.cn}
+\author[inst2]{Yunfei Wang}
+\cortext[cor1]{Corresponding author.}
 
 \address[inst1]{School of Nuclear Science and Energy Engineering, Shandong University, Jinan 250061, China}
+\address[inst2]{Shandong Supermaly Generating Equipment Co., Ltd, No.5153 Yingqian Street, Hi-technology Development Zone, Weifang 261061, Shandong, China}
 
 \begin{abstract}
 Accurate State of Health (SOH) estimation is essential for safe and reliable operation of electric vehicles and energy storage systems, yet sensor failures and data acquisition anomalies frequently cause missing monitoring data. Traditional methods treat missing values as noise, neglecting the information contained in the pattern of missingness itself, which limits performance at high missing rates. Using the public XJTU lithium-ion battery dataset, we introduce a simple Missing Indicator Matrix (MIM) approach and systematically evaluate its impact on SOH prediction across four deep learning architectures---MLP, LSTM, GRU, and 1D-CNN---under varying missing-rate conditions. Results demonstrate that for missing rates $\geq$0.4, MIM consistently improves prediction accuracy, reducing error by 26--57\% across all models compared to imputation-only baselines. The improvement is observed uniformly across architectures, indicating that the missing-indicator signal is more valuable than the imputation method itself. This study provides a concise, effective technical solution for handling missing data in Battery Management Systems, enhancing the practicality and reliability of data-driven SOH prediction methods in real-world engineering applications.
@@ -129,7 +133,7 @@ Centered around the above research questions, this paper conducts work from thre
 
 \subsection{Paper Organization}
 
-The remainder of this paper is organized as follows: Section~2 reviews research on lithium battery SOH prediction methods and missing data treatment with MIM; Section~3 presents the MIM input strategy and model framework of this paper, including sample construction, missing simulation, and multi-missing-rate joint training strategy; Section~4 presents experimental settings and comparative results under multi-missing-rate conditions on the XJTU dataset; Section~5 discusses the mechanism of MIM and engineering application scenarios, and provides model selection recommendations for BMS; Section~6 summarizes the work and its potential impact on energy systems, and outlines future research directions.
+The remainder of this paper is organized as follows: Section~\ref{sec:related} reviews research on lithium battery SOH prediction methods and missing data treatment with MIM; Section~\ref{sec:method} presents the MIM input strategy and model framework of this paper, including sample construction, missing simulation, and multi-missing-rate joint training strategy; Section~\ref{sec:results} presents experimental settings and comparative results under multi-missing-rate conditions on the XJTU dataset; Section~\ref{sec:discussion} discusses the mechanism of MIM and engineering application scenarios, and provides model selection recommendations for BMS; Section~\ref{sec:conclusion} summarizes the work and its potential impact on energy systems, and outlines future research directions.
 
 %==============================================================================
 \section{Related Work and Technical Background}\label{sec:related}
@@ -520,7 +524,7 @@ GRU & $<$0.001*** & $<$0.001*** & $<$0.001*** & $<$0.001*** \\
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\columnwidth]{figures/fig9_seed_stability_v2.png}
+    \includegraphics[width=\columnwidth]{fig9_seed_stability_v2.png}
     \caption{Seed stability analysis (100 random seeds). Gray shaded area represents min-max range, colored solid lines represent cross-seed means for MIM, dashed lines represent cross-seed means for Baseline.}
     \label{fig:seed_stability}
 \end{figure}
@@ -537,7 +541,7 @@ The violin plot in Figure~\ref{fig:distribution} shows that as missing rate incr
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{figures/rmse_distribution.png}
+    \includegraphics[width=\textwidth]{rmse_distribution.png}
     \caption{MAE distribution under different missing rates (violin plot).}
     \label{fig:distribution}
 \end{figure*}
@@ -603,7 +607,6 @@ Although this study systematically evaluated the MIM method under multi-model an
 As electric vehicle fleets and grid-scale energy storage systems continue to expand in scale, the need to maintain SOH prediction robustness under missing data conditions becomes increasingly important. This paper conducted systematic empirical research around the ``missing as signal'' paradigm; future work still needs to advance in real BMS data, physics model fusion, and dispatch/maintenance coordinated decision-making to truly support the safe and efficient operation of energy systems.
 
 %==============================================================================
-
 \section{Conclusion and Future Work}\label{sec:conclusion}
 
 This paper conducts research on battery SOH prediction problems under data missing conditions, adopting the ``missing as signal'' MIM paradigm. Based on the XJTU publicly available lithium battery dataset, this paper constructs cycle-level sample units, designs MCAR missing simulations for nine levels of Missing Rate (MR) from 0.1--0.9, and conducts systematic evaluation of four typical deep learning architectures (MLP, LSTM, GRU, 1D-CNN) under multi-missing-rate and multi-random-seed conditions. Experimental results indicate that under medium-high missing rate (MR$\geq$0.4) conditions, MIM achieves significant performance improvements compared to imputation-only Baseline in metrics such as MAE, RMSE, and R\textsuperscript{2}, with particularly notable benefits for architectures such as 1D-CNN, and validated by statistical methods such as Wilcoxon signed-rank tests. This work provides systematic empirical evidence and a reproducible evaluation framework for research on explicitly encoding missing patterns in battery SOH prediction.
@@ -611,6 +614,11 @@ This paper conducts research on battery SOH prediction problems under data missi
 In practical application scenarios such as electric vehicle fleets and grid-scale energy storage systems, BMS needs to continuously estimate SOH under imperfect data conditions such as sensor failures and communication packet loss; the results of this paper provide empirical evidence for model and input strategy selection in such scenarios. In fleet applications, deep models adopting MIM (particularly 1D-CNN and LSTM architectures) can maintain more robust SOH estimation under medium-high missing rates, helping reduce health state misjudgment risks and optimize charging strategy and maintenance scheduling decisions. In grid-scale energy storage stations, long-term operation, sensor aging, and complex operating conditions make data missing more common; this study shows that reasonable selection of ``model+MIM'' combinations can significantly suppress prediction errors and instability under high missing rate conditions, providing more reliable health information support for frequency regulation, peak shaving and valley filling, and other services. The above findings have direct reference value for BMS software algorithm design and hardware computational power configuration, potentially improving battery asset utilization efficiency and operational safety.
 
 Future research still has several directions worth exploring. This study was mainly completed under the MCAR missing setting; future work is needed to systematically evaluate and compare under MAR/MNAR mechanisms (missing data correlated with operating conditions, aging, and maintenance strategies) closer to actual BMS scenarios. Meanwhile, validating the generalizability and boundaries of the ``missing as signal'' paradigm on multiple publicly available datasets (NASA, CALCE, Oxford, etc.) and richer tasks (RUL prediction, anomaly detection, multi-task learning, etc.) is an important follow-up direction. Additionally, combining MIM with Transformer, Graph Neural Networks, and physics-informed model fusion methods, and systematically analyzing their computational power and power consumption costs in actual BMS deployment, also holds research value. Deep coupling of explicit missing modeling with decision systems such as fleet dispatch optimization and grid-scale energy storage participation in electricity markets is a key direction for promoting the system-level value of missing-robust SOH prediction.
+
+%==============================================================================
+\section*{Acknowledgments}
+
+This work was supported by the Shandong Provincial Technology Innovation Guidance Program (Central Government Guides Local Science and Technology Development Funds) under Grant YDZX2024105.
 
 %==============================================================================
 \bibliographystyle{elsarticle-num}
