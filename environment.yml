@@ -1,0 +1,48 @@
+name: battery-nn
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  # Python (最新稳定版)
+  - python=3.13
+  
+  # Core Deep Learning
+  # pytorch 会自动检测 CUDA 并安装 GPU 或 CPU 版本
+  - pytorch>=2.5.0
+  - pytorch-lightning>=2.5.0
+  
+  # CUDA 支持 (可选 - 如果系统有 NVIDIA GPU，会自动启用)
+  # 如需指定 CUDA 版本，取消下面注释并修改版本号
+  # - cuda-version>=12.0
+  
+  # Data Processing
+  - pandas>=2.0.0
+  - numpy>=1.26.0
+  
+  # Machine Learning Utilities
+  - scikit-learn>=1.5.0
+  
+  # Visualization
+  - matplotlib>=3.9.0
+  - seaborn>=0.13.0
+  
+  # Jupyter (optional, for analysis)
+  - jupyter>=1.1.0
+  - ipykernel>=6.29.0
+  
+  # Progress bars
+  - tqdm>=4.66.0
+  
+  # Type checking
+  - typing-extensions>=4.12.0
+  
+  # Configuration Management
+  - omegaconf>=2.3.0
+  - pydantic>=2.0
+  - click=8.1.7
+  
+  # Pip 依赖
+  - pip
+  - pip:
+    - hydra-core>=1.3.0
+    - wandb>=0.19.0

@@ -2,8 +2,17 @@
 *.json
 *.xdv
 *.png
-*.yaml
-*.yml
+
+# 实验生成的 YAML 文件（Hydra 输出目录）
+outputs/**/*.yaml
+outputs/**/*.yml
+
+# 根目录 YAML 文件默认排除（按需添加例外）
+/*.yaml
+/*.yml
+!environment.yml
+
+# 允许特定目录的 YAML
 !configs/**/*.yaml
 !configs/**/*.yml
 !paper/**/*.png
