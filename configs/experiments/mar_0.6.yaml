@@ -1,0 +1,67 @@
+# Baseline (No MIM) + MAR (MR=0.6) + CNN1D 实验配置
+# 使用方式: python src/main.py experiments=mar_0.6
+
+experiment:
+  name: "mar_0.6_cnn1d_baseline"
+  description: "XJTU, MAR, MR=0.6, 1D-CNN Baseline (No MIM), 20 seeds"
+  type: "baseline"
+  use_mim: false
+  missing_mode: "mar"
+  missing_rate: 0.6
+
+# MAR 参数
+mar_params:
+  alpha: null  # 自动反推
+  beta: 2.0
+  gamma: 0.05
+
+# 训练配置
+training:
+  epochs: 200
+  batch_size: 64
+  optimizer: "adam"
+  learning_rate: 1.0e-3
+  weight_decay: 0.0
+  
+  # 早停
+  early_stopping:
+    enabled: true
+    monitor: "val_loss"
+    patience: 15
+    mode: "min"
+  
+  # 学习率调度
+  lr_scheduler:
+    enabled: true
+    type: "reduce_on_plateau"
+    factor: 0.5
+    patience: 5
+  
+  # 随机种子列表 (20个)
+  seeds:
+    - 42
+    - 101
+    - 102
+    - 103
+    - 104
+    - 105
+    - 106
+    - 107
+    - 108
+    - 109
+    - 110
+    - 111
+    - 112
+    - 113
+    - 114
+    - 115
+    - 116
+    - 117
+    - 118
+    - 119
+
+# 输出配置
+output:
+  result_csv: "results/csv/mar_0.6_cnn1d_baseline.csv"
+  save_models: false
+  log_dir: "logs/experiments/mar_0.6_baseline"

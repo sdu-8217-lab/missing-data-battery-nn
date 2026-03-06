@@ -1,0 +1,239 @@
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:48] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:48] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:48] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:48] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:48] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:49] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:49] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:49] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:49] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:49] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:49] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:49] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:49] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:50] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:51] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:51] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:51] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:51] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:51] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:51] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:51] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:51] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:52] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:53] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:53] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:53] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:53] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:53] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:53] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:53] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:53] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:54] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:55] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:55] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:55] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:55] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:55] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:55] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:55] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:55] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:56] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:57] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:58] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:59] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:59] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:59] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:59] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:59] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:59] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:59] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:23:59] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py:1118: UserWarning: [00:24:00] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\c_api\c_api.cc:1575: Saving model in the UBJSON format as default.  You can use a file extension: `json` or `ubj` to choose between formats.
+  self.get_booster().save_model(fname)
+Traceback (most recent call last):
+  File "E:\00_KindKeeper\missing-data-battery-nn\run_full_experiment.py", line 68, in <module>
+    main()
+  File "E:\00_KindKeeper\missing-data-battery-nn\run_full_experiment.py", line 42, in main
+    results = runner.run_all_experiments()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\00_KindKeeper\missing-data-battery-nn\src\experiments\experiment_runner.py", line 377, in run_all_experiments
+    results = self.run_single_experiment(model_config, seed)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\00_KindKeeper\missing-data-battery-nn\src\experiments\experiment_runner.py", line 323, in run_single_experiment
+    model, history = self.train_mim_model(model_config, seed)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\00_KindKeeper\missing-data-battery-nn\src\experiments\experiment_runner.py", line 248, in train_mim_model
+    history = model.fit(X_train, train_dataset.y, X_val, val_dataset.y)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\00_KindKeeper\missing-data-battery-nn\src\models\xgboost_model.py", line 36, in fit
+    self.model.fit(
+  File "D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\core.py", line 774, in inner_f
+    return func(**kwargs)
+           ^^^^^^^^^^^^^^
+  File "D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py", line 1345, in fit
+    train_dmatrix, evals = _wrap_evaluation_matrices(
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py", line 759, in _wrap_evaluation_matrices
+    m = create_dmatrix(
+        ^^^^^^^^^^^^^^^
+  File "D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\sklearn.py", line 1259, in _create_dmatrix
+    return QuantileDMatrix(
+           ^^^^^^^^^^^^^^^^
+  File "D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\core.py", line 774, in inner_f
+    return func(**kwargs)
+           ^^^^^^^^^^^^^^
+  File "D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\core.py", line 1768, in __init__
+    self._init(
+  File "D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\core.py", line 1834, in _init
+    _check_call(ret)
+  File "D:\App\miniforge3\envs\pytorch-cpu\Lib\site-packages\xgboost\core.py", line 323, in _check_call
+    raise XGBoostError(py_str(_LIB.XGBGetLastError()))
+xgboost.core.XGBoostError: [00:24:00] C:\actions-runner\_work\xgboost\xgboost\src\data\quantile_dmatrix.cc:58: Check failed: ref->Info().num_col_ == n_features (32 vs. 16) : Invalid ref DMatrix, different number of features.

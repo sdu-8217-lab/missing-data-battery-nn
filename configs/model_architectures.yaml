@@ -1,0 +1,71 @@
+# Model Architectures for XJTU SOH Prediction
+# Selected from Stage 1 Pre-experiment (No Missing)
+# Target: ~2^13 = 8192 parameters (±20%)
+
+small_architectures:
+  # MLP: Best for both 2C and 3C
+  mlp_small_best_2c:
+    model_type: mlp
+    input_dim: 16
+    hidden_dims: [48, 48, 48, 48]  # 4 layers
+    dropout: 0.1
+    n_params: 7904
+    
+  mlp_small_best_3c:
+    model_type: mlp
+    input_dim: 16
+    hidden_dims: [48, 48, 48, 48]  # Same as 2C
+    dropout: 0.1
+    n_params: 7904
+  
+  # LSTM: Best for both 2C and 3C
+  lstm_small_best_2c:
+    model_type: lstm
+    input_dim: 16
+    hidden_dim: 36
+    num_layers: 1
+    dropout: 0.1
+    n_params: 9792
+    
+  lstm_small_best_3c:
+    model_type: lstm
+    input_dim: 16
+    hidden_dim: 36
+    num_layers: 1
+    dropout: 0.1
+    n_params: 9792
+  
+  # CNN: Optimized for 2^13 budget
+  cnn_small_best_2c:
+    model_type: cnn
+    input_dim: 16
+    channels: [16, 8]
+    kernel_sizes: [3, 3]
+    fc_hidden_dims: [32]
+    dropout: 0.1
+    n_params: ~6500
+    
+  cnn_small_best_3c:
+    model_type: cnn
+    input_dim: 16
+    channels: [16, 8]
+    kernel_sizes: [3, 3]
+    fc_hidden_dims: [32]
+    dropout: 0.1
+    n_params: ~6500
+
+# Training hyperparameters (shared)
+training_defaults:
+  epochs: 100
+  batch_size: 64
+  optimizer: adam
+  learning_rate: 1e-3
+  weight_decay: 0.0
+  early_stopping:
+    enabled: true
+    patience: 15
+    monitor: val_loss
+  lr_scheduler:
+    enabled: true
+    factor: 0.5
+    patience: 5
