@@ -1,116 +1,31 @@
-# 全局排除（但允许paper目录下的png）
-*.json
-*.xdv
-*.png
-
-# 实验生成的 YAML 文件（Hydra 输出目录）
-outputs/**/*.yaml
-outputs/**/*.yml
-
-# 根目录 YAML 文件默认排除（按需添加例外）
-/*.yaml
-/*.yml
-!environment.yml
-
-# 允许特定目录的 YAML
-!configs/**/*.yaml
-!configs/**/*.yml
-!paper/**/*.png
-!paper/**/*.html
-!paper/**/*.yaml
-!paper/**/*.yml
-
 # ======================
-# 项目特定忽略 (PyTorch/深度学习)
-# ======================
-
-# 模型文件
-*.pth
-*.pt
-*.ckpt
-*.h5
-*.onnx
-*.pb
-saved_models/
-checkpoints/
-models/
-
-# 训练结果和输出
-results/
-logs/
-runs/                  # PyTorch Lightning/TensorBoard 默认日志目录
-lightning_logs/
-tensorboard/
-wandb/                 # Weights & Biases 本地目录
-/figures/              # 仅排除根目录的figures
-!/paper/figures/       # 但允许paper/figures
-output/
-outputs/               # Hydra 默认输出目录
-
-# 数据集相关
-data/cache/
-data/processed/
-data/raw/
-datasets/
-*.npy                  # NumPy 数组
-*.npz                  # 压缩的 NumPy 数组
-*.hdf5
-*.h5
-
-# ======================
-# 临时文件和目录
-# ======================
-
-tmp_legacy/            # 旧代码备份
-22602_140541/          # 临时实验目录
-tmp_*.py               # 临时脚本
-*_backup_*.csv         # 备份文件
-# 临时问题分析文件
-PROBLEM_ANALYSIS.txt
-QUICK_FIX_INSTRUCTIONS.md
-
-# ======================
-# 开发环境
-# ======================
-
-# VS Code
-.vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# Jupyter
-.ipynb_checkpoints
-*.ipynb
-
-# PyCharm
-.idea/
-*.iml
-
-# LaTeX (新增规则)
-*.aux
-*.bbl
-*.blg
-*.dvi
-*.fdb_latexmk
-*.fls
-*.log
-*.out
-*.toc
-*.synctex.gz
-*.pdf
-*.ps
-*.eps
-
-# ======================
-# Python 通用忽略规则
+# Python 项目通用规则
 # ======================
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+pip-wheel-metadata/
+sdist/
+share/python-wheels/
+var/
+wheels/
+*.egg
+*.egg-info/
+*.manifest
+*.spec
+.installed.cfg
+MANIFEST
 
 # Virtual environments
 .venv/
@@ -121,31 +36,167 @@ env.bak/
 venv.bak/
 virtualenv/
 
-# C extensions and build artifacts
-*.so
-*.pyd
-*.dll
-*.pyc
-*.pyo
-build/
-dist/
-*.egg-info/
-*.whl
-
-# Coverage reports
+# Testing / coverage
+htmlcov/
+.tox/
+.nox/
 .coverage
 .coverage.*
 .cache
 nosetests.xml
 coverage.xml
-htmlcov/
+*.cover
+*.py,cover
 .pytest_cache/
 
-# IDE and editor files
-.DS_Store
-.Thumbs.db
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ======================
+# 机器学习 / PyTorch 项目
+# ======================
+
+# Model artifacts
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.pb
+*.h5
+*.hdf5
+
+# Model directories
+saved_models/
+checkpoints/
+models/
+
+# Experiment tracking
+wandb/
+mlruns/
+
+# Training outputs
+runs/
+lightning_logs/
+tensorboard/
+logs/
+results/
+output/
+outputs/
+
+# Data directories
+data/cache/
+data/processed/
+data/raw/
+datasets/
+
+# NumPy arrays
+*.npy
+*.npz
+
+# ======================
+# LaTeX 编译产物
+# ======================
+
+*.aux
+*.bbl
+*.blg
+*.bcf
+*.dvi
+*.fdb_latexmk
+*.fls
+*.glg
+*.glo
+*.gls
+*.ist
+*.lof
+*.lot
+*.log
+*.nav
+*.out
+*.ps
+*.pdf
+*.snm
+*.spl
+*.synctex.gz
+*.toc
+*.upa
+*.upb
+*.vrb
+*.run.xml
+*.xdv
+
+# ======================
+# IDE / 编辑器
+# ======================
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# PyCharm / IntelliJ
+.idea/
+*.iml
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# Vim / Emacs
 *.swp
 *.swo
 *~
+
+# ======================
+# Jupyter Notebook
+# ======================
+
+.ipynb_checkpoints
+*.ipynb
+
+# ======================
+# 环境变量 / 密钥
+# ======================
+
 .env
-wandb/
+.env.*
+!.env.example
+
+# ======================
+# 操作系统文件
+# ======================
+
+.DS_Store
+Thumbs.db
+
+# ======================
+# 项目特定规则
+# ======================
+
+# 全局排除（但允许特定目录）
+*.json
+*.png
+
+# 根目录 YAML 排除（按需添加例外）
+/*.yaml
+/*.yml
+!environment.yml
+
+# 允许特定目录的文件
+!configs/**/*.yaml
+!configs/**/*.yml
+!paper/**/*.png
+!paper/**/*.html
+!paper/**/*.yaml
+!paper/**/*.yml
+
+# 仅排除根目录的 figures，但允许 paper/figures
+/figures/
+!/paper/figures/
