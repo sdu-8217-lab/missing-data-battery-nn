@@ -33,7 +33,10 @@ outputs/**/*.yml
 *.pb
 saved_models/
 checkpoints/
-models/
+# 模型输出目录（根目录和常见子目录）
+/models/
+experiments/models/
+!src/models/          # 源代码目录例外：不忽略
 
 # 训练结果和输出
 results/
