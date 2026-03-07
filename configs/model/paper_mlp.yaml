@@ -1,0 +1,16 @@
+# @package model
+# Paper 精确配置 - MLP
+name: mlp
+type: mlp
+
+# Paper 架构: Input → 192 → 96 → 48 → 24 → 1
+# Baseline: 27,649 params, MIM: 30,721 params
+input_dim: 16  # 会被 main.py 覆盖为 16 或 32
+hidden_dims: [192, 96, 48, 24]
+dropout: 0.15
+activation: relu
+
+# Paper 目标参数量（仅供参考）
+expected_params_baseline: 27649
+expected_params_mim: 36865  # 论文目标
+expected_params_mim_actual: 30721  # PyTorch实际计算
