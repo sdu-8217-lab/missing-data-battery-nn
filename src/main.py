@@ -161,6 +161,10 @@ def main(cfg: DictConfig):
     method, is_mim = detect_method(cfg)
     input_dim = 32 if is_mim else 16
     
+    # 对于 baseline，使用具体的插补方法（mean/median/knn/zero）
+    # 对于 mim，使用 'mim'
+    impute_method = method if is_mim else cfg.method.get('imputation', 'mean')
+    
     print(f"\nMethod: {method.upper()}")
     print(f"Input dimension: {input_dim}")
     print(f"\nConfig:\n{OmegaConf.to_yaml(cfg)}")
@@ -243,13 +247,13 @@ def main(cfg: DictConfig):
         
         # 训练
         print("[3/4] Training...")
-        train_loader, val_loader = create_dataloaders(data_dict, cfg, mode='train', method=method)
+        train_loader, val_loader = create_dataloaders(data_dict, cfg, mode='train', method=impute_method)
         trainer.fit(module, train_loader, val_loader)
         
         # 评估
         print("[4/4] Evaluating across missing rates...")
         for mr in missing_rates:
-            _, _, test_loader = create_dataloaders(data_dict, cfg, mode='eval', method=method, missing_rate=mr)
+            _, _, test_loader = create_dataloaders(data_dict, cfg, mode='eval', method=impute_method, missing_rate=mr)
             results = trainer.test(module, test_loader, verbose=False)
             
             results_all.append({
