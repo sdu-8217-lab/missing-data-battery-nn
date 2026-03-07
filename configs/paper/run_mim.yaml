@@ -1,0 +1,71 @@
+# @package _global_
+# MIM 方法通用运行配置
+
+# 实验设置
+experiment:
+  name: paper_mim
+  run_name: null  # Will be set per experiment
+  seeds: [42]
+  output_dir: ./results
+
+method:
+  name: mim
+  use_missing_indicator: true
+  imputation: none
+
+# 缺失率（会被命令行覆盖）
+missing_rates: [0.5]
+
+# MIM训练配置
+training:
+  optimizer: Adam
+  learning_rate: 0.001
+  batch_size: 64
+  max_epochs: 200
+  early_stopping_patience: 15
+
+output:
+  save_predictions: true
+
+wandb:
+  enabled: false
+
+# 缺失数据处理
+missing:
+  mode: mcar
+  missing_rates_eval: ${missing_rates}
+
+# 数据配置 (内联 - 可靠)
+data:
+  dataset: "xjtu"
+  batch_id: "2C"
+  data_dir: "./data/XJTU data"
+  file_pattern: "{batch_id}_battery-*.csv"
+  split:
+    test_size: 0.25
+    val_size: 0.25
+    random_state: 42
+  seq_len: 5
+  features:
+    - 'voltage mean'
+    - 'voltage std'
+    - 'voltage kurtosis'
+    - 'voltage skewness'
+    - 'current mean'
+    - 'current std'
+    - 'current kurtosis'
+    - 'current skewness'
+    - 'CC Q'
+    - 'CC charge time'
+    - 'CV Q'
+    - 'CV charge time'
+    - 'voltage slope'
+    - 'current slope'
+    - 'voltage entropy'
+    - 'current entropy'
+  target: 'capacity'
+  nominal_capacity: 2.0
+  preprocessing:
+    outlier_method: "3sigma"
+    fill_method: "mean"
+    standardize: true
