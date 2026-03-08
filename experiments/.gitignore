@@ -1,0 +1,15 @@
+runs/*/logs/*.log
+runs/*/checkpoints/
+outputs/
+archive/
+*.tmp
+
+
+# 实验数据文件（大数据，不提交到git）
+runs/*/experiment_db.csv
+runs/*/config_snapshot.yaml
+runs/*/results/*.csv
+runs/*/summary_*.csv
+table*.csv
+experiment.pid
+latest

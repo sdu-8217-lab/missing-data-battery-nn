@@ -19,21 +19,33 @@ class ExperimentStatus(Enum):
 
 @dataclass
 class ExperimentRecord:
-    """Single experiment record."""
+    """Single experiment run record.
+    
+    循环层级（从内到外重要性递增）:
+    - 最内层（核心）: method [baseline/mim]
+    - 中间层: model [mlp/lstm/gru/cnn1d]  
+    - 最外层: seed [42-141]
+    
+    一个run = (seed, model, method)，测试所有eval_missing_rates
+    metrics 字段存储所有测试结果
+    """
     exp_id: str
-    model: str
-    method: str
-    mr: float
-    seed: int
+    seed: int           # outer loop
+    model: str          # middle loop  
+    method: str         # inner loop (core)
     status: str = "pending"
     created_at: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
     started_at: Optional[str] = None
     completed_at: Optional[str] = None
-    metrics: str = ""  # JSON string for flexibility
+    metrics: str = ""  # JSON string: {mr_results: [{mr: 0.0, mae: 0.05}, ...], summary: {...}}
     log_file: Optional[str] = None
     error_message: Optional[str] = None
     device: Optional[str] = None
     duration_seconds: Optional[float] = None
+    eval_missing_rates: str = ""      # 测试缺失率列表 "0.0,0.1,...,0.9"
+    mim_train_missing_rates: str = "" # MIM训练缺失率列表（合并训练）
+    timestamp: str = ""               # 实验时间戳 YYYYMMDD_HHMMSS
+    run_dir: str = ""                 # 实验运行目录
     
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -60,10 +72,12 @@ class ExperimentDatabase:
     """CSV-based experiment database with thread-safe operations."""
     
     CSV_FIELDS = [
-        'exp_id', 'model', 'method', 'mr', 'seed', 'status',
+        'exp_id', 'seed', 'model', 'method', 'status',
         'created_at', 'started_at', 'completed_at',
         'metrics', 'log_file', 'error_message',
-        'device', 'duration_seconds'
+        'device', 'duration_seconds',
+        'eval_missing_rates', 'mim_train_missing_rates',
+        'timestamp', 'run_dir'
     ]
     
     def __init__(self, db_path: str = "experiments/experiment_db.csv"):
@@ -160,14 +174,18 @@ class ExperimentDatabase:
             
             return result
     
-    def mark_completed(self, exp_id: str, metrics: Dict[str, float], 
+    def mark_completed(self, exp_id: str, metrics: Dict[str, Any], 
                        duration: float, log_file: str):
-        """Mark experiment as completed with results."""
+        """Mark experiment as completed with results.
+        
+        Args:
+            metrics: Dictionary containing 'mr_results' list and summary stats
+        """
         import json
         self.update_experiment(exp_id, {
             "status": ExperimentStatus.COMPLETED.value,
             "completed_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "metrics": json.dumps(metrics),
+            "metrics": json.dumps(metrics),  # Includes mr_results list
             "duration_seconds": duration,
             "log_file": log_file
         })
@@ -214,7 +232,9 @@ class ExperimentDatabase:
         records = self._read_all()
         return [ExperimentRecord.from_dict(r) for r in records]
     
-    def generate_experiment_id(self, model: str, method: str, mr: float, seed: int) -> str:
-        """Generate standardized experiment ID."""
-        mr_str = f"{mr:.1f}".replace(".", "_")
-        return f"{model}_{method}_mr{mr_str}_seed{seed}"
+    def generate_experiment_id(self, seed: int, model: str, method: str) -> str:
+        """Generate standardized experiment ID reflecting loop nesting.
+        
+        Loop order: seed(outer) → model(middle) → method(inner)
+        """
+        return f"seed{seed}_{model}_{method}"
