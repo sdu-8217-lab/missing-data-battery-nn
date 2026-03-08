@@ -152,3 +152,14 @@ htmlcov/
 *~
 .env
 wandb/
+
+
+
+# 审稿人可验证的实验结果数据（例外规则必须在results/之后）
+!results/xjtu_2c/
+!results/xjtu_2c/20260308_023704_summary.csv
+!results/xjtu_2c/20260308_023704_raw_data.csv
+
+# 论文图表（带时间戳）
+!paper/figures/20260308_023704/
+!paper/figures/20260308_023704/*.png

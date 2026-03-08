@@ -1,5 +1,13 @@
 """Experiment scheduler - manages 7200 experiments with parallel execution."""
 
+import multiprocessing
+# 必须在导入其他模块前设置启动方法
+# CUDA 需要 'spawn' 而不是默认的 'fork'
+try:
+    multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass  # 可能已经设置
+
 import time
 import signal
 import sys
@@ -17,8 +25,11 @@ from .runner import ExperimentRunner, GPUExperimentRunner, CPUExperimentRunner
 class SchedulerConfig:
     """Configuration for the scheduler."""
     # Parallel execution
-    gpu_workers: int = 2  # Number of GPU processes (limited by VRAM)
-    cpu_workers: int = 2  # Number of CPU processes
+    # Note: Only 1 GPU available, and CUDA multiprocessing is complex
+    # So we use 1 GPU worker + multiple CPU workers
+    gpu_workers: int = 1  # Only 1 GPU worker (CUDA context issues with multiple)
+    # i9-14900KF 32核: 设置更多 CPU workers
+    cpu_workers: int = 3  # Number of CPU processes
     
     # GPU settings
     use_gpu: bool = True
@@ -44,17 +55,22 @@ def _run_experiment_worker(record_dict: Dict, worker_id: int,
     """
     Worker function to run a single experiment.
     This runs in a separate process - no database access here!
+    
+    Note: Due to CUDA spawn/fork issues, we use a simpler approach:
+    - Only worker 0 uses GPU (if available)
+    - Other workers use CPU
+    - This avoids CUDA re-initialization issues
     """
     record = ExperimentRecord(**record_dict)
     
-    # Determine if this worker should use GPU
-    has_gpu = use_gpu and torch.cuda.is_available()
-    use_gpu_for_this = worker_id < gpu_workers and has_gpu
-    gpu_id = worker_id if use_gpu_for_this else None
+    # Simplified GPU logic: only worker 0 gets GPU
+    # This avoids complex CUDA context management
+    use_gpu_for_this = (worker_id == 0) and use_gpu
+    gpu_id = 0 if use_gpu_for_this else None
     
-    # Create runner
+    # Create runner (delay CUDA check until runner init)
     if use_gpu_for_this:
-        runner = GPUExperimentRunner(gpu_id=gpu_id, output_dir=log_dir)
+        runner = GPUExperimentRunner(gpu_id=0, output_dir=log_dir)
     else:
         runner = CPUExperimentRunner(output_dir=log_dir)
     
@@ -106,34 +122,59 @@ class ExperimentScheduler:
         self._shutdown_requested = True
     
     def initialize_experiments(self, 
+                              seeds: List[int],
                               models: List[str],
                               methods: List[str],
-                              missing_rates: List[float],
-                              seeds: List[int],
+                              eval_missing_rates: List[float],
+                              mim_train_missing_rates: List[float],
+                              timestamp: str = "",
+                              run_dir: str = "",
                               clear_existing: bool = False) -> int:
-        """Initialize experiment database with all combinations."""
+        """Initialize experiment database.
+        
+        循环层级（从内到外重要性递增）:
+        - 最内层（核心）: method [baseline/mim] - 必须完整对比
+        - 中间层: model [mlp/lstm/gru/cnn1d]
+        - 最外层: seed [42-141]
+        
+        一个run = (seed, model, method)，测试所有eval_missing_rates
+        最小完整实验 = (seed, model) + both methods
+        """
+        # 存储时间戳和运行目录
+        self.timestamp = timestamp
+        self.run_dir = run_dir
+        
         if clear_existing and Path(self.config.db_path).exists():
             print(f"Clearing existing database: {self.config.db_path}")
             Path(self.config.db_path).unlink()
             self.db = ExperimentDatabase(self.config.db_path)
         
         count = 0
-        for model in models:
-            for method in methods:
-                for mr in missing_rates:
-                    for seed in seeds:
-                        exp_id = self.db.generate_experiment_id(model, method, mr, seed)
-                        record = ExperimentRecord(
-                            exp_id=exp_id,
-                            model=model,
-                            method=method,
-                            mr=mr,
-                            seed=seed
-                        )
-                        if self.db.add_experiment(record):
-                            count += 1
+        eval_mr_str = ",".join([f"{mr:.1f}" for mr in eval_missing_rates])
+        train_mr_str = ",".join([f"{mr:.1f}" for mr in mim_train_missing_rates])
         
-        print(f"Initialized {count} experiments")
+        # 循环层级: seed(outer) → model(middle) → method(inner/core)
+        for seed in seeds:
+            for model in models:
+                for method in methods:
+                    exp_id = self.db.generate_experiment_id(seed, model, method)
+                    record = ExperimentRecord(
+                        exp_id=exp_id,
+                        seed=seed,          # outer loop
+                        model=model,        # middle loop
+                        method=method,      # inner loop (core)
+                        eval_missing_rates=eval_mr_str,
+                        mim_train_missing_rates=train_mr_str,
+                        timestamp=timestamp,
+                        run_dir=run_dir
+                    )
+                    if self.db.add_experiment(record):
+                        count += 1
+        
+        comparison_units = len(seeds) * len(models)
+        print(f"Initialized {count} runs ({comparison_units} comparison units)")
+        print(f"  Each run tests {len(eval_missing_rates)} eval MRs: {eval_mr_str}")
+        print(f"  MIM train MRs (merged): {train_mr_str}")
         return count
     
     def get_status(self) -> Dict[str, Any]:

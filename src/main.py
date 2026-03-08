@@ -85,28 +85,45 @@ def detect_method(cfg: DictConfig) -> tuple[str, bool]:
     Returns:
         (method_name, is_mim)
     """
-    # 支持新的配置结构
     method_cfg = cfg.get('method', {})
     
-    # OmegaConf DictConfig 不是标准 dict，需要特殊处理
-    if isinstance(method_cfg, (dict, DictConfig)) and not isinstance(method_cfg, str):
+    # 处理 method 是字符串的情况（命令行覆盖时）
+    if isinstance(method_cfg, str):
+        method_name = method_cfg
+        is_mim = (method_name == 'mim')
+        return method_name, is_mim
+    
+    # 处理 dict/DictConfig 情况
+    if isinstance(method_cfg, (dict, DictConfig)):
         method_name = method_cfg.get('name', 'mim')
         is_mim = method_cfg.get('use_missing_indicator', method_name == 'mim')
-    else:
-        # 向后兼容：method 是字符串
-        method_name = str(method_cfg)
-        is_mim = (method_name == 'mim')
+        return method_name, is_mim
     
-    return method_name, is_mim
+    # 默认 fallback
+    return 'mim', True
 
 
-def get_missing_rates(cfg: DictConfig) -> list:
+def get_missing_rates(cfg: DictConfig, mode: str = 'eval') -> list:
     """
     获取缺失率列表。
     
+    Args:
+        cfg: 配置
+        mode: 'eval' 或 'train'（MIM训练用）
+    
     支持多种配置结构。
     """
-    # 优先检查顶层 missing_rates
+    missing_cfg = cfg.get('missing', {})
+    
+    # 优先检查 missing.missing_rates_eval（测试集）
+    if mode == 'eval' and 'missing_rates_eval' in missing_cfg:
+        return list(missing_cfg.missing_rates_eval)
+    
+    # 检查 missing.missing_rates_train（MIM训练集）
+    if mode == 'train' and 'missing_rates_train' in missing_cfg:
+        return list(missing_cfg.missing_rates_train)
+    
+    # 向后兼容：顶层 missing_rates
     if 'missing_rates' in cfg:
         return list(cfg.missing_rates)
     
@@ -114,12 +131,10 @@ def get_missing_rates(cfg: DictConfig) -> list:
     if 'experiment' in cfg and 'missing_rates' in cfg.experiment:
         return list(cfg.experiment.missing_rates)
     
-    # 向后兼容：missing.missing_rates_eval
-    if 'missing' in cfg and 'missing_rates_eval' in cfg.missing:
-        return list(cfg.missing.missing_rates_eval)
-    
-    # 默认
-    return [0.1, 0.3, 0.5, 0.7, 0.9]
+    # 默认：10档 [0.0, 0.1, ..., 0.9]
+    if mode == 'train':
+        return [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    return [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
 
 def get_seeds(cfg: DictConfig) -> list:
@@ -153,6 +168,14 @@ def get_training_config(cfg: DictConfig) -> dict:
 @hydra.main(version_base=None, config_path="../configs", config_name="config")
 def main(cfg: DictConfig):
     """Main entry point."""
+    # 应用性能优化设置（启用 cuDNN benchmark, TF32 等）
+    # PyTorch性能优化 (原performance_config.py内容内联)
+    torch.backends.cudnn.benchmark = True  # cuDNN自动寻找最优算法
+    if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8:
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        print("[Performance] TF32 enabled")
+    
     print("=" * 60)
     print(f"Experiment: {cfg.experiment.name}")
     print("=" * 60)
@@ -163,7 +186,15 @@ def main(cfg: DictConfig):
     
     # 对于 baseline，使用具体的插补方法（mean/median/knn/zero）
     # 对于 mim，使用 'mim'
-    impute_method = method if is_mim else cfg.method.get('imputation', 'mean')
+    if is_mim:
+        impute_method = 'mim'
+    else:
+        # 从配置中获取插补方法，默认为 mean
+        method_cfg = cfg.get('method', {})
+        if isinstance(method_cfg, (dict, DictConfig)):
+            impute_method = method_cfg.get('imputation', 'mean')
+        else:
+            impute_method = 'mean'  # 默认插补方法
     
     print(f"\nMethod: {method.upper()}")
     print(f"Input dimension: {input_dim}")
@@ -237,17 +268,41 @@ def main(cfg: DictConfig):
         
         # 训练器
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        trainer = pl.Trainer(
-            max_epochs=train_cfg['epochs'],
-            accelerator=device,
-            callbacks=callbacks,
-            logger=wandb_logger,
-            enable_progress_bar=True
-        )
+        
+        # GPU优化配置
+        trainer_kwargs = {
+            'max_epochs': train_cfg['epochs'],
+            'accelerator': device,
+            'callbacks': callbacks,
+            'logger': wandb_logger,
+            'enable_progress_bar': True,
+        }
+        
+        # 启用混合精度训练（仅GPU）
+        if device == "cuda":
+            trainer_kwargs['precision'] = '16-mixed'  # 混合精度加速
+            print("  Using mixed precision (FP16) training")
+        
+        trainer = pl.Trainer(**trainer_kwargs)
         
         # 训练
         print("[3/4] Training...")
-        train_loader, val_loader = create_dataloaders(data_dict, cfg, mode='train', method=impute_method)
+        if is_mim:
+            # MIM方法：使用10个缺失率挡位合并训练
+            # 传入多个缺失率，由create_dataloaders处理合并
+            train_missing_rates = get_missing_rates(cfg, mode='train')
+            print(f"  MIM training with merged MRs: {train_missing_rates}")
+            train_loader, val_loader = create_dataloaders(
+                data_dict, cfg, mode='train', method=impute_method,
+                missing_rates=train_missing_rates  # 10个MR合并
+            )
+        else:
+            # Baseline方法：只在完整数据上训练（MR=0.0）
+            print(f"  Baseline training on complete data (MR=0.0)")
+            train_loader, val_loader = create_dataloaders(
+                data_dict, cfg, mode='train', method=impute_method,
+                missing_rates=[0.0]  # 只在无缺失数据上训练
+            )
         trainer.fit(module, train_loader, val_loader)
         
         # 评估

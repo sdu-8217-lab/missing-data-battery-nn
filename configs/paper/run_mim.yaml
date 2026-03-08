@@ -1,6 +1,8 @@
 # @package _global_
 # MIM 方法通用运行配置
 
+# 模型配置在运行命令中指定
+
 # 实验设置
 experiment:
   name: paper_mim

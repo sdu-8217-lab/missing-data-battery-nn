@@ -21,15 +21,27 @@ class ExperimentRunner:
                  gpu_id: int = 0):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.use_gpu = use_gpu and torch.cuda.is_available()
-        self.gpu_id = gpu_id if self.use_gpu else None
+        # 注意：在 spawn 模式下，子进程可能没有 CUDA 上下文
+        # 延迟 CUDA 检查，只通过参数存储配置
+        self.use_gpu = use_gpu
+        self.gpu_id = gpu_id
         
-        # Check GPU
-        if self.use_gpu:
-            print(f"GPU available: {torch.cuda.get_device_name(self.gpu_id)}")
-            print(f"   Memory: {torch.cuda.get_device_properties(self.gpu_id).total_memory / 1e9:.1f} GB")
+        # 只在确认有 CUDA 上下文时才检查 GPU
+        if use_gpu:
+            try:
+                if torch.cuda.is_available():
+                    print(f"GPU available: {torch.cuda.get_device_name(self.gpu_id)}")
+                    print(f"   Memory: {torch.cuda.get_device_properties(self.gpu_id).total_memory / 1e9:.1f} GB")
+                else:
+                    print("GPU not available in subprocess, using CPU")
+                    self.use_gpu = False
+                    self.gpu_id = None
+            except RuntimeError:
+                print("GPU context not available in subprocess, using CPU")
+                self.use_gpu = False
+                self.gpu_id = None
         else:
-            print("GPU not available, using CPU")
+            print("Using CPU")
     
     def run(self, record: ExperimentRecord) -> Dict[str, Any]:
         """Run a single experiment. Returns result dict."""
@@ -103,7 +115,10 @@ class ExperimentRunner:
             }
     
     def _build_command(self, record: ExperimentRecord) -> list:
-        """Build command line for the experiment."""
+        """Build command line for the experiment.
+        
+        Loop order: seed(outer) → model(middle) → method(inner)
+        """
         # Map model names to config names
         model_config_map = {
             "mlp": "paper_mlp",
@@ -114,40 +129,56 @@ class ExperimentRunner:
         
         model_config = model_config_map.get(record.model, f"paper_{record.model}")
         
-        # Use generic run config based on method
-        run_config = f"paper/run_{record.method}"
+        # 获取缺失率列表（10档：0.0-0.9）
+        eval_mrs = record.eval_missing_rates if record.eval_missing_rates else "0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9"
+        mim_train_mrs = record.mim_train_missing_rates if record.mim_train_missing_rates else "0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9"
         
+        # 使用默认 config.yaml 作为基础，通过覆盖参数来配置
         cmd = [
             "python", "src/main.py",
-            f"--config-name={run_config}",  # Use run config as base
-            f"model={model_config}",  # Override model
-            f"experiment.seeds=[{record.seed}]",  # Override seeds to single value
-            f"experiment.run_name={record.exp_id}",
-            f"missing_rates=[{record.mr}]",  # Override missing rates to single value
+            f"model={model_config}",           # 模型架构
+            f"method={record.method}",          # 方法（最内层循环）
+            f"experiment.seeds=[{record.seed}]", # 随机种子（最外层循环）
+            f"+experiment.run_name={record.exp_id}",
+            f"+missing.missing_rates_eval=[{eval_mrs}]",       # 10档测试MR
+            f"+missing.missing_rates_train=[{mim_train_mrs}]", # MIM训练MR（合并）
         ]
-        
-        # Note: trainer config is not exposed in main.py
-        # GPU is auto-detected in main.py
         
         return cmd
     
-    def _extract_metrics(self, log_file: Path) -> Dict[str, float]:
-        """Extract final metrics from log file by parsing the result line."""
+    def _extract_metrics(self, log_file: Path) -> Dict[str, Any]:
+        """Extract all MR results from log file by parsing the result lines."""
         metrics = {}
         
         try:
             with open(log_file, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Look for the result line: "MR=X.X: MAE=X.XXXX"
+            # Look for all result lines: "MR=X.X: MAE=X.XXXX"
             pattern = r"MR=([\d.]+):\s*MAE=([\d.]+)"
             matches = re.findall(pattern, content)
             
             if matches:
-                # Get the last match (should be the test result)
-                mr_str, mae_str = matches[-1]
-                metrics['test_mae'] = float(mae_str)
-                metrics['missing_rate'] = float(mr_str)
+                # Store all MR results as a list
+                mr_results = []
+                for mr_str, mae_str in matches:
+                    mr_results.append({
+                        'missing_rate': float(mr_str),
+                        'test_mae': float(mae_str)
+                    })
+                
+                # Store the full list
+                metrics['mr_results'] = mr_results
+                
+                # Also store summary statistics
+                mae_values = [r['test_mae'] for r in mr_results]
+                metrics['test_mae_mean'] = sum(mae_values) / len(mae_values)
+                metrics['test_mae_max'] = max(mae_values)
+                metrics['test_mae_min'] = min(mae_values)
+                
+                # Store the last MR result as primary metric for backward compatibility
+                metrics['test_mae'] = mr_results[-1]['test_mae']
+                metrics['missing_rate'] = mr_results[-1]['missing_rate']
             
         except Exception as e:
             print(f"Warning: Could not extract metrics from {log_file}: {e}")
