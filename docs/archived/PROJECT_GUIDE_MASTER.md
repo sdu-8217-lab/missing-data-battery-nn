@@ -167,14 +167,14 @@ git checkout dev
 
 ### 2. 配置环境
 ```bash
-# 安装conda环境
-conda create -n battery python=3.12 -y
-conda activate battery
+# 方式1: 使用 environment.yml (推荐)
+conda env create -f environment.yml
+conda activate battery-nn
 
-# 安装PyTorch GPU版
+# 方式2: 手动安装
+conda create -n battery-nn python=3.14 -y
+conda activate battery-nn
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
-# 安装其他依赖
 pip install pytorch-lightning hydra-core omegaconf wandb pandas numpy scikit-learn matplotlib
 
 # 验证GPU

@@ -17,7 +17,8 @@ training:
   device: auto
 
 wandb:
-  enabled: true
+  enabled: false  # 默认禁用 WandB，无需账户即可运行
+  # 如需启用 WandB，设置为 true 并运行 'wandb login' 配置账户
   entity: null  # null means use default (current logged-in user)
   project: battery-soh-missing-data
   name: ${experiment.name}

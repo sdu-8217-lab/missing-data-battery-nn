@@ -1,5 +1,56 @@
 # ======================
-# Python 项目通用规则
+# 项目特定忽略 (PyTorch/深度学习)
+# ======================
+
+# 模型文件
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.hdf5
+*.onnx
+*.pb
+saved_models/
+checkpoints/
+# 模型输出目录（根目录和常见子目录）
+/models/
+experiments/models/
+!src/models/          # 源代码目录例外：不忽略
+
+# 训练结果和输出
+results/
+logs/
+runs/                  # PyTorch Lightning/TensorBoard 默认日志目录
+lightning_logs/
+tensorboard/
+wandb/                 # Weights & Biases 本地目录
+/figures/              # 仅排除根目录的figures
+!/paper/figures/       # 但允许paper/figures
+output/
+outputs/               # Hydra 默认输出目录
+
+# 数据集相关
+data/cache/
+data/processed/
+data/raw/
+datasets/
+*.npy                  # NumPy 数组
+*.npz                  # 压缩的 NumPy 数组
+
+# ======================
+# 临时文件和目录
+# ======================
+
+tmp_legacy/            # 旧代码备份
+22602_140541/          # 临时实验目录
+tmp_*.py               # 临时脚本
+*_backup_*.csv         # 备份文件
+# 临时问题分析文件
+PROBLEM_ANALYSIS.txt
+QUICK_FIX_INSTRUCTIONS.md
+
+# ======================
+# Python 通用忽略规则
 # ======================
 
 # Byte-compiled / optimized / DLL files
@@ -53,47 +104,6 @@ coverage.xml
 .mypy_cache/
 .dmypy.json
 dmypy.json
-
-# ======================
-# 机器学习 / PyTorch 项目
-# ======================
-
-# Model artifacts
-*.pth
-*.pt
-*.ckpt
-*.onnx
-*.pb
-*.h5
-*.hdf5
-
-# Model directories
-saved_models/
-checkpoints/
-models/
-
-# Experiment tracking
-wandb/
-mlruns/
-
-# Training outputs
-runs/
-lightning_logs/
-tensorboard/
-logs/
-results/
-output/
-outputs/
-
-# Data directories
-data/cache/
-data/processed/
-data/raw/
-datasets/
-
-# NumPy arrays
-*.npy
-*.npz
 
 # ======================
 # LaTeX 编译产物
@@ -200,3 +210,12 @@ Thumbs.db
 # 仅排除根目录的 figures，但允许 paper/figures
 /figures/
 !/paper/figures/
+
+# 审稿人可验证的实验结果数据（例外规则必须在results/之后）
+!results/xjtu_2c/
+!results/xjtu_2c/20260308_023704_summary.csv
+!results/xjtu_2c/20260308_023704_raw_data.csv
+
+# 论文图表（带时间戳）
+!paper/figures/20260308_023704/
+!paper/figures/20260308_023704/*.png

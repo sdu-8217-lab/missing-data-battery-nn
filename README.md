@@ -22,11 +22,31 @@
 
 ## 快速开始
 
-### 安装依赖
+### 环境配置 (推荐 Miniforge)
 
+本项目使用 **Miniforge** 管理Python环境。
+
+**方式1: 使用 environment.yml (推荐)**
+```bash
+# 创建环境
+conda env create -f environment.yml
+
+# 激活环境
+conda activate battery-nn
+
+# 验证安装
+python -c "import torch; print(f'PyTorch: {torch.__version__}')"
+```
+
+**方式2: 使用 pip**
 ```bash
 pip install -r requirements.txt
 ```
+
+**环境要求**
+- Python: 3.14+
+- PyTorch: 2.10.0+
+- 依赖包: hydra-core, pytorch-lightning, pandas, numpy, scikit-learn
 
 ### 运行单次实验
 
@@ -99,12 +119,14 @@ python src/main.py \
 
 ## 模型
 
-| 模型 | 输入 dim=16 | 输入 dim=32 | 参数量 |
-|------|------------|-------------|--------|
-| MLP | [100,64,32] | [84,56,28] | ~10K |
-| LSTM | hidden=48×2 | hidden=48×2 | ~10K |
-| GRU | hidden=64×2 | hidden=64×2 | ~9K |
-| CNN1D | [72,32] | [64,32] | ~10K |
+| 模型 | 隐藏层配置 | 输入=16参数量 | 输入=32参数量 | 论文目标* |
+|------|-----------|-------------|-------------|---------|
+| MLP | [192,96,48,24] | 27,649 | 30,721 | 27,649 / 36,865 |
+| LSTM | hidden=48, layers=2 | 31,537 | 34,609 | 31,537 / 40,753 |
+| GRU | hidden=64, layers=2 | 40,769 | 43,841 | 40,769 / 49,985 |
+| CNN1D | channels=[72,32] | 13,961 | 18,569 | 16,713 / 30,537 |
+
+> *论文目标值来自Table 2，参数量控制范围 15k-45k
 
 ## 实验设计 (控制变量)
 
