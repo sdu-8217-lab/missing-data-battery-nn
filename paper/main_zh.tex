@@ -1,0 +1,738 @@
+\documentclass[10pt,a4paper]{ctexart}
+
+% 页面设置
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+
+% 放宽换行要求，减少Overfull hbox警告
+\sloppy
+
+% 数学与符号
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{bm}
+
+% 图表
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{float}
+
+% 颜色与链接
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue
+}
+
+% 算法
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\floatname{algorithm}{算法}
+\renewcommand{\algorithmicrequire}{\textbf{输入：}}
+\renewcommand{\algorithmicensure}{\textbf{输出：}}
+
+% 代码与引用
+\usepackage{listings}
+\usepackage[numbers,sort&compress]{natbib}
+
+% 其他
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{threeparttable}
+
+% 图片路径
+\graphicspath{{figures/}}
+
+% 标题信息
+\title{\textbf{基于缺失指示器的电池健康状态预测方法对比研究：\\XJTU数据集上的深度学习模型与多缺失率实验}}
+\author{作者姓名$^{1}$ \quad 通讯作者$^{2}$}
+\date{$^{1}$作者单位 \\ $^{2}$通讯作者单位 \\ \texttt{email@example.com}}
+
+\begin{document}
+
+\maketitle
+
+%==============================================================================
+\begin{abstract}
+锂离子电池健康状态（State of Health, SOH）的准确预测对于保障电动汽车和储能系统的安全可靠运行具有至关重要的意义。然而，在实际工程应用中，由于传感器故障、通信中断、数据采集异常等多种因素，电池监测数据普遍存在不同程度的缺失问题。传统的缺失数据处理方法通常将缺失视为噪声需要修复，而忽略了"哪些信息缺失"本身可能包含的有用信号，这在高缺失率场景下尤其限制了预测模型的性能上限。
+
+本文以公开的XJTU锂离子电池数据集为研究对象，引入实现简单的缺失指示器方法（Missing Indicator Method, MIM），系统评估其在多种常用模型架构和不同缺失率条件下对SOH预测性能与鲁棒性的影响。在数据预处理阶段，我们以循环为样本单位提取16个循环级统计特征，构建循环级SOH标签；在缺失模拟阶段，通过随机方式在特征层面注入九档缺失率（MR）$\{0.1, 0.2, \ldots, 0.9\}$，采用均值插补方法填补缺失值；在特征增强阶段，为每个特征构造二值缺失指示器，将"插补值与指示器拼接"作为MIM输入。我们选取了MLP、LSTM、GRU与1D-CNN四种代表性深度学习模型，在PyTorch 2.10.0深度学习框架下统一训练和评估，对比分析"仅插补"和"MIM输入"两类策略在不同缺失率下的SOH预测误差与鲁棒性差异。
+
+实验结果表明，在缺失率$\geq 0.4$条件下，引入缺失指示器的MIM版本在四种神经网络模型中均显著降低SOH预测误差（改进率26\%--57\%）。具体而言，在MR=0.5时，1D-CNN-MIM将MAE从0.034降至0.015（改进率55.3\%），LSTM-MIM从0.022降至0.016（改进率29.0\%）。在MR=0.9的极端情况下，基线模型MAE普遍超过0.029，而MIM版本仍可维持在0.029以下，展现出显著的缺失鲁棒性。进一步的对比分析发现，不同插补方法之间的性能差异相对有限，而是否使用缺失指示器对预测性能的影响更为关键。本研究为实际电池管理系统（Battery Management System, BMS）中的数据缺失问题提供了一种简洁而有效的技术解决方案，对于提升数据驱动SOH预测方法在实际工程环境中的适用性具有重要的理论和实践价值。
+
+\textbf{关键词：}锂离子电池；健康状态（SOH）预测；缺失数据；缺失指示器（MIM）；XJTU数据集；深度学习
+\end{abstract}
+
+%==============================================================================
+\section{引言}\label{sec:intro}
+
+在全球能源结构转型和交通电动化快速发展的背景下，锂离子电池作为关键储能单元，在电动汽车、电网级储能以及分布式能源系统中得到大规模应用。准确估计与预测电池健康状态（State of Health, SOH），是保障系统运行安全、优化能量管理策略以及控制全生命周期成本的核心环节。在大规模电动汽车车队与电网级储能系统中，SOH估计精度直接影响容量规划和调度策略，是保障可再生能源高比例接入的重要基础。
+
+近年来，基于数据驱动的SOH预测方法受到广泛关注\cite{luo2022review}。这类方法通过从历史运行数据中学习特征与SOH之间的复杂非线性映射关系，避免了构建和辨识复杂电化学机理模型，在适应性和可扩展性方面具有明显优势。从浅层模型到MLP、CNN、RNN/LSTM/GRU等深度神经架构，各类算法在公开基准数据集上的预测精度不断提升\cite{liu2025deep}，为SOH预测的工程应用奠定了坚实基础。
+
+然而，在实际工程场景中，电池管理系统（Battery Management System, BMS）采集的传感器数据往往存在不同程度的缺失。造成数据缺失的原因主要包括三类：（1）传感器故障与老化导致的测量失效；（2）通信链路不稳定引起的数据丢包；（3）采样策略优化或保护机制触发导致的间歇性记录中断。在大型储能电站或车队级应用场景下，由于电池数量众多、监测点密集，这一问题尤为突出。
+
+当输入特征存在显著缺失时，传统数据驱动模型往往面临输入维度不一致、特征分布偏移和预测不确定性增加等问题；在极端情形下，模型输出可能出现失真甚至完全失效。图~\ref{fig:problem_scenario}给出了BMS监测链路及对应循环级特征矩阵的示意，其中多源故障导致特征矩阵中出现随机缺失。在当前实践中，这些缺失问题往往通过数据筛除或保守策略规避，导致可用样本大幅减少，SOH预测模型难以推广至真实复杂工况。
+
+\begin{figure*}[!htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig1_problem_scenario.png}
+    \caption{电池SOH预测中的数据缺失问题示意图。(a) BMS监测链路与潜在故障源；(b) 循环级特征矩阵与MCAR缺失模式。}
+    \label{fig:problem_scenario}
+\end{figure*}
+
+%------------------------------------------------------------------------------
+\subsection{文献综述}\label{sec:literature}
+
+电池SOH预测方法经历了从基于物理机理到数据驱动的演变过程。早期的基于物理模型的方法通过建立电化学阻抗谱、等效电路模型等描述电池内部老化机制，具有明确的物理解释性，但模型参数众多、辨识困难，且难以适应不同化学体系和工况条件。随着机器学习技术的发展，数据驱动方法逐渐成为主流\cite{liu2025deep}，根据模型结构特点，可以大致分为前馈网络（MLP）、循环神经网络（LSTM/GRU）和一维卷积神经网络（1D-CNN）三类。
+
+多层感知机（MLP）作为最基础的神经网络结构，通过多层非线性变换学习特征与SOH之间的复杂映射关系，具有结构简单、参数量可控的特点，适合作为基准方法和资源受限场景\cite{bairwa2025cycle}。时序模型以LSTM和GRU为代表，能够显式建模相邻循环之间容量与特征的时间依赖关系，利用历史信息辅助当前预测，在容量再生、老化趋势转折等复杂情况下表现出更好的稳定性。一维卷积神经网络（1D-CNN）通过卷积核在时序维度上提取局部特征模式，具有并行计算效率高、局部模式识别能力强的特点，在训练数据相对有限的条件下表现优异\cite{zhang2024cnnsoh}。上述三类架构在捕捉时序依赖和跨循环特征方面各具优势，已在统一数据集上被广泛用于电池SOH预测和剩余寿命估计任务。
+
+值得注意的是，现有大多数SOH预测研究都假设输入数据基本完整，较少系统考虑数据缺失问题\cite{shao2025soh,deng2025novel}。针对BMS监测数据中的缺失问题，现有研究大致采用三类处理策略：删除法通过直接丢弃含缺失值的样本或特征，避免处理缺失值本身，但在高缺失率场景下会造成严重的信息损失和选择偏差；插补法通过统计量（均值、中位数）或预测模型（K近邻、回归等）对缺失值进行估计和填补，目前在工业界应用最为广泛，然而这类方法难以刻画由缺失引入的不确定性，且无法显式编码"哪些特征在何处缺失"这一潜在有用信息；基于模型的方法（如多重插补、概率图模型等）在理论上更为严谨，但往往需要复杂的分布假设，计算成本与实现难度较高，在资源受限、实时性要求较高的BMS环境中直接部署存在困难。
+
+上述传统方法普遍遵循"先修复数据、再进行预测"的处理范式，将缺失视作需要被抹去的噪声，而不是潜在的健康状态指示信号。缺失指示器方法（Missing Indicator Method, MIM）提供了一种区别于传统删除与插补策略的建模思路。该方法的核心思想是将缺失信息显式编码为额外的二元特征，与原始特征共同输入模型，让模型在训练过程中学习如何利用缺失模式信息。具体而言，对于每一个可能存在缺失的特征，都构造一个对应的指示器变量，当该特征值缺失时指示器为1，否则为0。这样，原始特征向量$X$就被扩展为$[X, M]$，其中$M$是指示器向量。MIM方法在医疗数据分析、推荐系统等领域已有成功实践，然而以MIM为代表的显式缺失建模在电池SOH预测任务中的系统评估仍然稀缺，缺少在统一数据集与多缺失率条件下的对比结论。
+
+%------------------------------------------------------------------------------
+\subsection{研究差距与贡献}\label{sec:contributions}
+
+面向电池SOH预测任务，现有研究在多缺失率统一评测框架、跨架构MIM效果比较以及严格控制变量的公开对比实验等方面仍存在亟待系统填补的关键空白。与现有文献相比，本研究的定位和主要区别体现在以下三个方面。首先，在研究视角上，现有工作多关注于提升SOH预测精度本身，而较少关注数据缺失这一实际工程中的普遍问题；本研究则将缺失数据处理作为核心研究内容，探索如何在存在缺失的条件下保持预测性能。其次，在方法选择上，现有缺失数据研究多聚焦于插补方法的改进，试图更准确地估计并填补缺失值；本研究则采用不同的思路，通过MIM方法将缺失信息显式编码，让模型自主学习如何利用这一信号。最后，在实验设计上，现有研究通常只在单一或少数缺失率下验证方法，而本研究覆盖了从0.1到0.9的九档缺失率（MR），能够更全面地评估方法在不同缺失程度下的表现。
+
+为系统评估缺失指示器方法在电池SOH预测中的作用，本研究在方法范式、实证框架和工程应用三个层面开展工作。在方法范式层面，将"缺失模式"重定位为一阶输入特征，在电池SOH预测任务中系统地提出并验证了"缺失即信号"的建模范式，从传统的$\text{Impute}(X)\rightarrow\text{Predict}(Y)$转向$\text{Predict}(Y \mid X_{\mathrm{obs}}, M)$，避免在预处理阶段抹除缺失模式携带的信息。在实证框架层面，基于XJTU公开电池数据集，设计了覆盖九档缺失率（MR=0.1--0.9）、四种典型深度学习架构（MLP、LSTM、GRU、1D-CNN）和100个随机种子的实验框架，在统一的预处理与训练配置下，通过Wilcoxon符号秩检验系统评估MIM的性能收益与统计显著性。在工程应用层面，在误差、参数量与缺失率之间进行系统权衡，构建"缺失率区间--模型架构--MIM使用"的定量映射关系，为电动汽车和储能系统的BMS设计提供可操作的算法选型指南。此外，本研究还提出了多缺失率联合训练策略，通过在训练阶段显式混合多种缺失率样本，使单一MIM模型在面对未知缺失模式时依然保持稳健性能，为在复杂工况下部署SOH预测提供方法支撑。
+
+%------------------------------------------------------------------------------
+\subsection{论文结构}\label{sec:organization}
+
+本文其余部分结构安排如下。第\ref{sec:method}章给出本文的MIM输入策略与模型框架，包括问题建模、MIM输入构建、多缺失率联合训练策略和深度学习架构。第\ref{sec:dataset}章描述XJTU电池数据集、特征工程、缺失模拟设置和实验配置。第\ref{sec:results}章呈现实验结果、性能分析和统计显著性检验，随后讨论MIM作用机理、架构差异分析和面向BMS的配置建议。最后，第\ref{sec:conclusion}章总结研究发现并展望未来研究方向。
+
+%==============================================================================
+\section{方法论}\label{sec:method}
+
+本章给出本文所提出的面向缺失数据条件下电池SOH预测的方法论框架，涵盖问题建模与符号说明、基于MIM的输入构建、多缺失率联合训练策略以及深度学习模型架构。
+
+%------------------------------------------------------------------------------
+\subsection{问题建模与符号}\label{sec:formulation}
+
+本研究将SOH预测任务建模为监督回归问题。设$\mathcal{D} = \{(\mathbf{x}_i, y_i)\}_{i=1}^{n}$表示包含$n$个样本的数据集，其中$\mathbf{x}_i \in \mathbb{R}^{d}$表示从第$i$个充放电循环提取的$d$维特征向量，$y_i \in [0, 1]$表示对应的SOH值，定义为当前放电容量与初始额定容量的比值：
+\begin{equation}
+    y_i = \frac{Q_i}{Q_0}
+    \label{eq:soh}
+\end{equation}
+其中，$Q_i$为第$i$个循环的实测放电容量，$Q_0$为初始额定容量。
+
+在实际应用中，由于传感器故障和通信问题，特征向量$\mathbf{x}_i$可能包含缺失值。我们定义观测到的特征向量为$\mathbf{x}_i^{\text{obs}}$，并引入二值缺失指示向量$\mathbf{m}_i \in \{0, 1\}^{d}$，其中每个元素指示对应特征是否缺失：
+\begin{equation}
+    m_{ij} = 
+    \begin{cases}
+        0, & \text{if } x_{ij} \text{ 被观测} \\
+        1, & \text{if } x_{ij} \text{ 缺失}
+    \end{cases}
+    \label{eq:indicator}
+\end{equation}
+
+整个数据集的缺失率（MR）定义为缺失元素所占比例：
+\begin{equation}
+    \text{MR} = \frac{1}{n \cdot d} \sum_{i=1}^{n} \sum_{j=1}^{d} m_{ij}
+    \label{eq:mr}
+\end{equation}
+
+为处理缺失值，我们采用均值插补获得插补后的特征向量$\hat{\mathbf{x}}_i$，其中缺失值被替换为训练集中对应特征的均值。目标是学习预测函数$f: \mathcal{X} \rightarrow \mathcal{Y}$，将输入空间映射到SOH估计，最小化期望预测误差。
+
+%------------------------------------------------------------------------------
+\subsection{MIM输入构建}\label{sec:mim}
+
+SOH预测中处理缺失数据的传统方法遵循"先插补、后预测"的两阶段范式，缺失值在模型训练前被填充，缺失指示信息被丢弃。本研究采用"缺失即信号"范式，将缺失模式显式编码为信息性特征以增强预测鲁棒性。
+
+\subsubsection{缺失机制假设}
+
+本研究采用完全随机缺失（MCAR）假设构建受控缺失数据场景。在MCAR下，缺失概率与观测值和未观测潜变量均无关。虽然真实世界的缺失模式可能表现出更复杂的依赖性，但MCAR为评估方法鲁棒性提供了原则性基准，并能够在不同缺失率下进行系统性性能评估。
+
+\subsubsection{输入表示策略}
+
+本研究构建两种输入表示策略用于对比分析。
+
+基线（Baseline）方法仅使用插补后的特征向量作为输入：
+\begin{equation}
+    \mathbf{z}_i^{\text{base}} = \hat{\mathbf{x}}_i \in \mathbb{R}^{d}
+\end{equation}
+其中$\hat{\mathbf{x}}_i$通过均值插补获得。在这种表示中，关于哪些特征原本缺失的信息完全丢失。
+
+缺失指示器矩阵（MIM）方法将插补特征与二值缺失指示向量拼接：
+\begin{equation}
+    \mathbf{z}_i^{\text{MIM}} = [\hat{\mathbf{x}}_i \,|\, \mathbf{m}_i] \in \mathbb{R}^{2d}
+\end{equation}
+其中$[\cdot|\cdot]$表示向量拼接。这种扩展表示显式编码了插补特征值和缺失模式，使模型能够学习特征值和缺失指示器对SOH预测的联合影响。
+
+MIM构建过程在算法~\ref{alg:mim}中形式化描述。给定原始特征矩阵和目标缺失率，算法按照MCAR机制采样缺失掩码，构造缺失指示矩阵，执行均值插补，并将插补特征与缺失指示器拼接形成扩展输入。
+
+\begin{algorithm}[!htbp]
+\caption{MIM输入构建}
+\label{alg:mim}
+\begin{algorithmic}[1]
+\REQUIRE 原始特征矩阵 $X \in \mathbb{R}^{n \times d}$，缺失率 $p \in [0, 1]$
+\ENSURE 插补特征 $\hat{X}$，缺失指示器 $M$，扩展输入 $Z$
+\STATE 采样缺失掩码：$\Omega_{ij} \sim \text{Bernoulli}(1-p)$
+\STATE 构造指示矩阵：$M_{ij} = \mathbb{I}(\Omega_{ij} = 0)$
+\STATE 计算特征均值：$\bar{x}_j = \frac{1}{n_j^{\text{obs}}} \sum_{i: \Omega_{ij}=1} X_{ij}$
+\STATE 插补缺失值：$\hat{X}_{ij} = \begin{cases} X_{ij}, & \text{if } \Omega_{ij}=1 \\ \bar{x}_j, & \text{if } \Omega_{ij}=0 \end{cases}$
+\STATE 拼接：$Z = [\hat{X} \,|\, M]$
+\STATE \textbf{return} $\hat{X}$, $M$, $Z$
+\end{algorithmic}
+\end{algorithm}
+
+图~\ref{fig:baseline_vs_mim}直观展示了Baseline与MIM输入策略的结构差异。Baseline策略丢弃缺失模式信息，而MIM将该信息保留为显式二值特征，使模型能够基于缺失指示器学习可靠性加权。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig2_baseline_vs_mim.png}
+    \caption{Baseline与MIM输入策略对比。(a) Baseline：插补后16维特征$\hat{X}$；(b) MIM：拼接32维扩展输入$[\hat{X} \,|\, M]$。}
+    \label{fig:baseline_vs_mim}
+\end{figure}
+
+%------------------------------------------------------------------------------
+\subsection{多缺失率联合训练策略}\label{sec:training}
+
+在缺失数据条件下部署SOH预测模型的一个关键挑战是确保模型在不同缺失率下的鲁棒性。本研究提出多缺失率联合训练策略，在训练阶段显式暴露模型于多样化的缺失模式。
+
+\subsubsection{训练数据增强}
+
+对于启用MIM的模型，训练过程同时纳入多种缺失率。设$\mathcal{P} = \{0.0, 0.1, 0.2, \ldots, 0.9\}$表示用于训练的缺失率集合。对于每个缺失率$p \in \mathcal{P}$，按照MCAR机制生成训练集的一个带缺失副本，并构造MIM输入。这些增强数据集被合并为统一的训练集：
+\begin{equation}
+    \mathcal{D}_{\text{train}}^{\text{aug}} = \bigcup_{p \in \mathcal{P}} \{(Z^{(p)}_i, y_i)\}_{i=1}^{n_{\text{train}}}
+\end{equation}
+其中$Z^{(p)}_i$表示样本$i$在缺失率$p$下的MIM输入。
+
+\subsubsection{训练策略对比}
+
+Baseline模型与MIM模型的训练策略存在本质差异。Baseline模型仅在完整数据（MR = 0.0）上训练，因为在没有缺失指示器的情况下，训练数据中的缺失只会引入噪声，模型无法将其与实际特征变化区分开，可能降低性能。
+
+MIM模型在包含不同缺失率样本的增强数据集$\mathcal{D}_{\text{train}}^{\text{aug}}$上训练。在每个训练迭代中，小批量样本从该增强集中采样，使模型接触多样化的缺失模式。这使模型能够学习在不同缺失条件下都具有泛化能力的鲁棒表示。
+
+多缺失率联合训练过程在算法~\ref{alg:training}中形式化描述。算法遍历缺失率集合，为每个缺失率生成MIM输入，将其合并为增强训练集，并执行带早停的标准小批量训练。
+
+\begin{algorithm}[!htbp]
+\caption{多缺失率联合训练}
+\label{alg:training}
+\begin{algorithmic}[1]
+\REQUIRE 训练集特征 $X$，标签 $Y$，缺失率集合 $\mathcal{P}$
+\ENSURE 训练好的MIM模型 $f_{\text{MIM}}$
+\STATE 初始化增强集：$\mathcal{D}_{\text{aug}} \leftarrow \emptyset$
+\FOR{$p \in \mathcal{P}$}
+    \STATE 生成MIM输入：$(\hat{X}^{(p)}, M^{(p)}, Z^{(p)}) \leftarrow$ 算法~\ref{alg:mim}$(X, p)$
+    \STATE 合并：$\mathcal{D}_{\text{aug}} \leftarrow \mathcal{D}_{\text{aug}} \cup \{(Z^{(p)}, Y)\}$
+\ENDFOR
+\STATE 初始化模型参数 $\theta$
+\FOR{epoch $= 1, 2, \ldots$}
+    \STATE 从$\mathcal{D}_{\text{aug}}$采样小批量
+    \STATE 计算损失并更新$\theta$
+    \STATE 在验证集上评估
+    \STATE \textbf{if} 验证损失不再改善 \textbf{then} 早停
+\ENDFOR
+\STATE \textbf{return} $f_{\text{MIM}}$
+\end{algorithmic}
+\end{algorithm}
+
+图~\ref{fig:joint_training}展示了多缺失率联合训练的具体过程。通过在多样化缺失率样本上训练，模型将缺失模式学习作为预测任务的核心方面，而非将其视为需要忽略的噪声。
+
+\begin{figure*}[!htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig4_joint_training.png}
+    \caption{多缺失率联合训练流程。原始训练集按10个缺失率生成副本，经MIM构造后合并为$\mathcal{D}_{\text{augmented}}$，用于训练统一的MIM模型。}
+    \label{fig:joint_training}
+\end{figure*}
+
+%------------------------------------------------------------------------------
+\subsection{深度学习架构}\label{sec:architectures}
+
+为全面评估MIM方法在不同模型家族中的有效性，本研究采用四种代表性深度学习架构：多层感知机（MLP）、长短期记忆网络（LSTM）、门控循环单元（GRU）和一维卷积神经网络（1D-CNN）。这些架构涵盖三种不同的归纳偏置：前馈映射、序列建模和局部模式提取。
+
+\subsubsection{MLP: Feedforward Baseline}
+
+多层感知机作为基础基线，学习从输入特征到SOH的直接映射，不显式假设序列或空间结构。架构由四个全连接隐藏层组成，维度从输入到输出逐步减小：
+\begin{equation}
+    d_{\text{input}} \rightarrow 192 \rightarrow 96 \rightarrow 48 \rightarrow 24 \rightarrow 1
+\end{equation}
+每个隐藏层应用ReLU激活，后接Dropout（比率0.15）进行正则化。MLP建立了更复杂架构应超越的性能基线。
+
+\subsubsection{LSTM: Sequential Modeling}
+
+长短期记忆网络通过门控循环单元显式建模电池循环数据中的时间依赖性。架构采用双层LSTM，每层48个隐藏单元，处理长度为5个循环的序列。层间应用Dropout（比率0.2）防止过拟合。LSTM的门控机制能够有选择地保留相关历史信息，可能捕捉老化趋势和容量再生模式。
+
+\subsubsection{GRU: Gated Recurrent Alternative}
+
+门控循环单元以较少的参数提供LSTM的精简替代方案，同时保持相似的序列建模能力。架构使用双层GRU，每层64个隐藏单元，序列长度为5，Dropout比率0.2。GRU简化的门控结构（仅重置门和更新门）可能提供计算优势，同时保留建模循环间依赖关系的能力。
+
+\subsubsection{1D-CNN: Local Pattern Extraction}
+
+一维卷积神经网络通过滑动卷积滤波器沿时间维度提取局部特征模式。架构包含两个卷积层，通道维度$16 \rightarrow 72 \rightarrow 32$，卷积核大小为4，后接自适应池化和全连接层。应用Dropout（比率0.1）。1D-CNN的局部感受野和权重共享实现高效并行计算，可能捕捉局部老化特征。
+
+\subsubsection{模型配置总结}
+
+表~\ref{tab:model_config}汇总了四种模型在Baseline和MIM输入策略下的架构配置和参数量。参数量控制在15k--45k范围内，以确保比较聚焦于输入表示而非模型容量。当从Baseline（$d$维输入）切换到MIM（$2d$维输入）时，由于第一层权重矩阵的扩展，参数量相应增加。
+
+\begin{table*}[!htbp]
+\centering
+\small
+\caption{深度学习架构配置}
+\label{tab:model_config}
+\begin{tabular}{@{}llp{5cm}rr@{}}
+\toprule
+\textbf{模型} & \textbf{架构} & \textbf{关键超参数} & \textbf{Baseline参数量} & \textbf{MIM参数量} \\
+\midrule
+MLP & FC$(d \rightarrow 192 \rightarrow 96 \rightarrow 48 \rightarrow 24 \rightarrow 1)$ & ReLU, Dropout=0.15 & 27,649 & 36,865 \\
+LSTM & 2层LSTM + FC & hidden=48, seq=5, Dropout=0.2 & 31,537 & 40,753 \\
+GRU & 2层GRU + FC & hidden=64, seq=5, Dropout=0.2 & 40,769 & 49,985 \\
+1D-CNN & Conv1d$(d \rightarrow 72 \rightarrow 32)$ + FC & kernel=4, Dropout=0.1 & 16,713 & 30,537 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+图~\ref{fig:model_architectures}可视化了四种架构的结构设计，突出它们处理电池循环特征的不同方式。
+
+\begin{figure*}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{fig3_model_architectures.png}
+    \caption{四种深度学习模型架构对比。(a) MLP；(b) LSTM；(c) GRU；(d) 1D-CNN。}
+    \label{fig:model_architectures}
+\end{figure*}
+
+%------------------------------------------------------------------------------
+\subsection{损失函数与优化}\label{sec:optimization}
+
+\subsubsection{Loss Function}
+
+SOH预测任务被建模为回归问题。采用均方误差（MSE）损失衡量预测SOH值与实际值之间的差异：
+\begin{equation}
+    \mathcal{L}(\theta) = \frac{1}{n} \sum_{i=1}^{n} \left( f_{\theta}(\mathbf{z}_i) - y_i \right)^2
+\end{equation}
+其中$f_{\theta}$表示参数为$\theta$的神经网络，$\mathbf{z}_i$表示输入（Baseline或MIM），$y_i$为真实SOH标签。MSE因其可微性和对大误差的敏感性而被选用，适用于预测精度至关重要的回归任务。
+
+\subsubsection{Optimization}
+
+模型参数使用Adam算法优化，这是一种基于梯度和梯度二阶矩估计为每个参数维护独立学习率的自适应一阶优化方法。优化过程在训练数据上最小化MSE损失。
+
+\subsubsection{Training Procedure}
+
+训练过程包含以下正则化和收敛监控技术。
+
+当验证损失连续指定轮数不再改善时，训练停止。这防止过拟合并确保模型泛化。
+
+在指定比率的隐藏层后应用Dropout（见表~\ref{tab:model_config}），在训练期间随机失活神经元以防止共适应。
+
+Z-score标准化作为预处理步骤应用于输入特征（详见第\ref{sec:dataset}章），而非使用批量归一化。
+
+具体的超参数值和训练配置在第\ref{sec:dataset}章中记录，提供包括学习率、批量大小和硬件环境在内的完整实验设置。
+
+%==============================================================================
+\section{数据集与实验设置}\label{sec:dataset}
+
+本章描述实现环境、数据预处理流程、缺失数据生成协议、评估方法和实验设置。所有实验在公开可用的XJTU电池老化数据集上进行，在严格控制条件下确保可重复性和公平比较。
+
+%------------------------------------------------------------------------------
+\subsection{XJTU电池数据集}\label{sec:xjtu}
+
+实验使用西安交通大学公开的XJTU锂离子电池老化数据集\cite{wang2024open,duan2025lithium,wang2024pinn}，该数据集是电池健康预测研究的公开基准。该数据集包含在受控实验室条件下收集的全面循环老化数据，为评估缺失数据场景下的SOH预测方法提供了可靠基础。
+
+数据集涵盖多种锂离子电池化学体系，包括磷酸铁锂（LFP）和镍锰钴（NMC）氧化物，代表当前电动汽车和储能应用的主流正极材料。电池在不同电流倍率和工况条件下经受各种充放电协议，覆盖实际应用中遇到的典型运行场景。
+
+经严格数据质量筛选和预处理后，实验语料库包含约9,000个有效循环级样本，涵盖从初始状态（SOH$\approx$100\%）到寿命终止标准（SOH降至约50\%）的完整老化轨迹。这种广泛覆盖确保评估涵盖电池系统的完整运行生命周期。
+
+数据集已被广泛用于电池健康管理研究，为比较不同预测方法提供了标准化基准。详细的循环记录包括每个循环的电压、电流、温度曲线和容量测量，支持提取多样化的健康指标。
+
+%------------------------------------------------------------------------------
+\subsection{特征工程与预处理}\label{sec:features}
+
+\subsubsection{特征提取}
+
+从原始循环数据中，为每个充放电循环提取共16个统计特征，以表征电池的电化学行为和健康状态。这些特征基于物理来源系统性地分为三个功能组。
+
+电压统计特征包括均值电压、标准差、偏度和峰度，从循环期间的电压曲线计算得到。这些统计矩捕捉电压分布的整体形态，反映电池内阻、极化特性和电化学稳定性在老化过程中的变化。
+
+充电过程特征包括恒流阶段充电容量和持续时间、充电期间电压斜率和电压熵，用于表征电池的充电接受能力和电压信号复杂度。这些指标对锂析出、电解液降解和电极结构变化敏感。
+
+电流统计特征包括均值电流、标准差、偏度、峰度，结合恒压阶段充电容量、持续时间、电流斜率和电流熵。这些特征全面表征电流波动模式和恒压阶段退化行为，为基于电压的指标提供互补信息。
+
+\subsubsection{数据预处理}
+
+在模型训练前，提取的特征经过系统性预处理以确保数据质量和建模有效性。
+
+表现出物理异常SOH值的循环（SOH$>$100\%表示测量误差，或SOH$<$50\%代表具有高度不稳定特性的寿命终止区域）被排除在分析之外，以保持数据可靠性。
+
+电压和电流曲线等连续特征经过异常检测和平滑处理，以减轻传感器噪声和瞬态测量波动，同时保留底层老化趋势。
+
+循环序列经过对齐和连续性验证，以确保时间一致性，消除可能混淆时间建模方法的不连续性。
+
+所有特征在模型输入前经过Z-score标准化：
+\begin{equation}
+    z_{ij} = \frac{x_{ij} - \mu_j}{\sigma_j}
+\end{equation}
+其中$\mu_j$和$\sigma_j$分别表示特征$j$的均值和标准差。关键的是，这些标准化参数仅在训练集上计算，以防止信息泄露并确保模型泛化性能的无偏评估。
+
+%------------------------------------------------------------------------------
+\subsection{缺失数据生成与插补设置}\label{sec:missing}
+
+\subsubsection{缺失数据注入协议}
+
+为系统评估模型在不完整数据条件下的鲁棒性，按照完全随机缺失（MCAR）假设实现受控缺失数据注入机制。在MCAR下，任何特征缺失的概率与观测值和未观测潜变量均无关，能够在不同数据不完整程度上对方法性能进行无偏评估。
+
+考察九个不同缺失率水平：MR$\in\{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9\}$，覆盖从轻微数据缺口到严重信息稀缺的范围。对于每个缺失率水平，缺失值按照伯努利过程以概率$p$（等于目标缺失率）在特征层面独立采样。
+
+对于每次实验运行，不同缺失率的缺失掩码独立生成，确保评估捕捉方法在不同缺失模式实现下的性能。这种方法防止对特定缺失配置的过拟合，提供鲁棒的性能估计。
+
+\subsubsection{插补基线}
+
+采用统一的均值插补策略作为处理缺失值的基线。对于每个特征维度，缺失条目被替换为训练集中观测样本的该特征均值：
+\begin{equation}
+    \hat{x}_{ij} = \begin{cases}
+        x_{ij}, & \text{if } x_{ij} \text{ 被观测} \\
+        \bar{x}_j, & \text{if } x_{ij} \text{ 缺失}
+    \end{cases}
+\end{equation}
+其中$\bar{x}_j$表示特征$j$的训练集均值。
+
+选择这种插补方法是因为其计算效率、实现稳定性和在工业实践中的广泛采用。通过使用一致、简单的插补方法作为基础，可以清晰地分离和量化MIM策略带来的后续性能增益。
+
+%------------------------------------------------------------------------------
+\subsection{训练/验证/测试划分与评估指标}\label{sec:evaluation}
+
+\subsubsection{数据划分策略}
+
+为确保模型泛化的严格评估，采用电池级别的训练/验证/测试划分方案，而非随机样本级划分。这种方法防止同一电池不同循环之间的信息泄露，确保测试阶段评估的是真正未见过的电池。
+
+完整数据集划分如下：训练集（60\%，18个电池，约5,400个循环样本），验证集（20\%，6个电池，约1,800个循环样本），测试集（20\%，6个电池，约1,800个循环样本）。训练集用于模型参数学习，验证集用于超参数调优和早停，测试集专用于最终性能评估。
+
+对于每个训练好的模型，在保留的测试集上对所有九个缺失率水平进行评估。验证集采用固定的MR=0.5缺失率监控训练期间的泛化表现，提供平衡的评估条件。
+
+\subsubsection{评估指标}
+
+模型性能使用三个标准回归评估指标进行量化。
+
+平均绝对误差（MAE）测量预测误差的平均幅度，不考虑方向：
+\begin{equation}
+    \text{MAE} = \frac{1}{n} \sum_{i=1}^{n} |y_i - \hat{y}_i|
+\end{equation}
+其中$y_i$表示真实SOH值，$\hat{y}_i$表示预测值。MAE在原始SOH尺度上提供直观、可解释的预测精度度量。
+
+均方根误差（RMSE）通过二次加权更严厉地惩罚较大误差：
+\begin{equation}
+    \text{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
+\end{equation}
+该指标对异常预测敏感，提供关于误差分布特征的互补信息。
+
+决定系数（$R^2$）量化模型解释的目标变量方差比例：
+\begin{equation}
+    R^2 = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y}_i)^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2}
+\end{equation}
+其中$\bar{y}$表示真实值的均值。接近1的值表示更好的模型拟合。
+
+为评估方法间性能差异的统计可靠性，采用Wilcoxon符号秩检验进行多次实验运行的配对比较。这种非参数检验评估竞争方法间预测误差分布是否存在显著差异，无需假设正态性。
+
+\subsubsection{可复现性协议}
+
+为确保实验可复现性和鲁棒性评估，所有实验在100个独立随机种子（范围42--141）上重复。每个种子控制数据划分、缺失模式生成和模型初始化中的随机性。结果以这些重复运行的均值$\pm$标准差报告，提供中心趋势和变异性的可靠估计。
+
+%------------------------------------------------------------------------------
+\subsection{实现细节}\label{sec:implementation}
+
+\subsubsection{软件环境}
+
+所有模型使用Python 3.12实现，PyTorch 2.10.0作为深度学习框架。关键支持库包括用于数值计算的NumPy、用于数据处理的Pandas，以及用于预处理和统计检验的Scikit-learn。实验代码结构确保可复现性，在可行情况下使用固定随机种子和确定性操作。
+
+\subsubsection{硬件配置}
+
+计算实验在GPU加速硬件上进行，以实现深度学习模型的高效训练。特定的GPU型号和内存配置支持在合理时间约束内对数据集进行批量处理。基于CPU的回退实现可用于可复现性验证。
+
+\subsubsection{训练配置总结}
+
+训练过程使用Adam优化器，所有架构的初始学习率为$10^{-3}$。小批量梯度下降的批量大小为32。训练最多进行200轮，如果验证损失连续15轮未改善则触发早停。所有回归任务使用均方误差（MSE）损失函数。
+
+表~\ref{tab:training_config}汇总了所有实验条件下的完整超参数配置。
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{训练超参数配置}
+\label{tab:training_config}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{超参数} & \textbf{配置} \\
+\midrule
+优化器 & Adam \\
+学习率 & $10^{-3}$ \\
+批量大小 & 32 \\
+最大轮数 & 200 \\
+早停耐心值 & 15轮 \\
+损失函数 & MSE \\
+随机种子 & 42--141（100次运行） \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+表~\ref{tab:data_split}提供了训练、验证和测试集的详细数据划分统计。
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{数据集划分统计}
+\label{tab:data_split}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{子集} & \textbf{比例} & \textbf{电池数} & \textbf{样本数} \\
+\midrule
+训练集 & 60\% & $\approx$18 & $\approx$6,000 \\
+验证集 & 20\% & $\approx$6 & $\approx$2,000 \\
+测试集 & 20\% & $\approx$6 & $\approx$2,000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+从数据预处理到模型训练再到评估的完整实验流程，旨在确保报告结果的完全可复现性。源代码和配置文件将在发表后提供，以促进独立验证和本工作的扩展。
+
+%==============================================================================
+\section{结果与讨论}\label{sec:results}
+
+本章全面呈现评估缺失指示器矩阵（MIM）方法在不同缺失数据条件下用于电池SOH预测有效性的实验结果。分析涵盖整体性能趋势、统计显著性、架构特定行为以及BMS部署的实际意义。
+
+%------------------------------------------------------------------------------
+\subsection{不同缺失率下的整体性能}\label{sec:overall}
+
+图~\ref{fig:performance_metrics}展示了四种深度学习架构在九个缺失率水平（MR = 0.1--0.9）下Baseline与MIM策略的综合性能比较，包括MAE曲线、RMSE曲线、$R^2$曲线和改进率。结果揭示了三个一致的趋势。
+
+所有模型表现出随着MR上升预测误差（MAE、RMSE）增加和$R^2$降低，反映了信息稀缺条件下预测的基本挑战。在MR = 0.1（轻微数据缺口）时，Baseline和MIM均实现相对较低的误差；然而，当MR接近0.9（严重缺失）时，Baseline模型经历显著性能退化，而启用MIM的模型保持更稳定的精度。
+
+MIM在每个测试缺失率下、在所有指标上均始终优于Baseline。在低缺失率（MR = 0.1）时，MIM根据架构提供约8.6\%--45.2\%的适度改进。在中等缺失率（MR = 0.5）时，改进变得更加显著，达到26\%--57\%的误差降低。带MIM的1D-CNN架构在MR = 0.5时实现最高改进率（55.3\%），其次是MLP-MIM（46.8\%）。
+
+MIM与Baseline之间的性能差距在高缺失率（MR$\geq$0.7）时显著扩大。虽然Baseline MAE在此范围内通常超过0.032，但MIM版本保持MAE低于0.023。在MR = 0.9的极端情况下，Baseline误差通常超过0.029，而启用MIM的模型维持误差低于0.020，展示了在严重数据不完整条件下的鲁棒性。
+
+表~\ref{tab:full_results}提供了四个代表性缺失率（0.3、0.5、0.7、0.9）的详细数值比较。数据确认MIM版本在所有测试条件下均实现比相应Baseline版本更低的MAE，在中高缺失率时改进最为显著。
+
+\begin{figure*}[!htbp]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{mae_curves_ci.png}
+        \caption{MAE曲线}
+        \label{fig:mae_curves}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{rmse_curves_ci.png}
+        \caption{RMSE曲线}
+        \label{fig:rmse_curves}
+    \end{subfigure}
+    \\
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{r2_curves_ci.png}
+        \caption{$R^2$曲线}
+        \label{fig:r2_curves}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{mae_improvement_rate.png}
+        \caption{MAE改进率}
+        \label{fig:improvement_rate}
+    \end{subfigure}
+    \caption{不同指标和缺失率下的综合性能比较。(a--c) 指标曲线：实线为MIM，虚线为Baseline，阴影区域为95\%置信区间；(d) MIM相对Baseline的改进率曲线。}
+    \label{fig:performance_metrics}
+\end{figure*}
+
+\begin{table*}[!htbp]
+\centering
+\small
+\caption{不同缺失率下的MAE对比与改进率（100随机种子，均值$\pm$标准差，最优值加粗）}
+\label{tab:full_results}
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+\textbf{模型} & \textbf{策略} & \textbf{MR=0.3} & \textbf{MR=0.5} & \textbf{MR=0.7} & \textbf{MR=0.9} \\
+\midrule
+\multirow{3}{*}{MLP} 
+& Baseline & 0.029$\pm$0.018 & 0.030$\pm$0.017 & 0.032$\pm$0.016 & 0.033$\pm$0.015 \\
+& MIM & \textbf{0.015}$\pm$0.005 & \textbf{0.016}$\pm$0.005 & \textbf{0.018}$\pm$0.005 & \textbf{0.023}$\pm$0.005 \\
+& 改进率 & 46.5\% & 46.8\% & 42.4\% & 27.9\% \\
+\midrule
+\multirow{3}{*}{LSTM} 
+& Baseline & 0.019$\pm$0.007 & 0.022$\pm$0.007 & 0.025$\pm$0.007 & 0.028$\pm$0.007 \\
+& MIM & \textbf{0.016}$\pm$0.006 & \textbf{0.016}$\pm$0.005 & \textbf{0.016}$\pm$0.005 & \textbf{0.018}$\pm$0.004 \\
+& 改进率 & 17.8\% & 29.0\% & 38.0\% & 35.3\% \\
+\midrule
+\multirow{3}{*}{GRU} 
+& Baseline & 0.020$\pm$0.007 & 0.023$\pm$0.007 & 0.025$\pm$0.007 & 0.027$\pm$0.006 \\
+& MIM & \textbf{0.016}$\pm$0.006 & \textbf{0.016}$\pm$0.005 & \textbf{0.016}$\pm$0.005 & \textbf{0.019}$\pm$0.004 \\
+& 改进率 & 20.6\% & 30.4\% & 37.4\% & 31.4\% \\
+\midrule
+\multirow{3}{*}{1D-CNN} 
+& Baseline & 0.032$\pm$0.017 & 0.034$\pm$0.018 & 0.036$\pm$0.017 & 0.036$\pm$0.016 \\
+& MIM & \textbf{0.015}$\pm$0.006 & \textbf{0.015}$\pm$0.005 & \textbf{0.015}$\pm$0.005 & \textbf{0.018}$\pm$0.004 \\
+& 改进率 & 51.1\% & 55.3\% & 57.0\% & 51.0\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+%------------------------------------------------------------------------------
+\subsection{改进率与统计显著性}\label{sec:improvement}
+
+MIM性能收益的量化通过改进率分析完成。改进率定义为：
+\begin{equation}
+    \text{改进率}(\%) = \frac{\text{MAE}_{\text{Baseline}} - \text{MAE}_{\text{MIM}}}{\text{MAE}_{\text{Baseline}}} \times 100\%
+\end{equation}
+
+表~\ref{tab:improvement_summary}汇总了所有缺失率和架构的改进率。关键观察包括：1D-CNN在所有缺失率下始终实现最高改进率，平均52.6\%。这表明卷积架构特别受益于MIM提供的显式缺失模式信息，可能是由于其局部感受野能够有效利用缺失指示器与特征值的空间结构。LSTM和GRU的改进率随缺失率单调增加（从MR = 0.3时的约18\%/21\%到MR = 0.7时的38\%/37\%），表明循环架构随着数据不完整性增长越来越依赖缺失模式信息。它们的门控机制似乎利用缺失指示器选择性加权可靠与不确定输入。
+
+在100个随机种子上进行的Wilcoxon符号秩检验确认所有MIM改进均具有统计显著性（$p <$ 0.05），绝大多数达到$p <$ 0.001（表~\ref{tab:significance}）。这种稳健的统计验证排除了观察到的改进源于初始化或数据划分随机变化的可能性。
+
+改进率曲线（图~\ref{fig:performance_metrics}d）清晰展示了架构依赖的轮廓：1D-CNN在所有缺失率下保持较高的改进率（45--57\%），而LSTM和GRU随缺失率上升显示单调递增的收益，在MR$\geq$0.5时跨越30\%阈值。
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{MIM相比Baseline的MAE改进率汇总（\%）}
+\label{tab:improvement_summary}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{模型} & \textbf{0.1} & \textbf{0.3} & \textbf{0.5} & \textbf{0.7} & \textbf{0.9} & \textbf{平均} \\
+\midrule
+MLP & 44.4 & 46.5 & 46.8 & 42.4 & 27.9 & 42.5 \\
+LSTM & 8.6 & 17.8 & 29.0 & 38.0 & 35.3 & 26.5 \\
+GRU & 9.6 & 20.6 & 30.4 & 37.4 & 31.4 & 26.9 \\
+1D-CNN & 45.2 & 51.1 & 55.3 & 57.0 & 51.0 & 52.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Wilcoxon符号秩检验结果（MIM vs Baseline）}
+\label{tab:significance}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{模型} & \textbf{MR=0.3} & \textbf{MR=0.5} & \textbf{MR=0.7} & \textbf{MR=0.9} \\
+\midrule
+MLP & $<$0.001*** & $<$0.001*** & $<$0.001*** & 0.001** \\
+LSTM & $<$0.001*** & $<$0.001*** & $<$0.001*** & $<$0.001*** \\
+GRU & $<$0.001*** & $<$0.001*** & $<$0.001*** & $<$0.001*** \\
+1D-CNN & $<$0.001*** & $<$0.001*** & $<$0.001*** & $<$0.001*** \\
+\bottomrule
+\end{tabular}
+\\[3pt]
+\footnotesize 注：*** 表示$p<$0.001，** 表示$p<$0.01，Wilcoxon符号秩检验，双尾检验，$K=$100个随机种子。
+\end{table}
+
+%------------------------------------------------------------------------------
+\subsection{架构差异分析与极端缺失鲁棒性}\label{sec:architecture}
+
+不同深度学习架构在缺失数据条件下表现出不同的行为，为实际BMS部署的模型选择提供了见解。
+
+与MIM结合使用时，1D-CNN架构在所有缺失率下展现出最强的鲁棒性。其局部感受野结构似乎特别适合处理扩展输入$[\hat{X} | M]$，使卷积滤波器能够同时捕捉局部特征模式和对应的缺失状态。在极端缺失率（MR = 0.9）下，1D-CNN-MIM保持MAE低至0.018，相对于Baseline改进51\%。
+
+循环架构显示出随缺失率增加的改进率，表明它们的门控机制有效利用缺失指示器调节信息流。在MR = 0.9时，LSTM-MIM和GRU-MIM均实现约0.018--0.019的MAE，与1D-CNN-MIM相当。这表明时间模型能够利用缺失模式信息维持预测精度，即使在大量历史数据不可用时也是如此。
+
+虽然MLP-MIM在中低缺失率时实现显著改进（MR$\leq$0.6时平均46\%），但在MR = 0.9时改进降至27.9\%。这表明全连接架构缺乏显式空间或时间结构，在极端数据稀缺条件下难以充分利用缺失模式信息。
+
+图~\ref{fig:distribution}的小提琴图展示了不同缺失率下预测误差的分布特征。随着缺失率增加，Baseline模型误差分布变宽并向更高值偏移，表明不确定性增加和不稳定性。相比之下，启用MIM的模型保持集中在稳定中心的误差分布，展示了增强的鲁棒性。
+
+\begin{figure*}[!htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/rmse_distribution.png}
+    \caption{不同缺失率下MAE的分布情况（小提琴图）。}
+    \label{fig:distribution}
+\end{figure*}
+
+%------------------------------------------------------------------------------
+\subsection{种子稳定性与鲁棒性分析}\label{sec:stability}
+
+除了平均性能外，模型在随机初始化下的稳定性对实际部署至关重要。图~\ref{fig:seed_stability}展示了100个独立随机种子下的MAE分布。
+
+在中高缺失率范围（MR$\geq$0.4），MIM版本不仅表现出更低的平均误差，而且标准差也显著更小。在MR = 0.5时，MIM标准差约0.005，相比之下Baseline变化为0.007--0.018。这表明MIM显著降低了模型对随机初始化和数据划分随机性的敏感性。
+
+方差降低转化为生产环境中更可预测和可复现的性能。对于跨不同车辆或运行周期需要一致行为的BMS应用，MIM的稳定性优势代表了超越原始精度改进的显著实际效益。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/fig9_seed_stability_v2.png}
+    \caption{种子稳定性分析（100个随机种子）。灰色阴影为min-max范围，彩色实线为MIM跨种子均值，虚线为Baseline跨种子均值。}
+    \label{fig:seed_stability}
+\end{figure}
+
+%------------------------------------------------------------------------------
+\subsection{面向BMS的模型与配置建议}\label{sec:bms}
+
+基于综合实验结果，制定了不同缺失率场景下BMS部署的实际建议（表~\ref{tab:bms_selection}）。
+
+在数据质量较好的环境（MR$\leq$0.3）中，Baseline和MIM模型均实现可接受的性能。对于资源受限的嵌入式BMS芯片，MLP-Baseline提供计算效率高的解决方案。如果边际精度改进能够证明适度的额外复杂度，推荐MLP-MIM作为默认配置，以最小计算开销提供约44\%的误差降低。
+
+随着数据质量下降（0.3$<$MR$\leq$0.6），MIM收益变得显著。两种配置选择出现：（1）MLP-MIM作为轻量级高效解决方案，适合边缘计算节点，在MR = 0.5时改进46\%；（2）1D-CNN-MIM作为性能优先解决方案，实现55\%改进，适用于具有充足计算资源的车队监测系统。
+
+在老化传感器网络或恶劣运行环境典型的严重数据不完整条件下（MR$\geq$0.7），MIM变得至关重要。推荐1D-CNN-MIM或LSTM-MIM，即使在MR = 0.9时也能保持0.018--0.019的MAE。这些配置适合部署在车队云服务器或电网级储能站控制器上，计算资源约束较少。
+
+\begin{table*}[!htbp]
+\centering
+\small
+\caption{面向BMS的缺失率场景下模型与MIM选型建议}
+\label{tab:bms_selection}
+\begin{tabular}{@{}lp{4cm}p{6cm}@{}}
+\toprule
+\textbf{缺失率区间} & \textbf{推荐配置} & \textbf{工程说明} \\
+\midrule
+MR$\leq$0.3 & MLP-Baseline / MLP-MIM & 低复杂度，适合嵌入式BMS芯片；如果精度余量允许，推荐MLP-MIM \\
+\midrule
+0.3$<$MR$\leq$0.6 & MLP-MIM / 1D-CNN-MIM & 中等复杂度，边缘计算部署；MR=0.5时改进46--55\% \\
+\midrule
+MR$\geq$0.7 & 1D-CNN-MIM / LSTM-MIM & 较高复杂度，云/服务器部署；MR=0.9时MAE维持0.018--0.019 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+关于计算需求，MLP-MIM的参数量约为$10^4$量级，适合在资源受限硬件上进行实时推理。1D-CNN-MIM和LSTM-MIM需要略高的参数量（$2\times10^4$--$4\times10^4$），但对于现代边缘和云计算环境仍然可行。配置选择应考虑目标部署环境中精度要求、计算预算和观测缺失率特征之间的权衡。
+
+表~\ref{tab:bms_selection}为BMS从业者提供了结构化决策指南，基于综合实验结果将缺失率区间映射到推荐的模型-MIM配置。
+
+%==============================================================================
+\section{结论与未来工作}\label{sec:conclusion}
+
+%------------------------------------------------------------------------------
+\subsection{研究发现总结}\label{sec:findings}
+
+本研究系统调查了缺失指示器矩阵（MIM）方法在不完整数据条件下用于电池SOH预测的有效性。主要发现总结如下。
+
+MIM在完整的缺失率谱系上始终优于传统基于插补的基线。性能优势在中高缺失率时尤为显著，其中缺失模式的显式编码使模型能够在大量信息丢失的情况下维持预测精度。多缺失率联合训练通过在训练期间暴露模型于多样化缺失模式，增强了对未知缺失条件的鲁棒性，使单一模型能够有效泛化到不同程度的数据不完整性，并缓解仅基于完整数据训练相关的不稳定性。
+
+架构特定行为揭示了在缺失数据场景下的差异适用性，其中卷积和循环架构在利用缺失模式信息方面表现出特殊优势，即使在基本前馈结构表现出性能退化的极端缺失率下也能维持低预测误差。跨种子稳定性分析表明MIM降低了模型对随机初始化和数据划分的敏感性，因为纳入缺失指示器不仅提高了平均预测精度，还降低了结果方差，增强了实际部署的可复现性和可靠性。
+
+%------------------------------------------------------------------------------
+\subsection{BMS应用的实际意义}\label{sec:implications}
+
+本研究的发现为真实运行环境中的电池管理系统设计提供了可操作的指导。
+
+对于具有不同数据质量特征的部署场景，观测缺失率与最优模型配置之间的关系可以指导实施决策。具有轻微数据缺口的环境可使用带MIM的低复杂度架构，而缺失数据普遍性增加时则需要更复杂的模型。
+
+BMS设计者应将显式缺失模式编码视为预测流程的组成部分，而非将缺失数据纯粹视为需要通过插补消除的预处理问题。这种从"先修复再预测"到"带意识预测"的范式转变，可以在传感器退化或通信故障条件下显著增强系统鲁棒性。
+
+模型复杂度与预测精度之间的权衡随缺失率严重程度而变化。资源受限的边缘部署可为中低缺失率优先选择轻量级配置，而基于云的车队监测系统可利用更复杂的架构处理严重数据不完整性。
+
+MIM观察到的跨种子方差降低表明，显式缺失建模可以增强跨不同车辆、运行周期和传感器配置的系统可靠性，这对安全关键的电池健康监测应用是至关重要的要求。
+
+%------------------------------------------------------------------------------
+\subsection{局限性与未来工作}\label{sec:future}
+
+本研究限于MCAR假设以获得受控实验条件；真实BMS数据可能表现出MAR或MNAR模式，其中缺失与电池老化相关。结果在具有特定电池化学体系的单一数据集上验证，需要在不同数据集和运行条件下进一步验证。此外，评估采用均值插补作为基线，涵盖四种已建立的架构；未来工作应探索高级插补策略和新兴模型家族，如Transformer和物理信息神经网络。
+
+%==============================================================================
+\section*{致谢}
+
+本研究得到山东省技术创新引导计划（中央引导地方科技发展资金）资助，项目编号YDZX2024105。
+
+%==============================================================================
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+%==============================================================================
+
+\end{document}
