@@ -33,7 +33,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 35px;
+            gap: 15px;
         }
         
         /* Blocks */
@@ -60,16 +60,16 @@
         
         /* Original dataset */
         .origin-block {
-            width: 130px;
-            height: 110px;
+            width: 115px;
+            height: 120px;
             background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
             border-color: #1565c0;
         }
         
         /* MR=0 block - full water */
         .mr-zero-block {
-            width: 110px;
-            height: 90px;
+            width: 100px;
+            height: 120px;
             background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
             border-color: #388e3c;
             position: relative;
@@ -98,7 +98,7 @@
         
         /* Grid container for MR 0.1-0.9 */
         .mr-grid-container {
-            width: 280px;
+            width: 260px;
             height: 280px;
             border: 2.5px solid #5c6bc0;
             border-radius: 12px;
@@ -153,7 +153,7 @@
         
         /* Augmented dataset */
         .aug-block {
-            width: 150px;
+            width: 135px;
             height: 120px;
             background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
             border-color: #6a1b9a;
@@ -161,8 +161,8 @@
         
         /* Model block */
         .model-block {
-            width: 140px;
-            height: 130px;
+            width: 130px;
+            height: 120px;
             background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
             border-color: #2e7d32;
         }
@@ -207,7 +207,6 @@
 </head>
 <body>
     <div class="figure-container">
-        <div class="panel-title">Multi-Missing-Rate Joint Training Procedure</div>
         <div class="panel-content">
             <!-- Original Dataset -->
             <div class="block origin-block">
@@ -217,7 +216,7 @@
             
             <!-- Arrow -->
             <div class="arrow-container" style="flex-direction: column;">
-                <div class="arrow-h" style="width: 45px;"></div>
+                <div class="arrow-h" style="width: 25px;"></div>
                 <div class="arrow-label">MIM<br>Construct</div>
             </div>
             
@@ -231,7 +230,7 @@
             
             <!-- Arrow -->
             <div class="arrow-container" style="flex-direction: column;">
-                <div class="arrow-h" style="width: 35px;"></div>
+                <div class="arrow-h" style="width: 25px;"></div>
             </div>
             
             <!-- MR Grid 0.1-0.9 (3x3 Pool Grid) -->
@@ -282,7 +281,7 @@
             
             <!-- Arrow -->
             <div class="arrow-container" style="flex-direction: column;">
-                <div class="arrow-h" style="width: 45px;"></div>
+                <div class="arrow-h" style="width: 25px;"></div>
                 <div class="arrow-label">Merge &amp;<br>Concatenate</div>
             </div>
             
@@ -295,7 +294,7 @@
             
             <!-- Arrow -->
             <div class="arrow-container" style="flex-direction: column;">
-                <div class="arrow-h" style="width: 40px;"></div>
+                <div class="arrow-h" style="width: 25px;"></div>
                 <div class="arrow-label">Train</div>
             </div>
             
