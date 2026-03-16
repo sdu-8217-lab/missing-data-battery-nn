@@ -230,7 +230,7 @@ def evaluate_model(model, model_config: ModelConfig, data: dict,
                    missing_rate: float, batch_size: int, seed: int) -> Dict:
     """评估模型"""
     from torch.utils.data import DataLoader
-    from src.evaluators.model_evaluator import ModelEvaluator
+    from src.evaluation.model_evaluator import ModelEvaluator
     
     model_type = model_config.model_type
     use_mim = model_config.use_mim

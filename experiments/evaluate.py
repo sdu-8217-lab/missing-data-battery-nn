@@ -12,7 +12,7 @@ from pathlib import Path
 # 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.evaluators.model_evaluator import ModelEvaluator
+from src.evaluation.model_evaluator import ModelEvaluator
 from src.visualization.batch_plots import BatchPlotter
 
 
