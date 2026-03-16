@@ -13,7 +13,7 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
 from src.data.loader import load_dataset, create_dataloaders
-from src.models.lightning_module import BatterySOHModule
+from src.trainers.lightning_module import SOHLightningModule
 from src.utils.seed_manager import set_seed
 
 
@@ -85,12 +85,21 @@ def detect_method(cfg: DictConfig) -> tuple[str, bool]:
     Returns:
         (method_name, is_mim)
     """
+    # 优先检查 _group_ 配置（来自 +method=xxx 语法）
+    group_cfg = cfg.get('_group_', {})
+    if isinstance(group_cfg, (dict, DictConfig)) and 'name' in group_cfg:
+        method_name = group_cfg.get('name', 'mim')
+        is_mim = group_cfg.get('use_missing_indicator', method_name == 'mim')
+        return method_name, is_mim
+    
+    # 检查顶层 method 配置
     method_cfg = cfg.get('method', {})
     
-    # 处理 method 是字符串的情况（命令行覆盖时）
+    # 处理 method 是字符串的情况
     if isinstance(method_cfg, str):
-        method_name = method_cfg
-        is_mim = (method_name == 'mim')
+        method_name = method_cfg.lower()
+        # 判断是否是MIM变体
+        is_mim = method_name.startswith('mim')
         return method_name, is_mim
     
     # 处理 dict/DictConfig 情况
@@ -190,11 +199,20 @@ def main(cfg: DictConfig):
         impute_method = 'mim'
     else:
         # 从配置中获取插补方法，默认为 mean
-        method_cfg = cfg.get('method', {})
-        if isinstance(method_cfg, (dict, DictConfig)):
-            impute_method = method_cfg.get('imputation', 'mean')
+        # 优先检查 _group_ 配置（来自 +method=xxx 语法）
+        group_cfg = cfg.get('_group_', {})
+        if isinstance(group_cfg, (dict, DictConfig)) and 'imputation' in group_cfg:
+            impute_method = group_cfg.get('imputation', 'mean')
         else:
-            impute_method = 'mean'  # 默认插补方法
+            # 检查顶层 method 配置
+            method_cfg = cfg.get('method', {})
+            if isinstance(method_cfg, (dict, DictConfig)):
+                impute_method = method_cfg.get('imputation', 'mean')
+            elif isinstance(method_cfg, str):
+                # 如果 method 是字符串（如 'median'），直接使用
+                impute_method = method_cfg
+            else:
+                impute_method = 'mean'  # 默认插补方法
     
     print(f"\nMethod: {method.upper()}")
     print(f"Input dimension: {input_dim}")
@@ -227,7 +245,7 @@ def main(cfg: DictConfig):
         model_kwargs = get_model_config(cfg, input_dim)
         
         model_type = cfg.model.get('name') or cfg.model.get('type')
-        module = BatterySOHModule(
+        module = SOHLightningModule(
             model_type=model_type,
             input_dim=input_dim,
             lr=train_cfg['learning_rate'],
@@ -287,22 +305,15 @@ def main(cfg: DictConfig):
         
         # 训练
         print("[3/4] Training...")
-        if is_mim:
-            # MIM方法：使用10个缺失率挡位合并训练
-            # 传入多个缺失率，由create_dataloaders处理合并
-            train_missing_rates = get_missing_rates(cfg, mode='train')
-            print(f"  MIM training with merged MRs: {train_missing_rates}")
-            train_loader, val_loader = create_dataloaders(
-                data_dict, cfg, mode='train', method=impute_method,
-                missing_rates=train_missing_rates  # 10个MR合并
-            )
-        else:
-            # Baseline方法：只在完整数据上训练（MR=0.0）
-            print(f"  Baseline training on complete data (MR=0.0)")
-            train_loader, val_loader = create_dataloaders(
-                data_dict, cfg, mode='train', method=impute_method,
-                missing_rates=[0.0]  # 只在无缺失数据上训练
-            )
+        
+        # 公平对比：Baseline 和 MIM 使用相同的训练策略
+        # 都在多个缺失率挡位合并训练，确保训练数据量相同
+        train_missing_rates = get_missing_rates(cfg, mode='train')
+        print(f"  Training with merged MRs: {train_missing_rates}")
+        train_loader, val_loader = create_dataloaders(
+            data_dict, cfg, mode='train', method=impute_method,
+            missing_rates=train_missing_rates  # 所有方法使用相同的MR合并训练
+        )
         trainer.fit(module, train_loader, val_loader)
         
         # 评估
