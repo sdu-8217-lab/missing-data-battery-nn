@@ -354,7 +354,7 @@ class ArchitectureSearchRunner:
         param_count: int
     ) -> Dict:
         """评估架构性能"""
-        from src.evaluators.model_evaluator import ModelEvaluator
+        from src.evaluation.model_evaluator import ModelEvaluator
         from src.data.datasets import BatteryDataset, SequenceDataset
         from torch.utils.data import DataLoader
         import torch
