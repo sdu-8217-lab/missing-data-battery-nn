@@ -67,15 +67,6 @@ def knn_imputation(X: torch.Tensor, missing_mask: torch.Tensor, k: int = 5) -> t
     X_np = X.numpy()
     mask_np = missing_mask.numpy()
     
-    # 先用均值填充，KNNImputer 需要完整矩阵
-    X_filled = X_np.copy()
-    for j in range(X_np.shape[1]):
-        col = X_np[:, j]
-        mask_col = mask_np[:, j]
-        if mask_col.sum() > 0:
-            mean_val = col[mask_col == 1].mean()
-            X_filled[mask_col == 0, j] = mean_val
-    
     # 标记缺失位置（用 nan）
     X_for_knn = X_np.copy()
     X_for_knn[mask_np == 0] = np.nan
@@ -96,6 +87,34 @@ def zero_imputation(X: torch.Tensor, missing_mask: torch.Tensor) -> torch.Tensor
     return X_imputed
 
 
+def forward_fill_imputation(X: torch.Tensor, missing_mask: torch.Tensor) -> torch.Tensor:
+    """
+    前向填充插补：时序数据标准方法
+    用前一个观测值填充当前缺失值
+    """
+    X_np = X.numpy()
+    mask_np = missing_mask.numpy()
+    X_filled = X_np.copy()
+    N, D = X_np.shape
+    
+    for j in range(D):
+        last_observed = None
+        for i in range(N):
+            if mask_np[i, j] == 1:  # 观测到
+                last_observed = X_np[i, j]
+            elif last_observed is not None:  # 缺失，但有前值
+                X_filled[i, j] = last_observed
+            else:  # 开头缺失，找后值
+                for k in range(i+1, N):
+                    if mask_np[k, j] == 1:
+                        X_filled[i, j] = X_np[k, j]
+                        break
+                else:
+                    X_filled[i, j] = 0  # 整列缺失
+    
+    return torch.from_numpy(X_filled).float()
+
+
 def create_imputed_input(
     X: torch.Tensor,
     missing_rate: float,
@@ -109,22 +128,20 @@ def create_imputed_input(
     Args:
         X: 原始特征 [N, D]
         missing_rate: 缺失率
-        impute_method: "mean", "median", "knn", "zero"
+        impute_method: "mean", "median", "knn", "zero", "forward_fill"
         mode: "mcar" 或 "mar"
         seed: 随机种子
         
     Returns:
         X_imputed: 插补后的特征 [N, D]
-        y: 目标值（SOH）[N]
+        missing_mask: 缺失掩码
     """
     from .mcar import simulate_mcar
     from .mar import simulate_mar
     
     # 生成缺失
     if mode == "mar":
-        # MAR 需要 SOH 值，这里假设 X 的最后一列是 SOH 的代理
-        # 或者从外部传入 SOH，这里简化处理
-        sohs = torch.ones(X.shape[0]) * 0.7  # 默认 SOH
+        sohs = torch.ones(X.shape[0]) * 0.7
         _, missing_mask, _ = simulate_mar(X, sohs, missing_rate, seed=seed)
     else:
         _, missing_mask, _ = simulate_mcar(X, missing_rate, seed=seed)
@@ -138,6 +155,8 @@ def create_imputed_input(
         X_imputed = knn_imputation(X, missing_mask)
     elif impute_method == "zero":
         X_imputed = zero_imputation(X, missing_mask)
+    elif impute_method == "forward_fill":
+        X_imputed = forward_fill_imputation(X, missing_mask)
     else:
         raise ValueError(f"Unknown impute method: {impute_method}")
     

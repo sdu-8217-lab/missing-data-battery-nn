@@ -5,8 +5,36 @@ MAR 机制：缺失概率依赖于 SOH
 修正公式: p_i = alpha * SOH_i^beta + gamma
 """
 
+import numpy as np
 import torch
 from typing import Tuple, Optional
+
+
+def _impute_column(
+    X_np: np.ndarray, 
+    mask_np: np.ndarray, 
+    col_idx: int, 
+    impute_method: str = 'mean'
+) -> np.ndarray:
+    """对单特征列进行插补"""
+    col = X_np[:, col_idx].copy()
+    col_mask = mask_np[:, col_idx]
+    
+    observed = col[col_mask == 1]
+    if len(observed) == 0:
+        return col
+    
+    if impute_method == 'mean':
+        fill_value = observed.mean()
+    elif impute_method == 'median':
+        fill_value = np.median(observed)
+    elif impute_method == 'zero':
+        fill_value = 0.0
+    else:
+        fill_value = observed.mean()
+    
+    col[col_mask == 0] = fill_value
+    return col
 
 
 def simulate_mar(
@@ -17,6 +45,7 @@ def simulate_mar(
     beta: float = 2.0,
     gamma: float = 0.05,
     seed: int = 42,
+    impute_method: str = 'mean',
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     生成 MAR 缺失模式（依赖 SOH）- 修正版
@@ -37,9 +66,10 @@ def simulate_mar(
         beta: 非线性参数 (>0)
         gamma: 基础缺失率
         seed: 随机种子
+        impute_method: 插补方法 ('mean', 'median', 'zero')
         
     返回:
-        X_imputed: 均值插补后的特征 [N, D]
+        X_imputed: 插补后的特征 [N, D]
         mask: 缺失掩码 [N, D], 1=观测, 0=缺失
         mim_input: MIM 输入 [N, 2D]
     """
@@ -75,14 +105,15 @@ def simulate_mar(
     # 生成掩码: rand > p 则观测(1)，否则缺失(0)
     mask = (torch.rand(N, D, device=X.device) > p_matrix).float()
     
-    # 均值插补
-    X_imputed = X.clone()
+    # 插补
+    X_np = X.cpu().numpy()
+    mask_np = mask.cpu().numpy()
+    X_imputed_np = np.zeros_like(X_np)
+    
     for j in range(D):
-        feature = X[:, j]
-        mask_j = mask[:, j]
-        if mask_j.sum() > 0:
-            mean_val = feature[mask_j == 1].mean()
-            X_imputed[mask_j == 0, j] = mean_val
+        X_imputed_np[:, j] = _impute_column(X_np, mask_np, j, impute_method)
+    
+    X_imputed = torch.from_numpy(X_imputed_np).to(X.device, dtype=X.dtype)
     
     # 构造 MIM 输入
     mim_input = torch.cat([X_imputed, 1.0 - mask], dim=1)

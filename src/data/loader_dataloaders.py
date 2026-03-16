@@ -71,7 +71,7 @@ def apply_missing_and_impute(
     """Baseline: 施加缺失 + 传统插补（支持 2D 和 3D 序列数据）"""
     from ..missing_data.mcar import simulate_mcar
     from ..missing_data.mar import simulate_mar
-    from ..missing_data.imputation import mean_imputation, median_imputation, knn_imputation, zero_imputation
+    from ..missing_data.imputation import mean_imputation, median_imputation, knn_imputation, zero_imputation, forward_fill_imputation
     
     # 处理 3D 序列数据: [batch, seq_len, features] -> [batch*seq_len, features]
     original_shape = X.shape
@@ -101,6 +101,8 @@ def apply_missing_and_impute(
         X_imputed = knn_imputation(X_flat, missing_mask)
     elif impute_method == "zero":
         X_imputed = zero_imputation(X_flat, missing_mask)
+    elif impute_method == "forward_fill":
+        X_imputed = forward_fill_imputation(X_flat, missing_mask)
     else:
         raise ValueError(f"Unknown impute method: {impute_method}")
     
@@ -130,13 +132,26 @@ def create_mim_training_data(
     all_inputs = []
     all_targets = []
     
+    # 获取插补方法配置（从 _group_ 或 method）
+    group_cfg = cfg.get('_group_', {})
+    method_cfg = cfg.get('method', {})
+    
+    if isinstance(group_cfg, dict) and 'imputation' in group_cfg:
+        impute_method = group_cfg.get('imputation', 'mean')
+    elif isinstance(method_cfg, dict):
+        impute_method = method_cfg.get('imputation', 'mean')
+    else:
+        impute_method = 'mean'
+    
     for i, mr in enumerate(missing_rates):
         mr_seed = seed + i * 100
         
-        if cfg.missing.mode == 'mar':
-            _, _, mim_input = simulate_mar(X, y, mr, seed=mr_seed)
+        # 处理 MAR 变体 (mar, mar_cycle, mar_temp)
+        if cfg.missing.mode in ('mar', 'mar_cycle', 'mar_temp'):
+            _, _, mim_input = simulate_mar(X, y, mr, seed=mr_seed, impute_method=impute_method)
         else:
-            _, _, mim_input = simulate_mcar(X, mr, seed=mr_seed)
+            # 默认 MCAR (包括 mcar, mnar 等映射到 MCAR)
+            _, _, mim_input = simulate_mcar(X, mr, seed=mr_seed, impute_method=impute_method)
         
         all_inputs.append(mim_input)
         all_targets.append(y)
