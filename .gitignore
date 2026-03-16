@@ -194,18 +194,17 @@ Thumbs.db
 *.json
 *.png
 
-# 根目录 YAML 排除（按需添加例外）
-/*.yaml
-/*.yml
-!environment.yml
+# YAML 文件默认全部忽略，只有明确规定的才保留
+**/*.yaml
+**/*.yml
 
-# 允许特定目录的文件
-!configs/**/*.yaml
+# 例外：保留关键配置
+!environment.yml               # 根目录环境配置
+!configs/**/*.yaml             # Hydra 配置文件
 !configs/**/*.yml
-!paper/**/*.png
-!paper/**/*.html
-!paper/**/*.yaml
+!paper/**/*.yaml               # 论文相关配置
 !paper/**/*.yml
+!paper/**/*.png                # 论文图表
 
 # 仅排除根目录的 figures，但允许 paper/figures
 /figures/
@@ -219,3 +218,6 @@ Thumbs.db
 # 论文图表（带时间戳）
 !paper/figures/20260308_023704/
 !paper/figures/20260308_023704/*.png
+
+# 归档文件
+archive/
