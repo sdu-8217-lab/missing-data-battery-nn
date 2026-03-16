@@ -1,39 +1,62 @@
-"""PyTorch Lightning模块定义"""
+"""PyTorch Lightning模块定义 - 统一版本"""
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 from torch.optim import Adam, AdamW, SGD
 from typing import Dict, Any, Optional
 
+from ..models.model_factory import create_model
+
 
 class SOHLightningModule(pl.LightningModule):
     """
-    SOH预测的Lightning模块
+    SOH预测的Lightning模块 - 统一版本
     
-    封装PyTorch模型，提供标准化的训练/验证/测试流程
+    支持两种初始化方式:
+    1. 传入已创建的模型: SOHLightningModule(model=nn.Module, ...)
+    2. 传入模型参数: SOHLightningModule(model_type='mlp', input_dim=16, ...)
     """
     
     def __init__(
         self,
-        model: nn.Module,
+        model: Optional[nn.Module] = None,
+        model_type: Optional[str] = None,
+        input_dim: Optional[int] = None,
         learning_rate: float = 1e-3,
+        lr: Optional[float] = None,  # 兼容旧接口
         optimizer_name: str = "Adam",
         weight_decay: float = 0.0,
         scheduler_patience: int = 5,
         scheduler_factor: float = 0.5,
+        **model_kwargs
     ):
         """
         Args:
-            model: PyTorch模型
-            learning_rate: 学习率
-            optimizer_name: 优化器名称 (Adam, AdamW, SGD)
+            model: 已创建的PyTorch模型（方式1）
+            model_type: 模型类型如'mlp','lstm'等（方式2）
+            input_dim: 输入维度（方式2）
+            learning_rate/lr: 学习率（lr为兼容旧接口）
+            optimizer_name: 优化器名称
             weight_decay: 权重衰减
             scheduler_patience: 学习率调度耐心值
             scheduler_factor: 学习率衰减因子
+            **model_kwargs: 模型特定参数（方式2）
         """
         super().__init__()
-        self.model = model
-        self.save_hyperparameters(ignore=['model'])
+        
+        # 兼容旧接口：lr 优先级高于 learning_rate
+        lr_value = lr if lr is not None else learning_rate
+        
+        if model is not None:
+            # 方式1：使用传入的模型
+            self.model = model
+            self.save_hyperparameters(ignore=['model'])
+        elif model_type is not None and input_dim is not None:
+            # 方式2：内部创建模型
+            self.model = create_model(model_type, input_dim, **model_kwargs)
+            self.save_hyperparameters()
+        else:
+            raise ValueError("必须提供 model 参数，或提供 model_type + input_dim 参数")
         
         self.criterion = nn.MSELoss()
         
