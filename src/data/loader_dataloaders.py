@@ -71,7 +71,11 @@ def apply_missing_and_impute(
     """Baseline: 施加缺失 + 传统插补（支持 2D 和 3D 序列数据）"""
     from ..missing_data.mcar import simulate_mcar
     from ..missing_data.mar import simulate_mar
-    from ..missing_data.imputation import mean_imputation, median_imputation, knn_imputation, zero_imputation, forward_fill_imputation
+    from ..missing_data.mnar import simulate_mnar
+    from ..missing_data.imputation import (
+        mean_imputation, median_imputation, knn_imputation, 
+        zero_imputation, forward_fill_imputation, iterative_imputation
+    )
     
     # 处理 3D 序列数据: [batch, seq_len, features] -> [batch*seq_len, features]
     original_shape = X.shape
@@ -89,7 +93,9 @@ def apply_missing_and_impute(
     # 施加缺失（在展平后的数据上）
     if mode == 'mar':
         _, missing_mask, _ = simulate_mar(X_flat, y_expanded, missing_rate, seed=seed)
-    else:
+    elif mode == 'mnar':
+        _, missing_mask, _ = simulate_mnar(X_flat, y_expanded, missing_rate, seed=seed)
+    else:  # mcar
         _, missing_mask, _ = simulate_mcar(X_flat, missing_rate, seed=seed)
     
     # 在展平数据上进行插补
@@ -103,6 +109,8 @@ def apply_missing_and_impute(
         X_imputed = zero_imputation(X_flat, missing_mask)
     elif impute_method == "forward_fill":
         X_imputed = forward_fill_imputation(X_flat, missing_mask)
+    elif impute_method == "iterative":
+        X_imputed = iterative_imputation(X_flat, missing_mask, random_state=seed)
     else:
         raise ValueError(f"Unknown impute method: {impute_method}")
     
@@ -128,6 +136,7 @@ def create_mim_training_data(
     """
     from ..missing_data.mcar import simulate_mcar
     from ..missing_data.mar import simulate_mar
+    from ..missing_data.mnar import simulate_mnar
     
     all_inputs = []
     all_targets = []
@@ -143,14 +152,18 @@ def create_mim_training_data(
     else:
         impute_method = 'mean'
     
+    # 获取缺失模式
+    missing_mode = cfg.get('missing', {}).get('mode', 'mcar')
+    
     for i, mr in enumerate(missing_rates):
         mr_seed = seed + i * 100
         
-        # 处理 MAR 变体 (mar, mar_cycle, mar_temp)
-        if cfg.missing.mode in ('mar', 'mar_cycle', 'mar_temp'):
+        # 根据缺失模式选择模拟方法
+        if missing_mode == 'mar':
             _, _, mim_input = simulate_mar(X, y, mr, seed=mr_seed, impute_method=impute_method)
-        else:
-            # 默认 MCAR (包括 mcar, mnar 等映射到 MCAR)
+        elif missing_mode == 'mnar':
+            _, _, mim_input = simulate_mnar(X, y, mr, seed=mr_seed, impute_method=impute_method)
+        else:  # mcar
             _, _, mim_input = simulate_mcar(X, mr, seed=mr_seed, impute_method=impute_method)
         
         all_inputs.append(mim_input)
