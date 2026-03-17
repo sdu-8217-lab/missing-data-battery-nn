@@ -3,7 +3,7 @@ import time
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from .metrics import calculate_all_metrics
+from .metrics import compute_metrics
 
 
 class ModelEvaluator:
@@ -51,7 +51,7 @@ class ModelEvaluator:
         predictions = np.array(predictions)
         targets = np.array(targets)
         
-        metrics = calculate_all_metrics(targets, predictions)
+        metrics = compute_metrics(targets, predictions)
         metrics['inference_time'] = inference_time
         metrics['n_samples'] = len(targets)
         
