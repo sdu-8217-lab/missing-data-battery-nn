@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from loguru import logger
 from src.config.pydantic_config import ExperimentConfig
-from src.utils.logger_v2 import setup_logger
+from src.utils.logger import setup_logger
 
 
 @dataclass

@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from src.config.pydantic_config import ExperimentConfig, ModelConfig
 from src.trainers.lightning_module import SOHLightningModule
 from src.trainers.lightning_trainer import LightningTrainer
-from src.utils.logger_v2 import setup_logger
+from src.utils.logger import setup_logger
 
 # 数据加载
 from src.data.dataset_loader import XJTUDatasetLoader
