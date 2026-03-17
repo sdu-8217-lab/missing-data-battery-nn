@@ -47,6 +47,7 @@ def run_experiment(
     missing_rate: float,
     seeds: List[int],
     timestamp: str,
+    epochs: int = 100,
     dry_run: bool = False
 ) -> bool:
     """Run a single experiment configuration."""
@@ -66,12 +67,13 @@ def run_experiment(
     
     cmd = [
         "python", "experiments/run_experiment.py",
-        f"experiment={config_name}",
+        f"--config-name={config_name}",
         f"data.batch_id={batch_id}",
         f"model.type={model}",
         f"missing.rate_eval={missing_rate}",
         f"training.seeds={seeds}",
-        f"timestamp={timestamp}",
+        f"training.epochs={epochs}",
+        f"+timestamp={timestamp}",
     ]
     
     print(f"\n{'='*60}")
@@ -106,6 +108,8 @@ def main():
     parser.add_argument('--seeds', nargs='+', type=int,
                        default=[42, 123, 456, 789, 1011],
                        help='Random seeds')
+    parser.add_argument('--epochs', type=int, default=100,
+                       help='Number of training epochs')
     parser.add_argument('--timestamp', help='Custom timestamp (default: auto-generated)')
     parser.add_argument('--dry-run', action='store_true',
                        help='Show commands without executing')
@@ -148,6 +152,7 @@ def main():
                     missing_rate=mr,
                     seeds=args.seeds,
                     timestamp=timestamp,
+                    epochs=args.epochs,
                     dry_run=args.dry_run
                 )
                 

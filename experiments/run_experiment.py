@@ -218,9 +218,9 @@ def evaluate_model(model, test_loader):
     
     with torch.no_grad():
         for batch_x, batch_y in test_loader:
-            outputs = model(batch_x).squeeze()
-            all_preds.extend(outputs.cpu().numpy())
-            all_targets.extend(batch_y.cpu().numpy())
+            outputs = model(batch_x).squeeze(-1)
+            all_preds.extend(outputs.cpu().numpy().flatten())
+            all_targets.extend(batch_y.cpu().numpy().flatten())
     
     preds = np.array(all_preds)
     targets = np.array(all_targets)
