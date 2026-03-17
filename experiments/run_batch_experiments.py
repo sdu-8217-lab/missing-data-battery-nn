@@ -64,15 +64,19 @@ def get_config_name(mode: str, method: str) -> str:
         }
     else:
         # Baseline configs with specific imputation methods
-        # For now, use existing configs and override method via command line
         config_map = {
             ("mcar", "mean"): "youth_mcar_baseline",
             ("mcar", "knn"): "full_test_mcar_knn",
             ("mcar", "iterative"): "full_test_mcar_iterative",
             ("mcar", "zero"): "full_test_mcar_zero",
-            ("mar", "mean"): "youth_mar_baseline",
-            ("mar", "knn"): "youth_mar_baseline",  # fallback
+            ("mar", "mean"): "full_test_mar_mean",
+            ("mar", "knn"): "full_test_mar_knn",
+            ("mar", "iterative"): "full_test_mar_iterative",
+            ("mar", "zero"): "full_test_mar_zero",
             ("mnar", "mean"): "full_test_mnar_mean",
+            ("mnar", "knn"): "full_test_mnar_knn",
+            ("mnar", "iterative"): "full_test_mnar_iterative",
+            ("mnar", "zero"): "full_test_mnar_zero",
         }
     
     if method == "mim":

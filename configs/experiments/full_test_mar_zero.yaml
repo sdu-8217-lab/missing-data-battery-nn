@@ -1,0 +1,29 @@
+# @package _global_
+experiment: full_test_mar_zero
+method: zero
+
+data:
+  batch_id: 2C
+  data_dir: "data/XJTU data"
+
+model:
+  type: mlp
+
+missing:
+  mode: mar
+  rate_eval: 0.3
+  beta: 2.0
+  gamma: 0.05
+
+training:
+  seeds: [42]
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  early_stopping:
+    patience: 10
+
+hydra:
+  run:
+    dir: outputs/${experiment}/${now:%Y%m%d_%H%M%S}
