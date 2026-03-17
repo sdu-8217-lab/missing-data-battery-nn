@@ -30,6 +30,7 @@ from typing import List, Dict
 from src.data.loader import load_dataset
 from src.utils.seed_manager import set_seed
 from src.utils.logger import setup_logger
+from src.utils.paths import get_results_dir, ensure_results_structure, get_timestamp
 
 
 def create_model(cfg: DictConfig, input_dim: int):
@@ -312,20 +313,21 @@ def main(cfg: DictConfig):
         
         logger.info(f"Seed {seed}: MAE={metrics['test_mae']:.4f}, R2={metrics['test_r2']:.4f}")
     
-    # Save results
+    # Save results to batch-specific directory
     df = pd.DataFrame(results)
     
-    # Determine output CSV based on method
-    method = cfg.method
-    if method == "mim":
-        output_csv = "results/csv/youth_mar_mim.csv"
-    else:
-        output_csv = "results/csv/youth_mar_baseline.csv"
+    # Get timestamp from config or generate new one
+    timestamp = cfg.get("timestamp", None)
+    if timestamp is None:
+        timestamp = get_timestamp()
     
-    Path(output_csv).parent.mkdir(parents=True, exist_ok=True)
+    # Create results directory: results/{timestamp}_{batch}/
+    results_dir = get_results_dir(batch_id, timestamp)
+    paths = ensure_results_structure(results_dir)
+    output_csv = paths["csv_path"]
     
     # Append or create new
-    if Path(output_csv).exists():
+    if output_csv.exists():
         df_existing = pd.read_csv(output_csv)
         df_combined = pd.concat([df_existing, df], ignore_index=True)
         df_combined.to_csv(output_csv, index=False)
@@ -334,6 +336,7 @@ def main(cfg: DictConfig):
     
     logger.info(f"Results saved to {output_csv}")
     logger.info(f"Completed {len(seeds)} experiments")
+    logger.info(f"Results directory: {results_dir}")
 
 
 if __name__ == "__main__":
