@@ -232,7 +232,7 @@ def evaluate_model(model, test_loader):
     }
 
 
-@hydra.main(version_base=None, config_path="../../configs/experiments", config_name="youth_mar_baseline")
+@hydra.main(version_base=None, config_path="../configs/experiments", config_name="youth_mar_baseline")
 def main(cfg: DictConfig):
     """主函数"""
     
@@ -258,7 +258,7 @@ def main(cfg: DictConfig):
             "data": {
                 "dataset": "xjtu",
                 "data_dir": cfg.data.data_dir,
-                "batch": batch_id,
+                "batch_id": batch_id,
                 "features": [
                     "voltage mean", "voltage std", "voltage kurtosis", "voltage skewness",
                     "current mean", "current std", "current kurtosis", "current skewness",
