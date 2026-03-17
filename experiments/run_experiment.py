@@ -84,8 +84,7 @@ def create_missing_data_mim(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, s
     
     Returns augmented training set with missing rates: 0.0, 0.1, ..., 0.9
     """
-    from src.missing_data.mcar import simulate_mcar
-    
+    mode = cfg.missing.mode
     rate_list = cfg.missing.get("rate_train_list", [i/10.0 for i in range(10)])
     
     all_inputs = []
@@ -93,7 +92,23 @@ def create_missing_data_mim(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, s
     
     for i, mr in enumerate(rate_list):
         mr_seed = seed + i * 100
-        X_imp, mask, mim_input = simulate_mcar(X, mr, mr_seed)
+        
+        if mode == "mar":
+            from src.missing_data.mar import simulate_mar
+            beta = cfg.missing.get("beta", 2.0)
+            gamma = cfg.missing.get("gamma", 0.05)
+            alpha = cfg.missing.get("alpha", None)
+            X_imp, mask, mim_input = simulate_mar(X, y, mr, alpha, beta, gamma, mr_seed)
+        elif mode == "mnar":
+            from src.missing_data.mnar import simulate_mnar
+            alpha = cfg.missing.get("alpha", None)
+            beta = cfg.missing.get("beta", 0.05)
+            feature_idx = cfg.missing.get("feature_index", 0)
+            X_imp, mask, mim_input = simulate_mnar(X, y, mr, alpha, beta, feature_idx=feature_idx, seed=mr_seed)
+        else:  # mcar
+            from src.missing_data.mcar import simulate_mcar
+            X_imp, mask, mim_input = simulate_mcar(X, mr, mr_seed)
+        
         all_inputs.append(mim_input)
         all_targets.append(y)
     
@@ -114,6 +129,13 @@ def create_missing_data_eval(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, 
         gamma = cfg.missing.get("gamma", 0.05)
         alpha = cfg.missing.get("alpha", None)
         X_imp, mask, mim_input = simulate_mar(X, y, rate, alpha, beta, gamma, seed)
+    
+    elif mode == "mnar":
+        from src.missing_data.mnar import simulate_mnar
+        alpha = cfg.missing.get("alpha", None)
+        beta = cfg.missing.get("beta", 0.05)
+        feature_idx = cfg.missing.get("feature_index", 0)
+        X_imp, mask, mim_input = simulate_mnar(X, y, rate, alpha, beta, feature_idx=feature_idx, seed=seed)
     
     elif mode == "mcar":
         from src.missing_data.mcar import simulate_mcar
