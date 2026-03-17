@@ -104,7 +104,7 @@ def create_missing_data_mim(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, s
             alpha = cfg.missing.get("alpha", None)
             beta = cfg.missing.get("beta", 0.05)
             feature_idx = cfg.missing.get("feature_index", 0)
-            X_imp, mask, mim_input = simulate_mnar(X, y, mr, alpha, beta, feature_idx=feature_idx, seed=mr_seed)
+            X_imp, mask, mim_input = simulate_mnar(X, y, mr, alpha, beta, feature_index=feature_idx, seed=mr_seed)
         else:  # mcar
             from src.missing_data.mcar import simulate_mcar
             X_imp, mask, mim_input = simulate_mcar(X, mr, mr_seed)
@@ -144,7 +144,7 @@ def create_missing_data_eval(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, 
         alpha = cfg.missing.get("alpha", None)
         beta = cfg.missing.get("beta", 0.05)
         feature_idx = cfg.missing.get("feature_index", 0)
-        X_imp, mask, mim_input = simulate_mnar(X, y, rate, alpha, beta, feature_idx=feature_idx, seed=seed)
+        X_imp, mask, mim_input = simulate_mnar(X, y, rate, alpha, beta, feature_index=feature_idx, seed=seed)
     
     elif mode == "mcar":
         from src.missing_data.mcar import simulate_mcar
