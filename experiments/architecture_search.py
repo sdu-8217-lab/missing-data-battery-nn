@@ -295,17 +295,17 @@ class ArchitectureSearchRunner:
             start_time = time.time()
             
 
-                pl_module = SOHLightningModule(
-                    model.model if hasattr(model, 'model') else model,
-                    learning_rate=0.001
-                )
-                trainer = LightningTrainer(
-                    max_epochs=self.config['epochs'],
-                    patience=self.config['patience'],
-                    device=device
-                )
-                history = trainer.train(pl_module, train_loader, val_loader)
-                best_val_loss = min(history.get('val_loss', [float('inf')]))
+            pl_module = SOHLightningModule(
+                model.model if hasattr(model, 'model') else model,
+                learning_rate=0.001
+            )
+            trainer = LightningTrainer(
+                max_epochs=self.config['epochs'],
+                patience=self.config['patience'],
+                device=device
+            )
+            history = trainer.train(pl_module, train_loader, val_loader)
+            best_val_loss = min(history.get('val_loss', [float('inf')]))
             
             training_time = time.time() - start_time
             
