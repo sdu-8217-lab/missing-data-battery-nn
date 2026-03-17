@@ -3,8 +3,8 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  # Python (最新稳定版 - 3.13)
-  - python=3.13
+  # Python (3.12+ for compatibility)
+  - python>=3.12,<3.14
   
   # Core Deep Learning
   # pytorch 会自动检测 CUDA 并安装 GPU 或 CPU 版本
@@ -39,7 +39,7 @@ dependencies:
   # Configuration Management
   - omegaconf>=2.3.0
   - pydantic>=2.0
-  - click=8.1.7
+  - click>=8.0.0
   
   # Hyperparameter Optimization
   - optuna>=4.0.0
