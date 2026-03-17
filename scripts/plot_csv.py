@@ -141,10 +141,12 @@ def plot_method_comparison(df: pd.DataFrame, output_path: Path):
         return False
     
     # Calculate improvement
-    baseline = df[df['method'].str.upper() == 'BASELINE'].groupby(['model', 'missing_rate'])['MAE'].mean().reset_index()
+    # Treat non-MIM methods as baseline (mean, knn, iterative, zero, etc.)
+    is_mim = df['method'].str.upper() == 'MIM'
+    baseline = df[~is_mim].groupby(['model', 'missing_rate'])['MAE'].mean().reset_index()
     baseline.rename(columns={'MAE': 'MAE_baseline'}, inplace=True)
     
-    mim = df[df['method'].str.upper() == 'MIM'].groupby(['model', 'missing_rate'])['MAE'].mean().reset_index()
+    mim = df[is_mim].groupby(['model', 'missing_rate'])['MAE'].mean().reset_index()
     mim.rename(columns={'MAE': 'MAE_mim'}, inplace=True)
     
     if baseline.empty or mim.empty:
