@@ -118,10 +118,19 @@ def create_missing_data_mim(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, s
     return combined_input, combined_target
 
 
-def create_missing_data_eval(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, seed: int):
-    """Create evaluation data with specified missing mechanism and rate"""
+def create_missing_data_eval(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, seed: int, rate: float = None):
+    """Create evaluation data with specified missing mechanism and rate
+    
+    Args:
+        X: Input features
+        y: Target values
+        cfg: Configuration
+        seed: Random seed
+        rate: Missing rate (if None, uses cfg.missing.rate_eval)
+    """
     mode = cfg.missing.mode
-    rate = cfg.missing.rate_eval
+    if rate is None:
+        rate = cfg.missing.rate_eval
     
     if mode == "mar":
         from src.missing_data.mar import simulate_mar
@@ -147,8 +156,90 @@ def create_missing_data_eval(X: torch.Tensor, y: torch.Tensor, cfg: DictConfig, 
     return X_imp, mask, mim_input
 
 
-def train_model(model, train_loader, val_loader, cfg: DictConfig):
-    """训练模型"""
+def validate_multi_mr(model, X_val, y_val, cfg: DictConfig, seed: int, batch_size: int, method: str = "mim"):
+    """
+    在多个缺失率下验证模型，返回平均损失
+    
+    Args:
+        model: 模型
+        X_val: 验证特征 (原始特征，16维)
+        y_val: 验证标签
+        cfg: 配置
+        seed: 随机种子
+        batch_size: 批次大小
+        method: "mim" 或 "baseline"
+    
+    Returns:
+        avg_val_loss: 所有缺失率下的平均验证损失
+        per_mr_losses: 每个缺失率的具体损失 {mr: loss}
+    """
+    import torch.nn as nn
+    
+    model.eval()
+    criterion = nn.MSELoss()
+    device = torch.device("cpu")
+    
+    # 验证缺失率列表（可配置，默认使用0.0-0.9）
+    val_missing_rates = cfg.missing.get(
+        'validation_missing_rates', 
+        [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    )
+    
+    per_mr_losses = {}
+    
+    with torch.no_grad():
+        for mr in val_missing_rates:
+            # 创建当前缺失率的验证数据
+            X_imp, mask, mim_input = create_missing_data_eval(
+                X_val, y_val, cfg, seed=seed, rate=mr
+            )
+            
+            # 根据方法选择正确的输入格式
+            # baseline: 使用 X_imp (16维填充数据)
+            # mim: 使用 mim_input (32维 = 16特征 + 16掩码)
+            if method == "mim":
+                val_input = mim_input  # [N, 32]
+            else:
+                val_input = X_imp  # [N, 16]
+            
+            # 创建DataLoader
+            val_loader = torch.utils.data.DataLoader(
+                torch.utils.data.TensorDataset(val_input, y_val),
+                batch_size=batch_size,
+                shuffle=False
+            )
+            
+            # 计算该MR下的损失
+            mr_loss = 0.0
+            for batch_x, batch_y in val_loader:
+                batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+                outputs = model(batch_x).squeeze(-1)
+                loss = criterion(outputs, batch_y)
+                mr_loss += loss.item() * len(batch_x)
+            
+            mr_loss /= len(val_loader.dataset)
+            per_mr_losses[mr] = mr_loss
+    
+    # 使用平均损失作为早停指标
+    avg_val_loss = sum(per_mr_losses.values()) / len(per_mr_losses)
+    
+    return avg_val_loss, per_mr_losses
+
+
+def train_model(model, train_loader, val_loader, cfg: DictConfig, 
+                X_val=None, y_val=None, multi_mr_val: bool = False, method: str = "mim"):
+    """训练模型
+    
+    Args:
+        model: 模型
+        train_loader: 训练数据加载器
+        val_loader: 验证数据加载器（单MR验证时使用）
+        cfg: 配置
+        X_val: 验证特征（多MR验证时使用）
+        y_val: 验证标签（多MR验证时使用）
+        multi_mr_val: 是否使用多MR验证
+        method: "mim" 或 "baseline"
+    """
     import torch.nn as nn
     import torch.optim as optim
     from torch.utils.data import DataLoader
@@ -159,6 +250,7 @@ def train_model(model, train_loader, val_loader, cfg: DictConfig):
     epochs = cfg.training.epochs
     lr = cfg.training.learning_rate
     patience = cfg.training.early_stopping.patience
+    batch_size = cfg.training.batch_size
     
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=cfg.training.weight_decay)
     criterion = nn.MSELoss()
@@ -174,22 +266,34 @@ def train_model(model, train_loader, val_loader, cfg: DictConfig):
         for batch_x, batch_y in train_loader:
             batch_x, batch_y = batch_x.to(device), batch_y.to(device)
             optimizer.zero_grad()
-            outputs = model(batch_x).squeeze()
+            outputs = model(batch_x).squeeze(-1)
             loss = criterion(outputs, batch_y)
             loss.backward()
             optimizer.step()
             train_loss += loss.item() * len(batch_x)
         
         # Validation
-        model.eval()
-        val_loss = 0.0
-        with torch.no_grad():
-            for batch_x, batch_y in val_loader:
-                batch_x, batch_y = batch_x.to(device), batch_y.to(device)
-                outputs = model(batch_x).squeeze()
-                val_loss += criterion(outputs, batch_y).item() * len(batch_x)
-        
-        val_loss /= len(val_loader.dataset)
+        if multi_mr_val and X_val is not None and y_val is not None:
+            # 多缺失率验证
+            val_loss, per_mr_losses = validate_multi_mr(
+                model, X_val, y_val, cfg, seed=epoch + 999, batch_size=batch_size, method=method
+            )
+            
+            # 每10个epoch打印各MR的损失
+            if epoch % 10 == 0 or epoch == epochs - 1:
+                print(f"Epoch {epoch}: Avg Val Loss = {val_loss:.4f}")
+                for mr, loss in sorted(per_mr_losses.items()):
+                    print(f"  MR={mr:.1f}: {loss:.4f}")
+        else:
+            # 单一缺失率验证（原逻辑）
+            model.eval()
+            val_loss = 0.0
+            with torch.no_grad():
+                for batch_x, batch_y in val_loader:
+                    batch_x, batch_y = batch_x.to(device), batch_y.to(device)
+                    outputs = model(batch_x).squeeze(-1)
+                    val_loss += criterion(outputs, batch_y).item() * len(batch_x)
+            val_loss /= len(val_loader.dataset)
         
         # Early stopping
         if val_loss < best_val_loss:
@@ -199,6 +303,8 @@ def train_model(model, train_loader, val_loader, cfg: DictConfig):
         else:
             patience_counter += 1
             if patience_counter >= patience:
+                if multi_mr_val:
+                    print(f"Early stopping at epoch {epoch}")
                 break
     
     if best_state is not None:
@@ -316,7 +422,17 @@ def main(cfg: DictConfig):
         )
         
         # Train and evaluate
-        model = train_model(model, train_loader, val_loader, cfg)
+        # Check if multi-MR validation is enabled
+        multi_mr_val = cfg.get("multi_mr_validation", False)
+        if multi_mr_val:
+            logger.info("Using multi-MR validation (0.0-0.9)")
+            # 对于多MR验证，需要传递原始特征，以便在每个epoch生成不同MR的验证数据
+            # MIM方法使用原始X_val (16维)，baseline方法也使用原始X_val (16维)
+            # create_missing_data_eval会根据方法类型生成正确的输入格式
+            model = train_model(model, train_loader, val_loader, cfg, 
+                               X_val=X_val, y_val=y_val, multi_mr_val=True, method=method)
+        else:
+            model = train_model(model, train_loader, val_loader, cfg)
         metrics = evaluate_model(model, test_loader)
         
         # Record result
