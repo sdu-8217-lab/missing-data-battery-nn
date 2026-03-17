@@ -29,7 +29,6 @@ tqdm>=4.65.0
 
 # Dependencies that should be explicit (used in code but not declared)
 pyyaml>=6.0.0
-pydantic>=2.0.0
 scipy>=1.10.0
 
 # Hyperparameter Optimization (for architecture search)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 大实验V2 - 整合改进版本
-使用: PyTorch Lightning + Pydantic + Loguru + configs_v3最佳参数
+使用: PyTorch Lightning + Hydra + Loguru + configs_v3最佳参数
 """
 import os
 import sys
@@ -13,11 +13,12 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 
+import hydra
+from omegaconf import DictConfig, OmegaConf
+
 # 添加src到路径
 sys.path.insert(0, str(Path(__file__).parent))
 
-# V2改进组件
-from src.config.pydantic_config import ExperimentConfig, ModelConfig
 from src.trainers.lightning_module import SOHLightningModule
 from src.trainers.lightning_trainer import LightningTrainer
 from src.utils.logger import setup_logger
@@ -30,18 +31,93 @@ from src.data.datasets import BatteryDataset, SequenceDataset, MIMDataset, Seque
 from src.models.model_factory import ModelFactory
 
 
-def prepare_data(config: ExperimentConfig, seed: int):
+def get_model_configs(cfg: DictConfig) -> List[Dict]:
+    """获取所有模型配置 - configs_v3最佳参数 (4模型 x 2策略 = 8配置)"""
+    base_configs = [
+        {
+            'name': 'MLP',
+            'model_type': 'mlp',
+            'hidden_layers': [192, 96, 48, 24],  # configs_v3最佳
+            'dropout': 0.15,
+            'use_mim': False,
+        },
+        {
+            'name': 'MLP-MIM',
+            'model_type': 'mlp',
+            'hidden_layers': [192, 96, 48, 24],
+            'dropout': 0.15,
+            'use_mim': True,
+        },
+        {
+            'name': 'LSTM',
+            'model_type': 'lstm',
+            'hidden_size': 48,  # configs_v3最佳
+            'num_layers': 2,
+            'dropout': 0.2,
+            'seq_len': cfg.data.get('seq_len', 5),
+            'use_mim': False,
+        },
+        {
+            'name': 'LSTM-MIM',
+            'model_type': 'lstm',
+            'hidden_size': 48,
+            'num_layers': 2,
+            'dropout': 0.2,
+            'seq_len': cfg.data.get('seq_len', 5),
+            'use_mim': True,
+        },
+        {
+            'name': 'GRU',
+            'model_type': 'gru',
+            'hidden_size': 64,  # configs_v3最佳
+            'num_layers': 2,
+            'dropout': 0.2,
+            'seq_len': cfg.data.get('seq_len', 5),
+            'use_mim': False,
+        },
+        {
+            'name': 'GRU-MIM',
+            'model_type': 'gru',
+            'hidden_size': 64,
+            'num_layers': 2,
+            'dropout': 0.2,
+            'seq_len': cfg.data.get('seq_len', 5),
+            'use_mim': True,
+        },
+        {
+            'name': 'CNN1D',
+            'model_type': 'cnn1d',
+            'channels': [72, 32],  # configs_v3最佳
+            'kernel_size': 4,
+            'dropout': 0.1,
+            'seq_len': cfg.data.get('seq_len', 5),
+            'use_mim': False,
+        },
+        {
+            'name': 'CNN1D-MIM',
+            'model_type': 'cnn1d',
+            'channels': [72, 32],
+            'kernel_size': 4,
+            'dropout': 0.1,
+            'seq_len': cfg.data.get('seq_len', 5),
+            'use_mim': True,
+        },
+    ]
+    return base_configs
+
+
+def prepare_data(cfg: DictConfig, seed: int):
     """准备数据"""
     loader = XJTUDatasetLoader(
-        data_dir=config.data_dir,
-        batch=config.batch
+        data_dir=cfg.data.data_dir,
+        batch=cfg.batch
     )
     
     data = loader.prepare_data(
-        feature_cols=config.feature_cols,
-        target_col=config.target_col,
-        test_size=config.test_size,
-        val_size=config.val_size,
+        feature_cols=cfg.data.features,
+        target_col=cfg.data.target,
+        test_size=cfg.data.split.test_size,
+        val_size=cfg.data.split.val_size,
         random_seed=seed
     )
     
@@ -49,35 +125,34 @@ def prepare_data(config: ExperimentConfig, seed: int):
 
 
 def run_single_experiment(
-    config: ExperimentConfig,
-    model_config: ModelConfig,
+    cfg: DictConfig,
+    model_config: Dict,
     data: dict,
     seed: int,
     logger
 ) -> List[Dict]:
     """运行单个模型实验"""
     results = []
-    model_name = model_config.name
-    use_mim = model_config.use_mim
+    model_name = model_config['name']
+    use_mim = model_config['use_mim']
     
     logger.info(f"Training {model_name} (MIM={use_mim})")
     
     # 创建模型
-    # BaseModel会自动处理MIM的输入维度翻倍，所以这里传递原始维度16
     model_kwargs = {
-        'hidden_layers': model_config.hidden_layers,
-        'dropout': model_config.dropout,
-        'hidden_size': model_config.hidden_size,
-        'num_layers': model_config.num_layers,
-        'channels': model_config.channels,
-        'kernel_size': model_config.kernel_size,
+        'hidden_layers': model_config.get('hidden_layers'),
+        'dropout': model_config.get('dropout'),
+        'hidden_size': model_config.get('hidden_size'),
+        'num_layers': model_config.get('num_layers'),
+        'channels': model_config.get('channels'),
+        'kernel_size': model_config.get('kernel_size'),
     }
     # 过滤None值
     model_kwargs = {k: v for k, v in model_kwargs.items() if v is not None}
     
     model = ModelFactory.create_model(
-        model_config.model_type,
-        input_dim=16,  # BaseModel会自动翻倍当use_mim=True
+        model_config['model_type'],
+        input_dim=16,
         use_mim=use_mim,
         device='cpu',
         **model_kwargs
@@ -88,35 +163,35 @@ def run_single_experiment(
     
     # 准备训练数据
     if use_mim:
-        train_dataset, val_dataset = prepare_mim_data(config, model_config, data, seed)
+        train_dataset, val_dataset = prepare_mim_data(cfg, model_config, data, seed)
     else:
-        train_dataset, val_dataset = prepare_baseline_data(config, model_config, data, seed)
+        train_dataset, val_dataset = prepare_baseline_data(cfg, model_config, data, seed)
     
     # 使用PyTorch Lightning训练
     from torch.utils.data import DataLoader
     
     train_loader = DataLoader(
         train_dataset, 
-        batch_size=config.batch_size, 
+        batch_size=cfg.training.batch_size, 
         shuffle=True,
         num_workers=0
     )
     val_loader = DataLoader(
         val_dataset,
-        batch_size=config.batch_size,
+        batch_size=cfg.training.batch_size,
         num_workers=0
     )
     
     # 包装为Lightning模块
     lightning_model = SOHLightningModule(
         model.model if hasattr(model, 'model') else model,
-        learning_rate=config.lr
+        learning_rate=cfg.training.learning_rate
     )
     
     # 训练
     trainer = LightningTrainer(
-        max_epochs=config.epochs,
-        patience=config.early_stopping_patience,
+        max_epochs=cfg.training.epochs,
+        patience=cfg.training.patience,
         device='cpu',
         enable_progress_bar=False
     )
@@ -131,15 +206,15 @@ def run_single_experiment(
         return []
     
     # 评估所有缺失率
-    for missing_rate in config.missing_rates:
+    for missing_rate in cfg.missing.missing_rates:
         metrics = evaluate_model(
             model, model_config, data, missing_rate, 
-            config.batch_size, seed
+            cfg.training.batch_size, seed
         )
         metrics.update({
             'seed': seed,
             'model_name': model_name,
-            'model_type': model_config.model_type,
+            'model_type': model_config['model_type'],
             'use_mim': use_mim,
             'missing_rate': missing_rate,
             'training_time': training_time,
@@ -151,22 +226,23 @@ def run_single_experiment(
     return results
 
 
-def prepare_baseline_data(config: ExperimentConfig, model_config: ModelConfig, 
+def prepare_baseline_data(cfg: DictConfig, model_config: Dict, 
                           data: dict, seed: int):
     """准备Baseline训练数据"""
-    model_type = model_config.model_type
+    model_type = model_config['model_type']
+    seq_len = model_config.get('seq_len', 5)
     
     if model_type in ['lstm', 'gru', 'cnn1d']:
         train_dataset = SequenceDataset(
             data['X_train'], data['y_train'],
-            seq_len=model_config.seq_len,
+            seq_len=seq_len,
             missing_rate=0.0,
             use_mim=False,
             seed=seed
         )
         val_dataset = SequenceDataset(
             data['X_val'], data['y_val'],
-            seq_len=model_config.seq_len,
+            seq_len=seq_len,
             missing_rate=0.0,
             use_mim=False,
             seed=seed
@@ -188,23 +264,24 @@ def prepare_baseline_data(config: ExperimentConfig, model_config: ModelConfig,
     return train_dataset, val_dataset
 
 
-def prepare_mim_data(config: ExperimentConfig, model_config: ModelConfig,
+def prepare_mim_data(cfg: DictConfig, model_config: Dict,
                      data: dict, seed: int):
     """准备MIM训练数据"""
-    model_type = model_config.model_type
+    model_type = model_config['model_type']
+    seq_len = model_config.get('seq_len', 5)
     
     if model_type in ['lstm', 'gru', 'cnn1d']:
         train_dataset = SequenceMIMDataset(
             data['X_train'], data['y_train'],
-            seq_len=model_config.seq_len,
-            missing_rates=config.training_missing_rates,
+            seq_len=seq_len,
+            missing_rates=cfg.missing.training_missing_rates,
             use_mim=True,
             base_seed=seed
         )
         # 验证集使用50%缺失率
         val_dataset = SequenceDataset(
             data['X_val'], data['y_val'],
-            seq_len=model_config.seq_len,
+            seq_len=seq_len,
             missing_rate=0.5,
             use_mim=True,
             seed=seed
@@ -212,7 +289,7 @@ def prepare_mim_data(config: ExperimentConfig, model_config: ModelConfig,
     else:
         train_dataset = MIMDataset(
             data['X_train'], data['y_train'],
-            missing_rates=config.training_missing_rates,
+            missing_rates=cfg.missing.training_missing_rates,
             use_mim=True,
             base_seed=seed
         )
@@ -226,20 +303,21 @@ def prepare_mim_data(config: ExperimentConfig, model_config: ModelConfig,
     return train_dataset, val_dataset
 
 
-def evaluate_model(model, model_config: ModelConfig, data: dict,
+def evaluate_model(model, model_config: Dict, data: dict,
                    missing_rate: float, batch_size: int, seed: int) -> Dict:
     """评估模型"""
     from torch.utils.data import DataLoader
     from src.evaluation.model_evaluator import ModelEvaluator
     
-    model_type = model_config.model_type
-    use_mim = model_config.use_mim
+    model_type = model_config['model_type']
+    use_mim = model_config['use_mim']
+    seq_len = model_config.get('seq_len', 5)
     
     # 准备测试数据
     if model_type in ['lstm', 'gru', 'cnn1d']:
         test_dataset = SequenceDataset(
             data['X_test'], data['y_test'],
-            seq_len=model_config.seq_len,
+            seq_len=seq_len,
             missing_rate=missing_rate,
             use_mim=use_mim,
             seed=seed
@@ -261,47 +339,47 @@ def evaluate_model(model, model_config: ModelConfig, data: dict,
     return metrics
 
 
-def run_big_experiment(config: ExperimentConfig, logger):
+def run_big_experiment(cfg: DictConfig, logger):
     """运行大实验"""
     logger.info("=" * 70)
-    logger.info("Big Experiment V2 - PyTorch Lightning + Pydantic + Loguru")
+    logger.info("Big Experiment V2 - PyTorch Lightning + Hydra + Loguru")
     logger.info("=" * 70)
-    logger.info(f"Config: {config.n_repeats} repeats, {config.epochs} epochs")
+    logger.info(f"Config: {cfg.experiment.n_repeats} repeats, {cfg.training.epochs} epochs")
     logger.info(f"Models: 4 (MLP, LSTM, GRU, CNN1D) x 2 strategies = 8 configs")
-    logger.info(f"Missing rates: {config.missing_rates}")
+    logger.info(f"Missing rates: {cfg.missing.missing_rates}")
     logger.info("=" * 70)
     
     # 创建输出目录
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_dir = Path("experiments_v2") / config.batch / timestamp
+    output_dir = Path(cfg.experiment.output_dir) / cfg.batch / timestamp
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # 保存配置
-    config.save_json(output_dir / "config.json")
+    OmegaConf.save(cfg, output_dir / "config.yaml")
     
     # 获取模型配置
-    model_configs = config.get_model_configs()
+    model_configs = get_model_configs(cfg)
     
     all_results = []
     
-    for repeat_idx in range(config.n_repeats):
-        seed = config.random_seed + repeat_idx
+    for repeat_idx in range(cfg.experiment.n_repeats):
+        seed = cfg.experiment.seeds[repeat_idx] if repeat_idx < len(cfg.experiment.seeds) else cfg.experiment.seeds[0] + repeat_idx
         logger.info(f"\n{'='*70}")
-        logger.info(f"Repeat {repeat_idx + 1}/{config.n_repeats} (seed={seed})")
+        logger.info(f"Repeat {repeat_idx + 1}/{cfg.experiment.n_repeats} (seed={seed})")
         logger.info(f"{'='*70}")
         
         # 准备数据（每个种子重新划分）
-        data = prepare_data(config, seed)
+        data = prepare_data(cfg, seed)
         
         # 运行每个模型配置
         for model_config in model_configs:
             try:
                 results = run_single_experiment(
-                    config, model_config, data, seed, logger
+                    cfg, model_config, data, seed, logger
                 )
                 all_results.extend(results)
             except Exception as e:
-                logger.error(f"Failed: {model_config.name} - {e}")
+                logger.error(f"Failed: {model_config['name']} - {e}")
                 import traceback
                 logger.error(traceback.format_exc())
         
@@ -338,39 +416,18 @@ def run_big_experiment(config: ExperimentConfig, logger):
     return output_dir
 
 
-def main():
-    import argparse
-    
-    parser = argparse.ArgumentParser(description='Big Experiment V2')
-    parser.add_argument('--batch', type=str, default='3C', 
-                       choices=['2C', '3C', 'R2.5', 'R3', 'RW', 'Sim_satellite'])
-    parser.add_argument('--n_repeats', type=int, default=100)
-    parser.add_argument('--epochs', type=int, default=200)
-    parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--patience', type=int, default=15)
-    parser.add_argument('--seed', type=int, default=42)
-    
-    args = parser.parse_args()
-    
-    # 创建配置
-    config = ExperimentConfig(
-        batch=args.batch,
-        n_repeats=args.n_repeats,
-        epochs=args.epochs,
-        lr=args.lr,
-        batch_size=args.batch_size,
-        early_stopping_patience=args.patience,
-        random_seed=args.seed
-    )
-    
+@hydra.main(version_base=None, config_path="../configs", config_name="config")
+def main(cfg: DictConfig):
+    """主函数"""
     # 设置日志
-    log_file = f"experiments_v2/{args.batch}/experiment_{datetime.now():%Y%m%d_%H%M%S}.log"
-    Path(log_file).parent.mkdir(parents=True, exist_ok=True)
-    logger = setup_logger("BigExperimentV2", log_file)
+    output_dir = Path(cfg.get('experiment', {}).get('output_dir', 'experiments_v2'))
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    log_file = output_dir / cfg.batch / timestamp / "experiment.log"
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    logger = setup_logger("BigExperimentV2", str(log_file))
     
     # 运行实验
-    output_dir = run_big_experiment(config, logger)
+    output_dir = run_big_experiment(cfg, logger)
     
     print(f"\nExperiment completed: {output_dir}")
 

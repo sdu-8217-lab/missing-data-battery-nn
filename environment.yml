@@ -38,7 +38,6 @@ dependencies:
   
   # Configuration Management
   - omegaconf>=2.3.0
-  - pydantic>=2.0
   - click>=8.0.0
   
   # Hyperparameter Optimization

@@ -13,8 +13,15 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from loguru import logger
-from src.config.pydantic_config import ExperimentConfig
 from src.utils.logger import setup_logger
+
+# 默认特征列
+DEFAULT_FEATURE_COLS = [
+    'voltage mean', 'voltage std', 'voltage kurtosis', 'voltage skewness',
+    'CC Q', 'CC charge time', 'voltage slope', 'voltage entropy',
+    'current mean', 'current std', 'current kurtosis', 'current skewness',
+    'CV Q', 'CV charge time', 'current slope', 'current entropy'
+]
 
 
 @dataclass
@@ -433,7 +440,7 @@ class ArchitectureSearchRunner:
         from src.data.dataset_loader import XJTUDatasetLoader
         loader = XJTUDatasetLoader(data_dir='./data/XJTU data', batch=self.batch_name)
         data = loader.prepare_data(
-            feature_cols=ExperimentConfig().feature_cols,
+            feature_cols=DEFAULT_FEATURE_COLS,
             target_col='capacity',
             test_size=0.25,
             val_size=0.25,
