@@ -285,3 +285,34 @@ print(f"p-value: {p_value:.4f}")
 ---
 
 *Last updated: 2026-02-26*
+
+## 文档
+
+| 文档 | 内容 | 读者 |
+|------|------|------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 代码架构、设计决策 | 开发者 |
+| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | 实验设计、完整操作指南 | 研究者 |
+| [docs/DATASETS.md](docs/DATASETS.md) | 数据集说明、下载指南 | 数据使用者 |
+
+## 实验规模
+
+```
+4数据集 × 2缺失机制 × 5方法 × 4模型 × 100种子 × 9缺失率 = 144,000 次评估
+```
+
+## Citation
+
+If you use this code in your research, please cite:
+
+```bibtex
+@article{battery_mim_2024,
+  title={Battery SOH Prediction with Missing Data},
+  author={...},
+  journal={...},
+  year={2024}
+}
+```
+
+## License
+
+MIT License
