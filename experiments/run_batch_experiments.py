@@ -48,7 +48,7 @@ ALL_METHODS = IMPUTATION_METHODS + ["mim"]
 FULL_MATRIX = {
     "modes": ["mcar", "mar", "mnar"],
     "methods": ["mean", "knn", "iterative", "zero", "mim"],
-    "missing_rates": [0.1, 0.3, 0.5, 0.7, 0.9],
+    "missing_rates": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
 }
 
 
@@ -200,8 +200,8 @@ def main():
     parser.add_argument('--method', choices=ALL_METHODS,
                        help='Imputation method (required if not --full-matrix)')
     parser.add_argument('--missing-rates', nargs='+', type=float,
-                       default=[0.1, 0.3, 0.5, 0.7, 0.9],
-                       help='Missing rates to evaluate')
+                       default=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                       help='Missing rates to evaluate (default: 0.0-0.9)')
     parser.add_argument('--seeds', nargs='+', type=int,
                        default=[42, 123, 456, 789, 1011],
                        help='Random seeds')
