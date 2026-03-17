@@ -369,7 +369,7 @@ def _get_missing_rates(cfg: DictConfig) -> List[float]:
         return [mr] if not isinstance(mr, (list, tuple)) else list(mr)
     else:
         # 多 MR 场景
-        return cfg.missing.get("missing_rates", [0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
+        return cfg.missing.get("missing_rates", [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 
 
 def _create_mim_train_loader(

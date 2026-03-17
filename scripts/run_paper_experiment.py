@@ -69,8 +69,8 @@ def main():
     
     # 缺失率参数
     parser.add_argument("--mr", type=float, nargs="+", 
-                       default=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-                       help="缺失率列表 (默认: 所有9个缺失率)")
+                       default=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                       help="缺失率列表 (默认: 0.0-0.9 共10个缺失率)")
     
     parser.add_argument("--dry-run", action="store_true",
                        help="只打印命令，不实际执行")
