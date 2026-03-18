@@ -1,38 +1,43 @@
-# 基础配置文件
-# 全局通用参数
+# 基础配置文件 - 基于meta.md的9层架构
 
-project:
-  name: "missing-data-battery-nn"
-  version: "2.0"
-  description: "电池SOH预测中的MIM系统评测"
+# L1: Seed (随机种子)
+seed: 42
 
-paths:
-  data_dir: "data/raw/XJTU"
-  processed_dir: "data/processed"
-  experiments_dir: "data/experiments"
-  results_dir: "results"
-  logs_dir: "logs/experiments"
-  figures_dir: "results/images"
+# L2: Dataset (数据集)
+dataset: "xjtu"
+data_dir: "data/XJTU data"
 
-# 数据配置
-data:
-  feature_cols: [
-    "voltage", "current", "temperature", 
-    "cycle", "charge_capacity", "discharge_capacity"
-  ]
-  target_col: "SOH"
-  test_size: 0.2
-  val_size: 0.1
+# L3: Batch (电池批次)
+batch: "2C"  # 可选: 2C, 3C, R2.5, R3, RW, Sim_satellite
 
-# 实验默认配置
-experiment:
-  batch: "3C"
-  n_repeats: 100
-  epochs: 200
+# L4: Model (模型架构)
+model:
+  type: "mlp"  # 可选: mlp, lstm, cnn
+  
+# L5: use_mim (是否使用MIM指示器)
+use_mim: false  # 可选: true, false
+
+# L6: 训练MR (由use_mim决定，无需配置)
+# use_mim=false: 训练MR=0.0 (完整数据)
+# use_mim=true: 训练MR=0.0-0.9 (MCAR多MR混合)
+
+# L7: Mode (缺失模式，仅测试时使用)
+mode: "MCAR"  # 可选: MCAR, MAR, MNAR
+
+# L8: 测试MR (测试缺失率)
+test_mr: 0.3  # 范围: 0.0-0.9
+
+# L9: Imputation (插补方法，仅测试时使用)
+imputation: "mean"  # 可选: mean, knn, iterative, zero
+
+# 训练参数
+training:
+  epochs: 50
   batch_size: 32
-  lr: 0.001
-  device: "auto"  # auto, cpu, cuda
-  seed: 42
-
-# 缺失率范围
-missing_rates: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  patience: 10
+  
+# 模型保存/加载
+model_dir: "models"
+results_dir: "results"
