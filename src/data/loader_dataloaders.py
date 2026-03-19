@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader, TensorDataset
 # 根据CPU核心数自动调整（i9-14900KF 32核）
 import multiprocessing
 _cpu_count = multiprocessing.cpu_count()
-DEFAULT_NUM_WORKERS = min(12, _cpu_count // 2)  # 使用最多12个workers
+DEFAULT_NUM_WORKERS = 0  # 使用最多12个workers
 DEFAULT_PIN_MEMORY = True  # 加速CPU->GPU传输
 DEFAULT_PERSISTENT_WORKERS = True  # 避免worker进程重复创建
 
