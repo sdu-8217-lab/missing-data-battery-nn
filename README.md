@@ -1,318 +1,298 @@
-# Battery SOH Prediction with Missing Data
+# 电池SOH预测：缺失数据下的MIM方法研究
 
-基于 PyTorch Lightning + Hydra 的电池 SOH 预测框架，对比 **MIM (Missing Indicator Method)** 与 **传统插补方法**。
+基于 **9层实验架构** 的电池健康状态(SOH)预测框架，系统对比 **MIM (Missing Indicator Method)** 与传统插补方法在缺失数据场景下的性能。
 
-## 核心对比
+> 📋 **权威架构定义**: 参见 [meta.md](meta.md) - 包含完整的9层实验设计原则与概念定义
 
-| 方法 | 训练数据 | 测试时处理 | 输入维度 | 特点 |
-|------|---------|-----------|---------|------|
-| **MIM (Proposed)** | 混合缺失率 0.0-0.9 | 直接 MIM 格式 | 32 (16+16) | 端到端，不插补 |
-| **Mean Imputation** | 完整数据 | 缺失→均值填充 | 16 | 简单 baseline |
-| **Median Imputation** | 完整数据 | 缺失→中位数填充 | 16 | 鲁棒 baseline |
-| **KNN Imputation** | 完整数据 | 缺失→KNN填充 | 16 | 局部相关性 baseline |
-| **Zero Imputation** | 完整数据 | 缺失→0填充 | 16 | 极端 baseline |
+---
 
-## 技术栈
+## 核心概念
 
-| 组件 | 用途 |
-|------|------|
-| **Hydra** | 配置管理 |
-| **PyTorch Lightning** | 训练框架 |
-| **Weights & Biases** | 实验追踪 (可选) |
+### MIM vs 插补的本质
 
-## 快速开始
+**关键认知**: MIM与插补不是互斥关系，而是**正交组合**。
 
-### 环境配置 (推荐 Miniforge)
+| 维度 | 无MIM (16维) | 有MIM (32维) |
+|------|-------------|-------------|
+| **mean** | 均值插补 | 均值插补 + 缺失指示器 |
+| **knn** | KNN插补 | KNN插补 + 缺失指示器 |
+| **iterative** | 迭代插补 | 迭代插补 + 缺失指示器 |
+| **zero** | 零值填充 | 零值填充 + 缺失指示器 |
 
-本项目使用 **Miniforge** 管理Python环境。
+**研究问题**: 在相同插补策略下，添加MIM指示器是否有帮助？
 
-**方式1: 使用 environment.yml (推荐)**
-```bash
-# 创建环境
-conda env create -f environment.yml
+---
 
-# 激活环境
-conda activate battery-nn
+## 9层实验架构
 
-# 验证安装
-python -c "import torch; print(f'PyTorch: {torch.__version__}')"
-```
+实验设计遵循 **meta.md** 定义的9层层次结构：
 
-**方式2: 使用 pip**
-```bash
-pip install -r requirements.txt
-```
+### 分界线以上（影响模型训练）
 
-**环境要求**
-- Python: 3.14+
-- PyTorch: 2.10.0+
-- 依赖包: hydra-core, pytorch-lightning, pandas, numpy, scikit-learn
+| 层级 | 变量 | 取值 | 说明 |
+|------|------|------|------|
+| L1 | Seed | 0-99 | 随机种子，控制可复现性 |
+| L2 | Dataset | XJTU | 固定使用XJTU数据集 |
+| L3 | Batch | 2C, 3C, R2.5, R3, RW, Sim_satellite | 6个电池批次 |
+| L4 | Model | mlp, lstm, cnn | 3种神经网络架构 |
+| L5 | use_mim | false, true | 是否使用MIM指示器 |
+| L6 | Train MR | 0.0 (false) / 0.0-0.9 (true) | 训练缺失率 |
 
-### 运行单次实验
+**分界线以上组合数**: 100 × 6 × 3 × 2 = **3,600个独立模型**
 
-```bash
-# MIM 方法 (Proposed)
-python src/main.py data=xjtu model=mlp method=mim
+### 分界线以下（仅影响测试）
 
-# 插补 Baselines
-python src/main.py data=xjtu model=mlp method=mean
-python src/main.py data=xjtu model=mlp method=median
-python src/main.py data=xjtu model=mlp method=knn
-python src/main.py data=xjtu model=mlp method=zero
-```
+| 层级 | 变量 | 取值 | 说明 |
+|------|------|------|------|
+| L7 | Mode | MCAR, MAR, MNAR | 缺失模式 |
+| L8 | Test MR | 0.0, 0.1, ..., 0.9 | 测试缺失率 |
+| L9 | Imputation | mean, knn, iterative, zero | 插补方法 |
 
-### 更换模型
+**每个模型的测试组合**: 3 × 10 × 4 = **120个测试结果**
 
-```bash
-python src/main.py model=lstm    # LSTM
-python src/main.py model=gru     # GRU
-python src/main.py model=cnn1d   # 1D-CNN
-```
+### 总实验规模
 
-### 更换数据集
+- **训练**: 3,600个模型
+- **测试**: 3,600 × 120 = **432,000个测试结果**
+- **完整矩阵**: 100种子 × 6批次 × 3模型 × 2 MIM × 3模式 × 10 MR × 4插补 = **432,000行结果**
 
-```bash
-python src/main.py data=xjtu   # 西安交通大学
-python src/main.py data=tju    # 天津大学
-python src/main.py data=hust   # 华中科技大学
-python src/main.py data=mit    # 麻省理工大学
-```
-
-### 更换缺失机制
-
-```bash
-python src/main.py missing=mcar   # 完全随机缺失
-python src/main.py missing=mar    # 依赖 SOH 的缺失
-```
-
-### 覆盖参数
-
-```bash
-python src/main.py \
-    data=xjtu \
-    model=mlp \
-    method=mim \
-    training.epochs=200 \
-    training.batch_size=32 \
-    experiment.seeds=[42,43,44]
-```
+---
 
 ## 项目结构
 
 ```
 .
-├── configs/              # Hydra 配置
-│   ├── config.yaml       # 主配置 (实验名、种子)
-│   ├── data/             # 4个数据集配置
-│   ├── model/            # 4个模型配置
-│   └── missing/          # 2种缺失机制
-├── src/
-│   ├── main.py           # 唯一入口
-│   ├── models/           # 神经网络定义
-│   ├── data/             # 数据加载 (电池级划分)
-│   ├── missing_data/     # 缺失模拟 + 插补
-│   └── utils/            # 工具函数
-├── data/                 # 数据集 (4 universities)
-├── results/              # 实验结果 (CSV)
-└── plot_results.py       # 可视化脚本
-```
-
-## 模型
-
-| 模型 | 隐藏层配置 | 输入=16参数量 | 输入=32参数量 | 论文目标* |
-|------|-----------|-------------|-------------|---------|
-| MLP | [192,96,48,24] | 27,649 | 30,721 | 27,649 / 36,865 |
-| LSTM | hidden=48, layers=2 | 31,537 | 34,609 | 31,537 / 40,753 |
-| GRU | hidden=64, layers=2 | 40,769 | 43,841 | 40,769 / 49,985 |
-| CNN1D | channels=[72,32] | 13,961 | 18,569 | 16,713 / 30,537 |
-
-> *论文目标值来自Table 2，参数量控制范围 15k-45k
-
-## 实验设计 (控制变量)
-
-```
-维度1: 数据集     {XJTU, TJU, HUST, MIT}
-维度2: 缺失机制   {MCAR, MAR}  
-维度3: 方法       {MIM, Mean, Median, KNN, Zero}
-维度4: 模型       {MLP, LSTM, GRU, CNN1D}
-维度5: 缺失率     {0.1, 0.2, ..., 0.9}
-维度6: 随机种子   {42, 43, ..., 141} (100次)
-```
-
-**总实验数**: 4 × 2 × 5 × 4 × 9 × 100 = 144,000 次
-
-**分层架构**:
-- **单次实验**: 固定 (dataset, mode, method, model, seed)
-- **批量实验**: 跨种子/方法/模型的组合
-
-## 关键特性
-
-### 1. 按电池划分 (Battery-wise Split)
-
-同一电池的所有循环只属于 train/val/test 中的一个集合，避免数据泄漏。
-
-```
-Train: [电池3,4,5,7]
-Val:   [电池1,8]
-Test:  [电池2,6]
-```
-
-### 2. 滑动窗口序列 (Sliding Window)
-
-LSTM/GRU/CNN 使用真实时间序列，不是简单重复。
-
-```
-输入: [c0,c1,c2,c3,c4] -> 预测 y4
-      [c1,c2,c3,c4,c5] -> 预测 y5
-```
-
-### 3. MIM 训练策略
-
-训练时混合 10 种缺失率 (0.0-0.9)，测试时指定缺失率。
-
-```python
-# 训练: 10× 数据量
-for mr in [0.0, 0.1, ..., 0.9]:
-    X_mim = simulate_missing(X, mr)  # [N, 32]
-
-# 测试: 指定缺失率
-X_test_mim = simulate_missing(X_test, mr=0.5)  # [N, 32]
-```
-
-### 4. 插补 Baseline
-
-训练时用完整数据，测试时先缺失再插补。
-
-```python
-# 训练 (完整)
-X_train  # [N, 16]
-
-# 测试 (缺失+插补)
-X_test_missing = simulate_missing(X_test, mr=0.5)  # [N, 16]
-X_test_input = mean_imputation(X_test_missing)      # [N, 16]
-```
-
-## 结果分析
-
-### 1. 运行实验
-
-```bash
-# 生成结果文件
-python src/main.py data=xjtu model=mlp method=mim \
-    experiment.seeds=[42,43,44] training.epochs=100
-
-# 结果保存到: results/battery_soh_experiment_mlp_mim.csv
-```
-
-### 2. 可视化对比
-
-```bash
-python plot_results.py
-# 生成: results/comparison_plot.png
-```
-
-### 3. 统计检验
-
-```python
-import pandas as pd
-from scipy import stats
-
-mim = pd.read_csv('results/battery_soh_experiment_mlp_mim.csv')
-mean = pd.read_csv('results/battery_soh_experiment_mlp_mean.csv')
-
-# MR=0.5 的 t检验
-mim_mae = mim[mim.missing_rate==0.5].test_mae
-mean_mae = mean[mean.missing_rate==0.5].test_mae
-t_stat, p_value = stats.ttest_ind(mim_mae, mean_mae)
-print(f"p-value: {p_value:.4f}")
-```
-
-## 实验结果示例
-
-**配置**: XJTU 2C, MLP, 3 seeds, 10 epochs
-
-| MR | MIM | Mean | KNN | MIM vs Best |
-|----|-----|------|-----|-------------|
-| 0.1 | **0.010** | 0.073 | 0.067 | **85% better** |
-| 0.3 | **0.011** | 0.086 | 0.066 | **83% better** |
-| 0.5 | **0.013** | 0.108 | 0.067 | **81% better** |
-| 0.7 | **0.016** | 0.144 | 0.079 | **80% better** |
-| 0.9 | **0.025** | 0.202 | 0.116 | **78% better** |
-
-## 故障排查
-
-### 问题: "至少需要3个电池"
-**原因**: 按电池划分需要 train/val/test 各至少1个电池
-**解决**: 检查数据目录中有 ≥3 个电池文件
-
-### 问题: "找不到特征列"
-**原因**: CSV 列名与配置不匹配
-**解决**: 检查 `configs/data/{dataset}.yaml` 中的 `features`
-
-### 问题: CUDA OOM
-**原因**: MIM 训练集扩大10倍
-**解决**: 减小 `training.batch_size` (64 → 32 或 16)
-
-### 问题: 结果不一致
-**原因**: 随机种子未正确设置
-**解决**: 确认 `experiment.seeds` 和 `random_state` 一致
-
-## 扩展
-
-### 添加新数据集
-1. 创建 `data/{dataset} data/` 目录
-2. 添加 `configs/data/{dataset}.yaml`
-3. 更新 `src/data/loader.py`
-
-### 添加新模型
-1. 在 `src/models/__init__.py` 定义模型
-2. 添加 `configs/model/{model}.yaml`
-3. 更新 `src/main.py` 的 `get_model_config()`
-
-## 引用
-
-如果本项目对您的研究有帮助，请引用：
-
-```bibtex
-@article{your_paper_2026,
-  title={Robust SOH Prediction with Missing Data using Missing Indicator Method},
-  author={Your Name},
-  journal={Journal of Energy Storage},
-  year={2026}
-}
+├── meta.md                     # ⭐ 权威架构定义（只读）
+├── README.md                   # 本文件
+├── experiments/                # 实验入口
+│   ├── run_batch_experiments.py   # 批量实验主入口
+│   ├── run_experiment.py          # 单次实验执行
+│   ├── run_single.py              # 快速单次测试
+│   └── evaluate.py                # 结果评估
+├── src/                        # 源代码
+│   ├── main.py                 # 旧Hydra入口（已弃用）
+│   ├── models/                 # 神经网络定义
+│   ├── data/                   # 数据加载与预处理
+│   ├── missing_data/           # 缺失模拟与插补
+│   └── utils/                  # 工具函数
+├── configs/                    # 配置文件
+├── data/                       # 数据集（XJTU等）
+├── models/                     # 保存的训练模型
+├── results/                    # 实验结果（JSON/CSV）
+├── docs/                       # 文档
+│   ├── ARCHITECTURE.md         # 代码架构
+│   ├── EXPERIMENTS.md          # 实验指南
+│   └── archived/               # 归档文档
+└── tests/                      # 测试
 ```
 
 ---
 
-*Last updated: 2026-02-26*
+## 快速开始
 
-## 文档
+### 环境配置
+
+```bash
+# 创建conda环境
+conda env create -f environment.yml
+conda activate battery-nn
+
+# 或直接使用pip
+pip install -r requirements.txt
+```
+
+### 运行实验
+
+#### 1. 单次实验（快速测试）
+
+```bash
+# 训练单个模型
+python experiments/run_experiment.py \
+    --phase train \
+    --seed 42 \
+    --batch 2C \
+    --model mlp \
+    --use-mim true \
+    --epochs 50
+
+# 测试该模型
+python experiments/run_experiment.py \
+    --phase test \
+    --seed 42 \
+    --batch 2C \
+    --model mlp \
+    --use-mim true \
+    --mode MCAR \
+    --test-mr 0.3 \
+    --imputation mean
+```
+
+#### 2. 批量实验（完整矩阵）
+
+```bash
+# 运行完整实验（训练+测试）
+python experiments/run_batch_experiments.py \
+    --phase full \
+    --epochs 50
+
+# 仅训练阶段
+python experiments/run_batch_experiments.py \
+    --phase train \
+    --epochs 50
+
+# 仅测试阶段（需已有训练好的模型）
+python experiments/run_batch_experiments.py \
+    --phase test
+
+# 指定子集（如仅2个种子、2个批次）
+python experiments/run_batch_experiments.py \
+    --phase full \
+    --seeds 42 43 \
+    --batches 2C 3C \
+    --epochs 50
+```
+
+#### 3. 大规模实验（100种子）
+
+```bash
+# 后台运行（耗时约10-15小时）
+nohup python experiments/run_batch_experiments.py \
+    --phase full \
+    --seeds $(seq 0 99) \
+    --epochs 50 \
+    --model-dir models/100seeds \
+    --results-dir results/100seeds \
+    > experiment_100seeds.log 2>&1 &
+
+# 监控进度
+tail -f experiment_100seeds.log
+```
+
+---
+
+## 监控实验进度
+
+批量实验内置tqdm进度条，显示：
+- 实时进度百分比
+- 预计剩余时间(ETA)
+- 当前配置
+- 成功/失败状态
+
+```
+Training:  25%|████▌| 900/3600 [2:30:15<7:30:45, 10.2s/it, ✓ 2C-mlp-MIM (4.5s)]
+```
+
+---
+
+## 结果分析
+
+### 结果文件结构
+
+```
+results/
+├── seed42_batch2C_modelmlp_mimtrue.json      # 单次实验结果
+├── seed42_batch2C_modellstm_mimfalse.json
+├── ...
+├── train_summary.json                        # 训练摘要
+└── aggregated_results.csv                    # 聚合结果（自动生成的CSV）
+```
+
+### 结果格式
+
+```json
+{
+  "seed": 42,
+  "batch": "2C",
+  "model": "mlp",
+  "use_mim": "true",
+  "mode": "MCAR",
+  "test_mr": 0.3,
+  "imputation": "mean",
+  "test_mae": 0.0234,
+  "test_rmse": 0.0312,
+  "status": "success",
+  "elapsed": 4.5
+}
+```
+
+### 统计分析示例
+
+```python
+import pandas as pd
+
+# 加载聚合结果
+df = pd.read_csv('results/aggregated_results.csv')
+
+# MIM vs 非MIM对比
+mim_comparison = df.groupby(['use_mim', 'imputation'])['test_mae'].mean()
+print(mim_comparison)
+
+# 不同缺失率下的性能
+mr_performance = df.groupby('test_mr')['test_mae'].mean()
+print(mr_performance)
+```
+
+---
+
+## 关键特性
+
+### 1. 按电池划分（Battery-wise Split）
+
+同一电池的所有循环只属于train/val/test中的一个，避免数据泄漏。
+
+### 2. 分界线原则
+
+- **分界线以上**（L1-L6）: 每个组合需独立训练模型
+- **分界线以下**（L7-L9）: 同一模型可复用测试所有组合
+- **关键洞察**: 训练缺失率与测试缺失率独立，可评估泛化能力
+
+### 3. MIM训练策略
+
+- **use_mim=false**: 使用完整数据训练（MR=0.0）
+- **use_mim=true**: 使用MCAR多MR混合训练（0.0-0.9）
+- **测试时**: 可面对任意缺失模式（MCAR/MAR/MNAR）
+
+---
+
+## 文档导航
 
 | 文档 | 内容 | 读者 |
 |------|------|------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 代码架构、设计决策 | 开发者 |
-| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | 实验设计、完整操作指南 | 研究者 |
-| [docs/DATASETS.md](docs/DATASETS.md) | 数据集说明、下载指南 | 数据使用者 |
+| [meta.md](meta.md) | ⭐ 9层架构定义、实验原则（**权威参考**） | 所有人 |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 代码架构、模块设计 | 开发者 |
+| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | 详细实验指南 | 研究者 |
+| [docs/DATASETS.md](docs/DATASETS.md) | 数据集说明 | 数据使用者 |
 
-## 实验规模
+---
 
-```
-4数据集 × 2缺失机制 × 5方法 × 4模型 × 100种子 × 9缺失率 = 144,000 次评估
-```
+## 故障排查
 
-## Citation
+### 问题: 显存不足
+**解决**: 减小batch size或模型隐藏层维度
 
-If you use this code in your research, please cite:
+### 问题: 实验中断
+**解决**: 支持断点续传，重新运行相同命令会自动跳过已完成的实验
+
+### 问题: 缺少依赖
+**解决**: `pip install -r requirements.txt`
+
+---
+
+## 引用
 
 ```bibtex
-@article{battery_mim_2024,
-  title={Battery SOH Prediction with Missing Data},
+@article{battery_mim_2026,
+  title={Battery SOH Prediction with Missing Data using Missing Indicator Method},
   author={...},
-  journal={...},
-  year={2024}
+  journal={Journal of Energy Storage},
+  year={2026}
 }
 ```
 
 ## License
 
 MIT License
+
+---
+
+*Last updated: 2026-03-18*
