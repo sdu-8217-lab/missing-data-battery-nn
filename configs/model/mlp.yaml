@@ -1,8 +1,0 @@
-# @package model
-type: "mlp"
-
-# MLP 配置会根据 method 自动调整：
-# - method=mim: hidden_dims=[84,56,28], input_dim=32, ~9K params
-# - method=mean/knn/etc: hidden_dims=[100,64,32], input_dim=16, ~10K params
-
-dropout: 0.15
