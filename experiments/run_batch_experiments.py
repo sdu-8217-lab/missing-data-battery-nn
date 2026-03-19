@@ -79,12 +79,12 @@ def run_subprocess_with_progress(
     config_str: str,
     pbar: tqdm,
     timeout: int = 600
-) -> tuple[bool, str, float]:
+) -> tuple[bool, str, float, str]:
     """
     运行子进程并更新进度条
     
     Returns:
-        (success, error_msg, elapsed_time)
+        (success, error_msg, elapsed_time, stdout)
     """
     start = time.time()
     pbar.set_postfix_str(f"Running: {config_str}")
@@ -95,21 +95,21 @@ def run_subprocess_with_progress(
         
         if result.returncode == 0:
             pbar.set_postfix_str(f"✓ {config_str} ({elapsed:.1f}s)")
-            return True, "", elapsed
+            return True, "", elapsed, result.stdout
         else:
             error = result.stderr[:50] if result.stderr else "Unknown error"
             pbar.set_postfix_str(f"✗ {config_str}: {error}")
-            return False, result.stderr[:500], elapsed
+            return False, result.stderr[:500], elapsed, result.stdout
             
     except subprocess.TimeoutExpired:
         elapsed = time.time() - start
         pbar.set_postfix_str(f"✗ {config_str}: Timeout")
-        return False, "Timeout", elapsed
+        return False, "Timeout", elapsed, ""
         
     except Exception as e:
         elapsed = time.time() - start
         pbar.set_postfix_str(f"✗ {config_str}: {str(e)[:50]}")
-        return False, str(e), elapsed
+        return False, str(e), elapsed, ""
 
 
 def run_training_phase(args) -> List[Dict]:
@@ -173,93 +173,171 @@ def run_training_phase(args) -> List[Dict]:
     return results
 
 
+def load_existing_results(csv_file: str) -> set:
+    """加载已完成的实验记录，返回标识符集合用于断点续传"""
+    if not os.path.exists(csv_file):
+        return set()
+    
+    try:
+        df = pd.read_csv(csv_file)
+        # 创建唯一标识符: seed_batch_model_use_mim_mode_test_mr_imputation
+        identifiers = set()
+        for _, row in df.iterrows():
+            key = f"{row['seed']}_{row['batch']}_{row['model']}_{str(row['use_mim']).lower()}_{row['mode']}_{row['test_mr']}_{row['imputation']}"
+            identifiers.add(key)
+        return identifiers
+    except Exception as e:
+        print(f"Warning: Failed to load existing results: {e}")
+        return set()
+
+
 def run_testing_phase(args) -> List[Dict]:
-    """分界线以下：测试阶段（L7-L9）"""
+    """分界线以下：测试阶段（L7-L9）
+    
+    优化版本：使用 batch-test 模式，每个模型只启动一次进程，测试120个配置
+    结果直接写入 CSV 文件，无需中间 JSON 文件
+    3 modes × 10 MRs × 4 imputations = 120 tests per model
+    """
     seeds = args.seeds if args.seeds else SEEDS
     batches = args.batches if args.batches else BATCHES
     models = args.models if args.models else MODELS
     
     n_models = len(seeds) * len(batches) * len(models) * len(USE_MIMS)
     n_tests_per_model = len(MODES) * len(TEST_MRS) * len(IMPUTATIONS)
-    total = n_models * n_tests_per_model
-    completed = failed = 0
+    total_tests = n_models * n_tests_per_model
+    total_models = n_models
+    
+    completed_models = 0
+    completed_tests = 0
+    failed_tests = 0
     all_results = []
     start_time = time.time()
     
+    # CSV 文件路径
+    csv_file = os.path.join(args.results_dir, 'test_results.csv')
+    os.makedirs(args.results_dir, exist_ok=True)
+    
+    # 加载已完成的记录（断点续传）
+    existing_keys = load_existing_results(csv_file) if not args.dry_run else set()
+    if existing_keys:
+        print(f"Found {len(existing_keys)} existing test results in {csv_file}")
+    
+    # 计算实际需要测试的模型数
+    models_to_test = []
+    for seed in seeds:
+        for batch in batches:
+            for model in models:
+                for use_mim in USE_MIMS:
+                    # 检查该模型的120个测试是否都已完成
+                    missing_tests = 0
+                    for mode in MODES:
+                        for test_mr in TEST_MRS:
+                            for imp in IMPUTATIONS:
+                                key = f"{seed}_{batch}_{model}_{str(use_mim).lower()}_{mode}_{test_mr}_{imp}"
+                                if key not in existing_keys:
+                                    missing_tests += 1
+                    
+                    # 只有当有测试缺失时才添加到待测试列表
+                    if missing_tests > 0:
+                        models_to_test.append((seed, batch, model, use_mim))
+    
+    skipped_models = total_models - len(models_to_test)
+    
     print(f"\n{'='*70}")
-    print(f"Testing Phase (L7-L9): {total} tests")
+    print(f"Testing Phase (L7-L9): {total_models} models × {n_tests_per_model} tests = {total_tests} total")
+    print(f"Using batch-test mode: 1 process per model")
+    if skipped_models > 0:
+        print(f"Skipped {skipped_models} already completed models")
+    print(f"Results will be saved to: {csv_file}")
     print(f"{'='*70}\n")
     
-    with tqdm(total=total, desc="Testing", ncols=100,
+    # 初始化 CSV 文件（如果不存在）
+    if not os.path.exists(csv_file) and not args.dry_run:
+        pd.DataFrame(columns=[
+            'seed', 'batch', 'model', 'use_mim', 'mode', 'test_mr', 'imputation',
+            'test_mae', 'test_r2', 'n_samples', 'status'
+        ]).to_csv(csv_file, index=False)
+    
+    # 外层循环：每个模型启动一次batch-test进程
+    with tqdm(total=len(models_to_test), desc="Batch Testing", ncols=100,
               bar_format='{desc}: {percentage:3.0f}%|{bar:20}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]') as pbar:
         
-        for seed in seeds:
-            for batch in batches:
-                for model in models:
-                    for use_mim in USE_MIMS:
-                        model_str = f"{batch}-{model}-{'MIM' if use_mim=='true' else 'Std'}"
+        for seed, batch, model, use_mim in models_to_test:
+            model_str = f"seed{seed}-{batch}-{model}-{'MIM' if use_mim=='true' else 'Std'}"
+            
+            # 构建batch-test命令（不再使用 --output）
+            cmd = [
+                'python', 'experiments/run_experiment.py',
+                '--phase', 'batch-test',
+                '--seed', str(seed),
+                '--batch', batch,
+                '--model', model,
+                '--use-mim', use_mim,
+                '--model-dir', args.model_dir
+            ]
+            
+            if args.dry_run:
+                pbar.set_postfix_str(f"Dry-run: {model_str}")
+                completed_models += 1
+                completed_tests += n_tests_per_model
+            else:
+                # 使用更长的超时时间，因为一次要测试120个配置
+                success, error, elapsed, stdout = run_subprocess_with_progress(
+                    cmd, model_str, pbar, timeout=600
+                )
+                completed_models += 1
+                
+                if success:
+                    # 从 stdout 解析 JSON 结果
+                    try:
+                        # 查找 JSON_RESULTS_START 和 JSON_RESULTS_END 之间的内容
+                        start_idx = stdout.find("JSON_RESULTS_START")
+                        end_idx = stdout.find("JSON_RESULTS_END")
                         
-                        for mode in MODES:
-                            for test_mr in TEST_MRS:
-                                for imp in IMPUTATIONS:
-                                    config = f"{model_str}-{mode}-{test_mr}-{imp[:4]}"
-                                    
-                                    result_file = os.path.join(
-                                        args.results_dir,
-                                        f"seed{seed}_batch{batch}_model{model}_"
-                                        f"mim{use_mim}_mode{mode}_mr{test_mr}_imp{imp}.json"
-                                    )
-                                    
-                                    # 断点续传
-                                    if os.path.exists(result_file) and not args.dry_run:
-                                        with open(result_file) as f:
-                                            result = json.load(f)
-                                        all_results.append(result)
-                                        pbar.update(1)
-                                        continue
-                                    
-                                    cmd = [
-                                        'python', 'experiments/run_experiment.py',
-                                        '--phase', 'test',
-                                        '--seed', str(seed),
-                                        '--batch', batch,
-                                        '--model', model,
-                                        '--use-mim', use_mim,
-                                        '--mode', mode,
-                                        '--test-mr', str(test_mr),
-                                        '--imputation', imp,
-                                        '--model-dir', args.model_dir,
-                                        '--output', result_file
-                                    ]
-                                    
-                                    if args.dry_run:
-                                        pbar.set_postfix_str(f"Dry-run: {config}")
-                                        completed += 1
-                                    else:
-                                        success, error, elapsed = run_subprocess_with_progress(cmd, config, pbar, timeout=60)
-                                        completed += 1
-                                        
-                                        if success and os.path.exists(result_file):
-                                            with open(result_file) as f:
-                                                result_data = json.load(f)
-                                            result_data['elapsed'] = elapsed
-                                            all_results.append(result_data)
-                                            mae = result_data.get('test_mae')
-                                            if mae:
-                                                pbar.set_postfix_str(f"✓ {config} MAE={mae:.4f}")
-                                        else:
-                                            failed += 1
-                                            all_results.append({
-                                                'seed': seed, 'batch': batch, 'model': model,
-                                                'use_mim': use_mim, 'mode': mode,
-                                                'test_mr': test_mr, 'imputation': imp,
-                                                'status': 'failed', 'error': error, 'elapsed': elapsed
-                                            })
-                                    
-                                    pbar.update(1)
+                        if start_idx != -1 and end_idx != -1:
+                            json_str = stdout[start_idx + len("JSON_RESULTS_START"):end_idx]
+                            batch_results = json.loads(json_str)
+                            
+                            if isinstance(batch_results, list):
+                                # 过滤掉已存在的记录（双重保险）
+                                new_results = []
+                                for r in batch_results:
+                                    key = f"{r['seed']}_{r['batch']}_{r['model']}_{str(r['use_mim']).lower()}_{r['mode']}_{r['test_mr']}_{r['imputation']}"
+                                    if key not in existing_keys:
+                                        new_results.append(r)
+                                        existing_keys.add(key)  # 添加到已存在集合
+                                
+                                if new_results:
+                                    # 实时追加写入 CSV
+                                    df_new = pd.DataFrame(new_results)
+                                    df_new.to_csv(csv_file, mode='a', header=False, index=False)
+                                
+                                all_results.extend(batch_results)
+                                n_success = sum(1 for r in batch_results if r.get('status') == 'success')
+                                n_failed = len(batch_results) - n_success
+                                completed_tests += n_success
+                                failed_tests += n_failed
+                                
+                                # 计算平均MAE
+                                maes = [r.get('test_mae') for r in batch_results if r.get('test_mae') is not None]
+                                avg_mae = sum(maes) / len(maes) if maes else 0
+                                pbar.set_postfix_str(f"✓ {model_str} ({n_success} tests, avg MAE={avg_mae:.4f}, {elapsed:.1f}s)")
+                        else:
+                            failed_tests += n_tests_per_model
+                            pbar.set_postfix_str(f"✗ {model_str}: JSON parse error")
+                    except Exception as e:
+                        failed_tests += n_tests_per_model
+                        pbar.set_postfix_str(f"✗ {model_str}: {str(e)[:30]}")
+                else:
+                    failed_tests += n_tests_per_model
+                    pbar.set_postfix_str(f"✗ {model_str}: {error[:30]}")
+            
+            pbar.update(1)
     
     print(f"\n{'='*70}")
-    print(f"Testing Complete: {completed - failed}/{completed} successful")
+    print(f"Testing Complete: {completed_tests}/{total_tests} tests successful")
+    print(f"Models: {completed_models}/{total_models}, Failed tests: {failed_tests}")
+    print(f"Results saved to: {csv_file}")
     print(f"Total time: {time.strftime('%H:%M:%S', time.gmtime(time.time() - start_time))}")
     print(f"{'='*70}\n")
     
@@ -267,37 +345,29 @@ def run_testing_phase(args) -> List[Dict]:
 
 
 def aggregate_results(results_dir: str) -> pd.DataFrame:
-    """聚合所有测试结果到CSV"""
-    result_files = list(Path(results_dir).glob("*.json"))
+    """读取测试结果CSV并显示统计信息"""
+    csv_file = os.path.join(results_dir, 'test_results.csv')
     
-    if not result_files:
-        print(f"No result files found in {results_dir}")
+    if not os.path.exists(csv_file):
+        print(f"No results file found at {csv_file}")
         return pd.DataFrame()
     
-    records = []
-    for f in result_files:
-        try:
-            with open(f) as fp:
-                data = json.load(fp)
-                if data.get('status') != 'failed':
-                    records.append(data)
-        except:
-            pass
-    
-    if not records:
+    try:
+        df = pd.read_csv(csv_file)
+        print(f"Loaded {len(df)} records from {csv_file}")
+        
+        # 过滤掉失败的记录
+        df_success = df[df['status'] == 'success']
+        print(f"Successful tests: {len(df_success)}/{len(df)}")
+        
+        if len(df_success) > 0 and 'test_mae' in df_success.columns:
+            print("\nMAE Statistics by use_mim and imputation:")
+            print(df_success.groupby(['use_mim', 'imputation'])['test_mae'].mean().unstack())
+        
+        return df_success
+    except Exception as e:
+        print(f"Error reading results: {e}")
         return pd.DataFrame()
-    
-    df = pd.DataFrame(records)
-    output_file = os.path.join(results_dir, 'aggregated_results.csv')
-    df.to_csv(output_file, index=False)
-    print(f"Aggregated results saved to {output_file}")
-    print(f"Total records: {len(df)}")
-    
-    if 'test_mae' in df.columns:
-        print("\nMAE Statistics:")
-        print(df.groupby(['use_mim', 'imputation'])['test_mae'].mean().unstack())
-    
-    return df
 
 
 def main():
