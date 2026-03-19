@@ -51,8 +51,8 @@ def parse_args():
     
     # 运行模式
     parser.add_argument('--phase', type=str, required=True, 
-                       choices=['train', 'test'],
-                       help='Experiment phase: train (L1-L6) or test (L7-L9)')
+                       choices=['train', 'test', 'batch-test'],
+                       help='Experiment phase: train (L1-L6), test (L7-L9 single), batch-test (L7-L9 all)')
     
     # 分界线以上参数（训练和测试都需要）
     parser.add_argument('--seed', type=int, default=42,
@@ -105,27 +105,40 @@ def get_model_path(model_dir: str, seed: int, batch: str, model_type: str, use_m
 
 
 def create_model(model_type: str, input_dim: int, use_mim: bool) -> nn.Module:
-    """创建模型"""
+    """创建模型
+    
+    配置要求：所有模型参数量统一在 (2^14, 2^15) = (16384, 32768) 范围内
+    """
     if model_type == 'mlp':
-        # MLP: 使用默认配置，适配输入维度
+        # MLP: 根据是否使用MIM选择不同配置以控制参数量
+        # non-MIM (input=16): [192, 96] -> 21,889 params
+        # MIM (input=32): [128, 96] -> 16,705 params
+        if use_mim:
+            hidden_dims = [128, 96]
+        else:
+            hidden_dims = [192, 96]
         return MLP(
             input_dim=input_dim,
-            hidden_dims=[64, 32],
-            dropout=0.1
+            hidden_dims=hidden_dims,
+            dropout=0.15
         )
     elif model_type == 'lstm':
-        # LSTM: 使用默认配置
+        # LSTM: hidden_size=46, num_layers=2
+        # non-MIM (input=16): -> 29,119 params
+        # MIM (input=32): -> 32,063 params
         return LSTM(
             input_dim=input_dim,
-            hidden_size=48,
+            hidden_size=46,
             num_layers=2,
             dropout=0.2
         )
     elif model_type == 'cnn':
-        # CNN1D: 需要适配输入维度
+        # CNN1D: channels=[64, 80]
+        # non-MIM (input=16): -> 18,657 params
+        # MIM (input=32): -> 21,729 params
         return CNN1D(
             input_dim=input_dim,
-            channels=[16, 32],
+            channels=[64, 80],
             kernel_size=3,
             dropout=0.1
         )
@@ -586,11 +599,215 @@ def test_model(args) -> Dict:
     return result
 
 
+def batch_test_model(args) -> List[Dict]:
+    """
+    批量测试模型（分界线以下：L7-L9）
+    
+    优化版本：一次加载模型，测试所有L7-L9组合
+    3 modes × 10 MRs × 4 imputations = 120 tests per model
+    """
+    use_mim = args.use_mim == 'true'
+    input_dim = 32 if use_mim else 16
+    
+    print(f"\n{'='*60}")
+    print(f"Batch Testing Phase (L7-L9)")
+    print(f"Seed: {args.seed}, Batch: {args.batch}, Model: {args.model}")
+    print(f"Use MIM: {args.use_mim} (Input dim: {input_dim})")
+    print(f"{'='*60}\n")
+    
+    # 加载模型（只加载一次）
+    model_path = get_model_path(
+        args.model_dir, args.seed, args.batch, args.model, use_mim
+    )
+    
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model not found: {model_path}. Please train first.")
+    
+    checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
+    
+    # 创建模型并加载权重
+    model = create_model(args.model, input_dim, use_mim)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = model.to(device)
+    
+    # 获取标准化参数
+    train_mean = checkpoint.get('train_mean')
+    train_std = checkpoint.get('train_std')
+    
+    # 加载测试数据（只加载一次）
+    loader = XJTUDataLoader(batch_id=args.batch, data_dir="data/XJTU data")
+    df = loader.load_data()
+    
+    # 直接使用加载的数据
+    feature_df = df.copy()
+    
+    # 获取测试电池（使用相同的seed分割）
+    np.random.seed(args.seed)
+    batteries = feature_df['battery_id'].unique()
+    np.random.shuffle(batteries)
+    
+    n_train = max(4, len(batteries) // 2)
+    n_val = max(2, len(batteries) // 4)
+    test_batteries = batteries[n_train + n_val:]
+    
+    test_df = feature_df[feature_df['battery_id'].isin(test_batteries)]
+    feature_cols = [c for c in feature_df.columns 
+                   if c not in ['battery_id', 'cycle', 'capacity', 'soh']]
+    
+    X_test_base = test_df[feature_cols].values.astype(np.float32)
+    # 确定标签列
+    label_col = 'capacity' if 'capacity' in test_df.columns else 'soh' if 'soh' in test_df.columns else None
+    if label_col is None:
+        raise ValueError(f"No label column found. Available columns: {list(test_df.columns)}")
+    
+    y_test = test_df[label_col].values.astype(np.float32)
+    
+    # 处理无效值
+    if np.isnan(X_test_base).any():
+        X_test_base = np.nan_to_num(X_test_base, nan=0.0)
+    if np.isinf(X_test_base).any():
+        X_test_base = np.nan_to_num(X_test_base, posinf=0.0, neginf=0.0)
+    
+    # 标准化
+    if train_mean is not None and train_std is not None:
+        X_test_base = (X_test_base - train_mean) / train_std
+    
+    # 导入插补器
+    from sklearn.impute import SimpleImputer, KNNImputer
+    from sklearn.experimental import enable_iterative_imputer
+    from sklearn.impute import IterativeImputer
+    from sklearn.metrics import mean_absolute_error, r2_score
+    
+    # 定义所有测试配置
+    modes = ['MCAR', 'MAR', 'MNAR']
+    test_mrs = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    imputations = ['mean', 'knn', 'iterative', 'zero']
+    
+    results = []
+    total_tests = len(modes) * len(test_mrs) * len(imputations)
+    test_count = 0
+    
+    print(f"Running {total_tests} tests per model...")
+    
+    for mode in modes:
+        for test_mr in test_mrs:
+            for imp in imputations:
+                test_count += 1
+                config_str = f"{mode}-MR{test_mr}-{imp}"
+                print(f"  [{test_count}/{total_tests}] Testing {config_str}...", end=' ')
+                
+                try:
+                    # 生成缺失数据（根据mode和test_mr）
+                    np.random.seed(args.seed + 1000 + int(test_mr * 100))
+                    X_test = X_test_base.copy()
+                    
+                    if test_mr > 0:
+                        if mode == 'MCAR':
+                            mask = np.random.rand(*X_test.shape) < test_mr
+                        elif mode == 'MAR':
+                            voltage_col = None
+                            for i, col in enumerate(feature_cols):
+                                if 'voltage' in col.lower():
+                                    voltage_col = i
+                                    break
+                            if voltage_col is not None:
+                                voltage = X_test[:, voltage_col]
+                                voltage_norm = (voltage - voltage.min()) / (voltage.max() - voltage.min() + 1e-8)
+                                missing_prob = test_mr * (0.5 + 0.5 * voltage_norm)
+                                mask = np.random.rand(*X_test.shape) < missing_prob[:, np.newaxis]
+                            else:
+                                mask = np.random.rand(*X_test.shape) < test_mr
+                        else:  # MNAR
+                            soh = y_test
+                            soh_norm = (soh - soh.min()) / (soh.max() - soh.min() + 1e-8)
+                            missing_prob = test_mr * (0.5 + 0.5 * soh_norm)
+                            mask = np.random.rand(*X_test.shape) < missing_prob[:, np.newaxis]
+                        
+                        X_test_missing = X_test.copy()
+                        X_test_missing[mask] = np.nan
+                    else:
+                        X_test_missing = X_test.copy()
+                        mask = np.zeros_like(X_test, dtype=bool)
+                    
+                    # 应用插补方法
+                    if imp == 'mean':
+                        imputer = SimpleImputer(strategy='mean')
+                        X_test_imputed = imputer.fit_transform(X_test_missing)
+                    elif imp == 'knn':
+                        imputer = KNNImputer(n_neighbors=5)
+                        X_test_imputed = imputer.fit_transform(X_test_missing)
+                    elif imp == 'iterative':
+                        imputer = IterativeImputer(max_iter=10, random_state=args.seed)
+                        X_test_imputed = imputer.fit_transform(X_test_missing)
+                    else:  # zero
+                        X_test_imputed = np.nan_to_num(X_test_missing, nan=0.0)
+                    
+                    # 准备输入
+                    X_test_tensor = torch.FloatTensor(X_test_imputed).to(device)
+                    
+                    if use_mim:
+                        mask_tensor = torch.FloatTensor(mask.astype(float)).to(device)
+                        X_test_tensor = torch.cat([X_test_tensor, mask_tensor], dim=1)
+                    
+                    # 对于CNN/LSTM模型，添加序列维度
+                    if args.model in ['cnn', 'lstm']:
+                        X_test_tensor = X_test_tensor.unsqueeze(1)
+                    
+                    # 预测
+                    with torch.no_grad():
+                        predictions = model(X_test_tensor).squeeze().cpu().numpy()
+                    
+                    # 计算指标
+                    mae = mean_absolute_error(y_test, predictions)
+                    r2 = r2_score(y_test, predictions)
+                    
+                    result = {
+                        'seed': args.seed,
+                        'batch': args.batch,
+                        'model': args.model,
+                        'use_mim': args.use_mim,
+                        'mode': mode,
+                        'test_mr': test_mr,
+                        'imputation': imp,
+                        'test_mae': mae,
+                        'test_r2': r2,
+                        'n_samples': len(y_test),
+                        'status': 'success'
+                    }
+                    results.append(result)
+                    print(f"MAE={mae:.4f}")
+                    
+                except Exception as e:
+                    print(f"FAILED: {str(e)[:50]}")
+                    results.append({
+                        'seed': args.seed,
+                        'batch': args.batch,
+                        'model': args.model,
+                        'use_mim': args.use_mim,
+                        'mode': mode,
+                        'test_mr': test_mr,
+                        'imputation': imp,
+                        'status': 'failed',
+                        'error': str(e)[:200]
+                    })
+    
+    # 输出结果到 stdout（供主进程捕获）
+    # 格式: JSON_RESULTS_START <json> JSON_RESULTS_END
+    print(f"\nJSON_RESULTS_START{json.dumps(results)}JSON_RESULTS_END")
+    
+    return results
+
+
 def main():
     args = parse_args()
     
     if args.phase == 'train':
         result = train_model(args)
+    elif args.phase == 'batch-test':
+        result = batch_test_model(args)
     else:  # test
         result = test_model(args)
     
