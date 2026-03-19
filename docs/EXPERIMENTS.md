@@ -1,866 +1,429 @@
 # 实验设计规范文档
 
-> 本文档记录MIM与Baseline对比实验的完整设计规范
-> 
-> 版本: v2.0 | 日期: 2026-03-08 | 分支: exp-execution
+<!-- 
+  confidence: A
+  reviewed: 2026-03-19
+  reviewer: chen
+  ai-assisted: true
+  commit: c87f6b7
+-->
+
+> **文档说明**
+>
+> 本文档基于 **meta.md** 定义的9层实验架构（L1-L9）。
+> 旧版5层循环架构已废弃，相关内容参见[HISTORY.md](HISTORY.md)。
 
 ---
 
-## 1. 核心设计理念
+## 1. 9层实验架构
 
-### 1.1 循环层级结构（重要性从内到外递增）
+### 1.1 架构概览
 
 ```
-for dataset in datasets:              # 最外层 - 跨数据集泛化
-    for batch in batches:             # 外层 - 同数据集不同批次
-        for seed in seeds:            # 中外层 - 重复性
-            for model in models:      # 中层 - 架构泛化
-                for method in methods: # 最内层 - 核心对比（必须完整）
-                    run_experiment()
+╔══════════════════════════════════════════════════════════════════════╗
+║ 分界线以上：影响模型训练                                              ║
+╠══════════════════════════════════════════════════════════════════════╣
+L1: Seed          - 随机种子（0-99），控制可复现性
+L2: Dataset       - 数据集（当前固定为XJTU）
+L3: Batch         - 电池批次（2C, 3C, R2.5, R3, RW, Sim_satellite）
+L4: Model         - 模型架构（mlp, lstm, cnn）
+L5: use_mim       - 是否使用MIM（true/false）
+L6: Train MR      - 训练缺失率（由L5决定：0.0或0.0-0.9混合）
+╠══════════════════════════════════════════════════════════════════════╣
+║ 分界线：模型训练完成，参数固定                                        ║
+╠══════════════════════════════════════════════════════════════════════╣
+L7: Mode          - 测试缺失模式（MCAR, MAR, MNAR）
+L8: Test MR       - 测试缺失率（0.0, 0.1, ..., 0.9）
+L9: Imputation    - 插补方法（mean, knn, iterative, zero）
+╚══════════════════════════════════════════════════════════════════════╝
 ```
 
-**完整循环层级**: `dataset → batch → seed → model → method`
+### 1.2 分界线原则
 
-**设计原则**：
-- **方法（method）是最核心的变量**，位于最内层循环
-- **数据集（dataset）是最外层的泛化维度**，验证跨数据集鲁棒性
-- 一个最小完整实验 = `(dataset, batch, seed, model)` + **both methods**
-- 只有方法对比完整，才能称之为一次有效实验
-- 外层变量（dataset/batch/seed/model）即使只有一个值，也能构成相对完整的实验
+**核心洞察**：分界线以上（L1-L6）每个组合需要**独立训练**一个模型；分界线以下（L7-L9）同一模型可以**复用测试**所有组合。
 
-### 1.2 新增维度说明
+| 阶段 | 层级 | 影响 | 组合数（单种子） |
+|------|------|------|-----------------|
+| 训练 | L1-L6 | 改变模型参数 | 6×3×2 = **36个模型** |
+| 测试 | L7-L9 | 不改变模型参数 | 3×10×4 = **120个测试/模型** |
 
-| 维度 | 层级 | 说明 | 示例值 |
-|------|------|------|--------|
-| **dataset** | 最外层 | 不同来源的电池数据集 | xjtu, nasa, calce |
-| **batch** | 外层 | 同一数据集内的不同批次 | 0.5C, 1C, 2C |
-| **seed** | 中外层 | 随机种子重复性 | 42-141 |
-| **model** | 中层 | 深度学习架构 | mlp, lstm, gru, cnn1d |
-| **method** | 最内层 | 缺失数据处理方法 | baseline, mim |
+**总结果数**：36个模型 × 120个测试 = **4,320行结果/种子**
 
-### 1.3 实验单元定义（更新）
-
-| 术语 | 定义 | 计算方式 |
-|------|------|----------|
-| **Run** | 单次执行 | `(dataset, batch, seed, model, method)` |
-| **Comparison Unit** | 最小完整对比单元 | `(dataset, batch, seed, model)` 包含两种方法 |
-| **Batch Experiment** | 批次实验 | `(dataset, batch)` 的所有seeds × models × methods |
-| **Full Experiment** | 完整实验 | 所有datasets × batches × seeds × models × methods |
+**100种子总计**：4,320 × 100 = **432,000行结果**
 
 ---
 
-## 2. 缺失率设置
+## 2. 层级详解
 
-### 2.1 测试集缺失率（10档）
+### 2.1 L1: 随机种子（Seed）
 
+**取值范围**：0-99（100个独立重复）
+
+**作用**：
+- 控制数据划分（电池随机分配）
+- 控制模型初始化
+- 控制缺失模式生成
+
+**执行方式**：
+```bash
+python experiments/run_batch_experiments.py --seeds 0 1 2 ... 99
+```
+
+### 2.2 L2: 数据集（Dataset）
+
+**当前状态**：固定为XJTU数据集
+
+**未来扩展**：可添加TJU、HUST、MIT等数据集
+
+### 2.3 L3: 电池批次（Batch）
+
+**取值**：
+- `2C` - 2C充放电
+- `3C` - 3C充放电
+- `R2.5` - 2.5C随机 walk
+- `R3` - 3C随机 walk
+- `RW` - Random Walk工况
+- `Sim_satellite` - 卫星仿真工况
+
+**注意**：每个批次视为**独立分布**，必须分别训练模型
+
+### 2.4 L4: 模型架构（Model）
+
+**取值**：
+- `mlp` - 多层感知机
+- `lstm` - 长短期记忆网络
+- `cnn` - 卷积神经网络
+
+### 2.5 L5: MIM使用（use_mim）
+
+**取值**：
+- `false` - 不使用MIM（16维输入）
+- `true` - 使用MIM（32维输入）
+
+**关键影响**：
+| 特性 | use_mim=false | use_mim=true |
+|------|--------------|--------------|
+| 输入维度 | 16 | 32（16特征+16掩码）|
+| 训练数据 | 完整数据（MR=0.0） | 混合MR（0.0-0.9） |
+| 验证策略 | 完整验证 | 多MR平均验证 |
+
+### 2.6 L6: 训练缺失率（Train MR）
+
+**由L5自动决定**：
+- `use_mim=false` → Train MR = 0.0（完整数据）
+- `use_mim=true` → Train MR = 0.0-0.9（10种MR混合）
+
+**MIM训练策略**：
 ```python
-eval_missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-```
-
-**设计理由**：
-- **MR=0.0（无缺失）**：现实中最普遍的场景，必须作为基准
-- **MR=0.1-0.8**：覆盖低、中、高各类缺失水平
-- **MR=0.9（极高缺失）**：压力测试，评估极端情况下的鲁棒性
-- 测试时复制为10份，各赋予一个缺失率，进行10次独立测试
-
-### 2.2 MIM训练集缺失率
-
-```python
-mim_train_missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-```
-
-**关键约束**：
-- **严格与测试集缺失率相同**（10档完全一致）
-- 复制10份训练集，各份赋予一个缺失率
-- **不是进行10次训练**，而是将10份合并为一份大训练集进行一次训练
-- 数据量扩展为原始训练集的10倍
-
-### 2.3 Baseline训练集缺失率
-
-```python
-baseline_train_missing_rates = [0.0]  # 仅在完整数据上训练
-```
-
-**设计理由**：
-- Baseline方法（插补范式）的标准做法
-- 训练阶段假设数据完整
-- 测试阶段通过插补处理缺失
-
----
-
-## 3. 方法对比设计
-
-### 3.1 两种范式的核心差异
-
-| 维度 | MIM (端到端学习) | Baseline (插补范式) |
-|------|------------------|---------------------|
-| **训练数据** | 10份合并（10种MR混合） | 仅完整数据（MR=0.0） |
-| **输入维度** | 32维（16特征 + 16掩码） | 16维（仅特征） |
-| **缺失处理** | 模型学习 P(Y\|X_observed, Mask) | 插补后学习 P(Y\|X_imputed) |
-| **测试方式** | 直接输入（无需插补） | 先插补，后预测 |
-
-### 3.2 控制变量
-
-- **数据集**: XJTU 2C电池数据集
-- **模型架构**: MLP/LSTM/GRU/CNN1D（约27K参数）
-- **缺失机制**: MCAR（完全随机缺失）
-- **评价指标**: MAE（平均绝对误差）
-
-### 3.3 独立变量
-
-- **处理范式**: MIM vs Baseline
-- **缺失率**: 0.0 - 0.9（10档）
-- **模型架构**: 4种深度学习模型
-- **随机种子**: 100个独立重复
-
----
-
-## 4. 实验规模与统计
-
-### 4.1 完整实验规模（含dataset和batch）
-
-```python
-# 最外层循环
-datasets = ["xjtu", "nasa", "calce"]  # 3个数据集（示例）
-batches = {
-    "xjtu": ["0.5C", "1C", "2C"],
-    "nasa": ["batch1", "batch2"],
-    "calce": ["CS2", "CX2"]
-}
-
-# 中外层循环
-seeds = list(range(42, 142))  # 100个种子
-
-# 中间循环
-models = ["mlp", "lstm", "gru", "cnn1d"]  # 4种架构
-
-# 最内层循环（核心）
-methods = ["baseline", "mim"]  # 2种方法（必须成对）
-
-# 总执行次数（以XJTU为例：3 batches × 100 seeds × 4 models × 2 methods = 2,400 runs）
-# 如果3个数据集各2-3 batches：约 7,200 runs
-
-# 对比单元数（最小完整实验单位）
-total_comparison_units = total_batches × 100 × 4
-
-# 测试结果行数
-total_result_rows = total_runs × 10 MRs
-```
-
-### 4.2 时间戳管理
-
-**每次实验运行创建独立的时间戳命名空间**：
-
-```
-experiments/
-├── runs/                          # 按时间戳组织的实验运行
-│   ├── 20260308_143052/          # 2026-03-08 14:30:52 的实验
-│   │   ├── experiment_db.csv     # 该次实验的数据库
-│   │   ├── logs/                 # 训练日志
-│   │   │   ├── xjtu_2C_seed42_mlp_baseline.log
-│   │   │   └── ...
-│   │   └── results/              # 结果CSV
-│   │       ├── xjtu_2C_mlp_baseline.csv
-│   │       └── ...
-│   └── 20260309_091215/          # 另一次实验
-└── aggregated/                    # 汇总结果（跨多次实验）
-    └── all_results.csv
-```
-
-**时间戳命名规则**: `YYYYMMDD_HHMMSS`
-
-### 4.3 简化测试规模（含dataset/batch）
-
-| 模式 | Datasets | Batches | Seeds | Models | Methods | Runs | Units |
-|------|----------|---------|-------|--------|---------|------|-------|
-| `--tiny` | 1 | 1 | 1 | 1 | 2 | 2 | 1 |
-| `--mini` | 1 | 1 | 2 | 1 | 2 | 4 | 2 |
-| `--test` | 1 | 2 | 2 | 2 | 2 | 16 | 8 |
-| `--all` | 3 | 2-3 | 100 | 4 | 2 | ~7,200 | ~3,600 |
-
-**层级递进关系**：
-- `--tiny`: 验证单次运行的正确性
-- `--mini`: 验证一个完整comparison unit
-- `--test`: 验证跨batch泛化
-- `--all`: 完整跨数据集实验
-
----
-
-## 5. 数据记录格式
-
-### 5.1 实验数据库字段（含dataset/batch/时间戳）
-
-```csv
-exp_id,dataset,batch,seed,model,method,status,metrics,eval_missing_rates,mim_train_missing_rates,timestamp,run_dir,...
-```
-
-**关键字段说明**：
-- `exp_id`: `{dataset}_{batch}_seed{seed}_{model}_{method}`（完整层级标识）
-- `dataset`: 最外层循环 - 数据集名称（xjtu/nasa/calce）
-- `batch`: 外层循环 - 批次标识（2C/1C/0.5C等）
-- `seed`: 中外层循环 - 随机种子
-- `model`: 中层循环 - 模型架构
-- `method`: 最内层循环（核心）- 方法名称
-- `timestamp`: 实验启动时间 `YYYYMMDD_HHMMSS`
-- `run_dir`: 该次实验的运行目录 `experiments/runs/{timestamp}/`
-- `eval_missing_rates`: 测试MR列表（10档）
-- `mim_train_missing_rates`: MIM训练MR列表（10档）
-- `metrics`: JSON格式，包含所有10个MR的测试结果
-
-### 5.2 时间戳管理规范
-
-**目的**：区分不同时间、不同次的实验，避免结果覆盖
-
-#### 5.2.1 时间戳生成
-
-```python
-from datetime import datetime
-
-def generate_timestamp():
-    """生成实验时间戳: YYYYMMDD_HHMMSS"""
-    return datetime.now().strftime("%Y%m%d_%H%M%S")
-
-timestamp = generate_timestamp()  # 例如: "20260308_143052"
-```
-
-#### 5.2.2 目录结构
-
-```
-experiments/
-├── runs/                           # 所有实验运行的根目录
-│   ├── {timestamp}_xjtu_2C/       # 某次针对XJTU 2C的实验
-│   │   ├── experiment_db.csv      # 该次实验的数据库
-│   │   ├── config.yaml            # 实验配置备份
-│   │   ├── logs/                  # 训练日志
-│   │   │   └── seed42_mlp_baseline.log
-│   │   └── results/               # 结果文件
-│   │       └── seed42_mlp_baseline.csv
-│   └── {timestamp}_multi/         # 跨数据集实验
-└── latest -> runs/{timestamp}/    # 软链接指向最新实验
-```
-
-#### 5.2.3 实验标识命名
-
-```python
-# 完整实验ID: {dataset}_{batch}_seed{seed}_{model}_{method}
-exp_id = f"{dataset}_{batch}_seed{seed}_{model}_{method}"
-# 例如: "xjtu_2C_seed42_mlp_baseline"
-
-# 带时间戳的全局唯一ID
-global_id = f"{timestamp}_{exp_id}"
-# 例如: "20260308_143052_xjtu_2C_seed42_mlp_baseline"
-```
-
-#### 5.2.4 结果汇总
-
-```python
-# 跨时间戳汇总所有实验结果
-def aggregate_results(timestamps: List[str]):
-    """汇总多次实验的结果"""
-    all_results = []
-    for ts in timestamps:
-        db_path = f"experiments/runs/{ts}/experiment_db.csv"
-        results = load_results(db_path)
-        all_results.extend(results)
+# 复制10份训练集
+for mr in [0.0, 0.1, ..., 0.9]:
+    X_mr = apply_mcar(X_train, mr)  # 应用MCAR缺失
+    X_imputed = impute(X_mr)         # 插补
+    X_mim = concat([X_imputed, mask]) # 拼接掩码
     
-    # 保存汇总结果
-    save_to = f"experiments/aggregated/aggregate_{timestamps[0]}_to_{timestamps[-1]}.csv"
-    save_results(all_results, save_to)
+# 合并为10倍大数据集训练
+X_train_mim = concat([X_mim_0.0, X_mim_0.1, ..., X_mim_0.9])
 ```
 
-### 5.3 Metrics JSON结构
+### 2.7 L7: 测试缺失模式（Mode）
 
+**取值**：
+- `MCAR` - 完全随机缺失（Missing Completely At Random）
+- `MAR` - 随机缺失，依赖观测值（Missing At Random）
+- `MNAR` - 非随机缺失，依赖缺失值本身（Missing Not At Random）
+
+**实现差异**：
+| 模式 | 缺失概率依赖 | 代码实现 |
+|------|-------------|---------|
+| MCAR | 均匀随机 | `src/missing_data/mcar.py` |
+| MAR | 电压特征 | `src/missing_data/mar.py` |
+| MNAR | SOH目标值 | `src/missing_data/mnar.py` |
+
+### 2.8 L8: 测试缺失率（Test MR）
+
+**取值**：0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9（10档）
+
+**设计理由**：
+- **MR=0.0**：无缺失基准
+- **MR=0.1-0.8**：覆盖低、中、高缺失水平
+- **MR=0.9**：极端压力测试
+
+### 2.9 L9: 插补方法（Imputation）
+
+**取值**：
+- `mean` - 均值插补
+- `knn` - K近邻插补
+- `iterative` - 迭代插补（MICE）
+- `zero` - 零值填充
+
+**关键认知**：
+- MIM方法也**需要插补**（填充缺失位置的具体数值）
+- 与纯插补的区别：MIM**额外输入缺失掩码**
+- 研究问题：在**相同插补策略**下，MIM指示器是否有帮助？
+
+---
+
+## 3. 实验执行
+
+### 3.1 批量实验（完整矩阵）
+
+**入口**：`experiments/run_batch_experiments.py`
+
+**完整实验（100种子）**：
+```bash
+python experiments/run_batch_experiments.py \
+    --phase full \
+    --seeds $(seq 0 99) \
+    --epochs 50 \
+    --model-dir models/100seeds \
+    --results-dir results/100seeds
+```
+
+**小规模测试（2种子 × 2批次）**：
+```bash
+python experiments/run_batch_experiments.py \
+    --phase full \
+    --seeds 42 43 \
+    --batches 2C 3C \
+    --epochs 50
+```
+
+### 3.2 仅训练阶段
+
+```bash
+python experiments/run_batch_experiments.py \
+    --phase train \
+    --epochs 50
+```
+
+**训练组合数**：100 seeds × 6 batches × 3 models × 2 use_mim = **3,600个模型**
+
+### 3.3 仅测试阶段（需已有训练好的模型）
+
+```bash
+python experiments/run_batch_experiments.py \
+    --phase test \
+    --model-dir models/100seeds \
+    --results-dir results/100seeds
+```
+
+**测试组合数**：3,600个模型 × 3 modes × 10 test MRs × 4 imputations = **432,000个测试**
+
+### 3.4 单次实验（调试用）
+
+**训练**：
+```bash
+python experiments/run_experiment.py \
+    --phase train \
+    --seed 42 \
+    --batch 2C \
+    --model mlp \
+    --use-mim true \
+    --epochs 50 \
+    --save-model
+```
+
+**测试**：
+```bash
+python experiments/run_experiment.py \
+    --phase test \
+    --seed 42 \
+    --batch 2C \
+    --model mlp \
+    --use-mim true \
+    --mode MCAR \
+    --test-mr 0.3 \
+    --imputation mean \
+    --model-dir models/100seeds
+```
+
+---
+
+## 4. 实验规模统计
+
+### 4.1 完整规模（100种子）
+
+| 层级 | 取值 | 说明 |
+|------|------|------|
+| L1 (Seed) | 100 | 0-99 |
+| L3 (Batch) | 6 | 2C, 3C, R2.5, R3, RW, Sim_satellite |
+| L4 (Model) | 3 | mlp, lstm, cnn |
+| L5 (use_mim) | 2 | true, false |
+| **训练组合** | **3,600** | L1×L3×L4×L5 |
+| L7 (Mode) | 3 | MCAR, MAR, MNAR |
+| L8 (Test MR) | 10 | 0.0-0.9 |
+| L9 (Imputation) | 4 | mean, knn, iterative, zero |
+| **测试组合/模型** | **120** | L7×L8×L9 |
+| **总结果数** | **432,000** | 3,600 × 120 |
+
+### 4.2 小规模测试模式
+
+| 模式 | Seeds | Batches | 训练模型数 | 总结果数 | 用途 |
+|------|-------|---------|-----------|---------|------|
+| `--tiny` | 1 | 1 | 6 | 720 | 验证单次运行 |
+| `--mini` | 1 | 2 | 12 | 1,440 | 验证跨批次 |
+| `--test` | 2 | 3 | 36 | 4,320 | 验证完整流程 |
+| `--full` | 100 | 6 | 3,600 | 432,000 | 完整实验 |
+
+---
+
+## 5. 结果格式
+
+### 5.1 模型文件命名
+
+```
+models/{experiment_dir}/
+└── seed{seed}_batch{batch}_model{model}_{mim_suffix}.pt
+
+示例:
+├── seed0_batch2C_modelmlp_mim.pt        # use_mim=true
+├── seed0_batch2C_modelmlp_no_mim.pt     # use_mim=false
+├── seed0_batch2C_modellstm_mim.pt
+├── seed0_batch3C_modelcnn_no_mim.pt
+└── ...
+```
+
+### 5.2 结果文件（JSON）
+
+**单条测试结果**：
 ```json
 {
-  "mr_results": [
-    {"missing_rate": 0.0, "test_mae": 0.0139},
-    {"missing_rate": 0.1, "test_mae": 0.0151},
-    ...
-    {"missing_rate": 0.9, "test_mae": 0.0364}
-  ],
-  "test_mae_mean": 0.02377,  // 10档MR的平均MAE
-  "test_mae_max": 0.0364,     // 最差情况
-  "test_mae_min": 0.0139,     // 最好情况（通常MR=0.0）
-  "test_mae": 0.0364,         // 最后一个MR的结果（兼容）
-  "missing_rate": 0.9         // 最后一个MR（兼容）
+  "seed": 42,
+  "batch": "2C",
+  "model": "mlp",
+  "use_mim": "true",
+  "mode": "MCAR",
+  "test_mr": 0.3,
+  "imputation": "mean",
+  "test_mae": 0.0234,
+  "test_rmse": 0.0312,
+  "status": "success",
+  "elapsed": 4.5
 }
 ```
 
----
+**聚合结果**（CSV）：
+```bash
+results/{experiment_dir}/
+├── seed42_batch2C_modelmlp_mim_modeMCAR_mr0.3_impmean.json
+├── ...
+└── aggregated_results.csv  # 自动聚合
+```
 
-## 6. 结果分析方法
-
-### 6.1 鲁棒性曲线（Robustness Curve）
-
-对于每个 `(seed, model)` 组合，绘制两条曲线：
-- **X轴**: 缺失率（0.0 - 0.9）
-- **Y轴**: MAE
-- **曲线**: Baseline vs MIM
-
-### 6.2 统计指标
-
-**单点指标**（每个MR单独计算）：
-- 均值: `mean(MAE)` across 100 seeds
-- 标准差: `std(MAE)` across 100 seeds
-- 95%置信区间
-
-**综合指标**（跨所有MR）：
-- 平均鲁棒性: `mean(MAE across MRs)`
-- 最差情况性能: `max(MAE at MR=0.9)`
-- 无缺失性能: `MAE at MR=0.0`
-- 性能下降率: `(MAE@0.9 - MAE@0.0) / MAE@0.0`
-
-### 6.3 假设检验
-
-对每个MR，检验：
-- H0: MIM_MAE = Baseline_MAE
-- H1: MIM_MAE < Baseline_MAE（单侧检验）
-
-使用配对t检验（paired t-test），因为两种方法使用相同的seeds和models。
+CSV列：
+- `seed`, `batch`, `model`, `use_mim` - L1, L3, L4, L5
+- `mode`, `test_mr`, `imputation` - L7, L8, L9
+- `test_mae`, `test_rmse` - 评估指标
+- `status` - success/failed/timeout
+- `elapsed` - 耗时（秒）
 
 ---
 
-## 7. 关键实现细节
+## 6. 关键设计对比
 
-### 7.1 MIM训练数据生成
+### 6.1 与旧5层循环架构的区别
 
-```python
-def create_mim_training_data(X, y, missing_rates, seed):
-    """
-    Args:
-        X: 原始特征 [N, D]
-        y: 目标值 [N]
-        missing_rates: [0.0, 0.1, ..., 0.9]
-        seed: 基础随机种子
-    
-    Returns:
-        X_merged: [N×10, D×2]（特征+掩码）
-        y_merged: [N×10]
-    """
-    all_inputs = []
-    all_targets = []
-    
-    for i, mr in enumerate(missing_rates):
-        mr_seed = seed + i * 100  # 每个MR使用不同种子
-        X_with_missing = simulate_mcar(X, mr, seed=mr_seed)
-        all_inputs.append(X_with_missing)
-        all_targets.append(y)
-    
-    return torch.cat(all_inputs), torch.cat(all_targets)
+| 特性 | 旧5层循环 | 新9层架构 |
+|------|----------|----------|
+| 核心对比 | MIM vs Baseline方法 | use_mim（有/无指示器） |
+| 架构维度 | dataset→batch→seed→model→method | L1-L9，明确分界线 |
+| 训练阶段 | 不明确 | L1-L6，每个组合独立训练 |
+| 测试阶段 | 仅MCAR | L7-L9，支持三种缺失模式 |
+| 缺失处理 | 测试时单一MR | 训练多MR混合，测试多MR评估 |
+
+### 6.2 MIM与插补的关系
+
+**正确理解**：
+```
+MIM ≠ 不插补
+MIM = 插补 + 缺失指示器（Mask）
+
+对比维度：
+- use_mim=false: [插补值] → 16维
+- use_mim=true:  [插补值] + [掩码] → 32维
 ```
 
-### 7.2 Baseline训练
+**2×4实验矩阵**：
 
-```python
-# Baseline仅在MR=0.0数据上训练
-X_train_complete = X_train  # 无缺失
-train_model(X_train_complete, y_train)
+| use_mim ↓ / Imputation → | mean | knn | iterative | zero |
+|--------------------------|------|-----|-----------|------|
+| **false** | 16维 | 16维 | 16维 | 16维 |
+| **true** | 32维 | 32维 | 32维 | 32维 |
 
-# 测试时施加缺失并插补
-for mr in [0.0, 0.1, ..., 0.9]:
-    X_test_missing = simulate_mcar(X_test, mr)
-    X_test_imputed = impute(X_test_missing, method='mean')
-    evaluate(model, X_test_imputed, y_test)
-```
+---
 
-### 7.3 命令行构建
+## 7. 监控与故障排查
+
+### 7.1 监控实验进度
 
 ```bash
-python src/main.py \
-    model=paper_mlp \
-    method=mim \                          # 或 baseline
-    experiment.seeds=[42] \               # 外层：种子
-    +experiment.run_name=seed42_mlp_mim \
-    +missing.missing_rates_eval=[0.0,0.1,...,0.9] \    # 10档测试
-    +missing.missing_rates_train=[0.0,0.1,...,0.9]     # MIM训练用
+# 实时日志
+tail -f logs/experiments/100seeds_*.log
+
+# 进度统计
+grep "Training:" logs/experiments/100seeds_*.log | tail -5
+
+# 成功计数
+grep -c "✓" logs/experiments/100seeds_*.log
+
+# 失败计数
+grep -c "✗" logs/experiments/100seeds_*.log
 ```
 
----
-
-## 8. 常见问题与注意事项
-
-### 8.1 为什么MR=0.0必须包含？
-
-- **现实意义**: 很多实际场景数据是完整的
-- **公平对比**: Baseline在MR=0.0时理论上最优
-- **性能锚点**: 提供性能比较的基准点
-
-### 8.2 为什么MIM训练要和测试MR严格相同？
-
-- **分布匹配**: 训练分布与测试分布一致
-- **公平性**: 避免训练时未见过的缺失率
-- **科学严谨**: 控制变量，只比较"是否使用掩码"
-
-### 8.3 为什么不把MR作为最外层循环？
-
-如果 `for mr in MRs: for seed in seeds: ...`，会导致：
-- 同一seed在不同MR下训练多个模型（冗余）
-- 违背"一个模型测试多MR"的设计
-- 实验量爆炸（800 runs × 10 MRs = 8000次训练）
-
-正确做法：一个模型训练一次，测试所有MR。
-
-### 8.4 为什么方法必须在最内层？
-
-保证最小完整实验包含两种方法的对比：
-- ✅ `seed42_mlp_baseline` + `seed42_mlp_mim` = 完整对比
-- ❌ 如果method在外层，可能只运行了baseline没运行mim
-
----
-
-## 9. 论文写作建议
-
-### 9.1 图表建议
-
-1. **鲁棒性曲线图**: 每个model一个子图，展示10档MR下的MAE对比
-2. **热力图**: 展示不同(model, MR)组合下MIM相对提升百分比
-3. **箱线图**: 展示100个seeds下的MAE分布稳定性
-4. **表格**: 汇总4种模型在关键MR点（0.0, 0.5, 0.9）的均值±标准差
-
-### 9.2 关键结论表述
-
-- MIM在**所有缺失率水平**下均优于Baseline
-- 随着缺失率增加，Baseline性能**线性恶化**，MIM性能**缓慢下降**
-- 在MR=0.9极端情况下，MIM相对提升**X%**
-- MIM在MR=0.0（无缺失）时性能**不劣于**Baseline
-
----
-
-## 10. 附录
-
-### 10.1 实验运行命令（含dataset/batch）
+### 7.2 检查模型保存
 
 ```bash
-# 初始化时指定数据集和批次
-python scripts/run_experiments.py init \
-    --dataset xjtu \
-    --batch 2C \
-    --seeds 42 43
+# 已保存模型数
+ls models/100seeds/*.pt | wc -l
+# 预期: 3,600
 
-# 或者使用预设配置
-python scripts/run_experiments.py init --tiny    # 1 dataset, 1 batch, 1 seed
-python scripts/run_experiments.py init --mini    # 1 dataset, 1 batch, 2 seeds
-python scripts/run_experiments.py init --test    # 1 dataset, 2 batches, 2 seeds
-python scripts/run_experiments.py init --all     # 所有datasets和batches
-
-# 运行（自动使用时间戳目录）
-python scripts/run_experiments.py run --gpu-workers 1 --cpu-workers 3
-
-# 查看特定时间戳的实验
-python scripts/run_experiments.py status --timestamp 20260308_143052
-
-# 汇总多次实验结果
-python scripts/run_experiments.py aggregate \
-    --timestamps 20260308_143052 20260309_091215 \
-    --output aggregated_results.csv
+# 检查特定种子
+ls models/100seeds/seed42*.pt
+# 预期: 6×3×2 = 36个模型
 ```
 
-### 10.2 状态监控
+### 7.3 常见问题
 
+**问题1：实验中断后如何恢复？**
 ```bash
-# 查看进度
-python scripts/run_experiments.py status
-
-# 查看结果
-python -c "
-import json, csv
-with open('experiments/experiment_db.csv') as f:
-    for r in csv.DictReader(f):
-        if r['status'] == 'completed':
-            m = json.loads(r['metrics'])
-            print(f\"{r['exp_id']}: {len(m['mr_results'])} MRs\")
-"
+# 重新运行相同命令，自动跳过已完成的模型
+python experiments/run_batch_experiments.py --phase full ...
 ```
 
-### 10.3 故障恢复
-
+**问题2：如何只运行特定种子/批次？**
 ```bash
-# 重置失败实验
-python scripts/run_experiments.py retry
+python experiments/run_batch_experiments.py \
+    --seeds 42 43 \
+    --batches 2C 3C \
+    ...
+```
 
-# 恢复卡住的实验（running → pending）
-python scripts/run_experiments.py recover
+**问题3：如何测试特定配置？**
+```bash
+# 单次实验
+python experiments/run_experiment.py \
+    --phase test \
+    --seed 42 --batch 2C --model mlp --use-mim true \
+    --mode MAR --test-mr 0.5 --imputation knn \
+    --model-dir models/100seeds
 ```
 
 ---
 
-**文档维护**: 如实验设计有重大变更，请更新本文档并注明版本和日期。
+## 8. 相关文档
+
+| 文档 | 内容 | 置信度 |
+|------|------|--------|
+| [../meta.md](../meta.md) | 9层架构定义（权威来源） | 🟢 S |
+| [CONFIDENCE.md](CONFIDENCE.md) | 文档置信度体系 | 🟢 S |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 代码架构实现 | 🟡 A |
+| [QUICKSTART.md](QUICKSTART.md) | 快速入门 | 🟡 A |
+| [DATASETS.md](DATASETS.md) | 数据集说明 | 🟠 B |
+| [HISTORY.md](HISTORY.md) | 历史文档索引 | 🟠 B |
 
 ---
 
-# 完整实验操作指南
-
-## 实验概述
-
-**实验设计**: 多维度控制变量的完整网格扫描
-
-| 维度 | 选项 | 数量 |
-|------|------|------|
-| 数据集 | XJTU, TJU, HUST, MIT | 4 |
-| 缺失机制 | MCAR, MAR | 2 |
-| 方法 | MIM, Mean, Median, KNN, Zero | 5 |
-| 模型 | MLP, LSTM, GRU, CNN1D | 4 |
-| 缺失率评估 | 0.1, 0.2, ..., 0.9 | 9 |
-| 随机种子 | 42, 43, ..., 141 | 100 |
-
-**总评估数**: 4 × 2 × 5 × 4 × 9 × 100 = **144,000**
-
----
-
-## 环境准备
-
-### 1. 激活环境
-
-```bash
-source ~/miniforge3/etc/profile.d/conda.sh
-conda activate battery
-```
-
-### 2. 验证安装
-
-```bash
-python -c "import torch; print(f'PyTorch: {torch.__version__}')"
-python -c "import pytorch_lightning; print(f'Lightning: {pytorch_lightning.__version__}')"
-```
-
----
-
-## 快速测试 (开发阶段)
-
-### 单配置测试
-
-```bash
-# 快速测试: 1 dataset × 1 model × 1 method × 1 seed × 3 epochs
-python src/main.py data=xjtu model=mlp method=mim \
-    experiment.seeds=[42] training.epochs=3
-```
-
-**预期输出**:
-```
-Loaded 8 batteries from data/XJTU data
-Battery split: 4 train, 2 val, 2 test
-MR=0.1: MAE=0.0123, RMSE=0.0156, R²=0.9985
-...
-MR=0.9: MAE=0.0289, RMSE=0.0354, R²=0.9932
-Results saved to: results/battery_soh_experiment_mlp_mim.csv
-```
-
-### 小网格测试
-
-```bash
-# 方法对比: 1 dataset × 1 model × 3 methods × 3 seeds × 10 epochs
-for method in mim mean knn; do
-    python src/main.py data=xjtu model=mlp method=$method \
-        experiment.seeds=[42,43,44] training.epochs=10
-done
-
-# 可视化
-python plot_results.py
-```
-
----
-
-## 标准实验 (验证阶段)
-
-### 单配置完整实验
-
-```bash
-# 标准: 1 dataset × 1 model × 1 method × 10 seeds × 100 epochs
-python src/main.py data=xjtu model=mlp method=mim \
-    experiment.seeds=[42,43,44,45,46,47,48,49,50,51] \
-    training.epochs=100
-```
-
-**运行时间**: ~30-60 分钟 (CPU)
-
-### 模型对比实验
-
-```bash
-# 比较 4 个模型: 1 dataset × 4 models × 1 method × 10 seeds × 100 epochs
-for model in mlp lstm gru cnn1d; do
-    python src/main.py data=xjtu model=$model method=mim \
-        experiment.seeds=[42..51] training.epochs=100
-done
-```
-
-**运行时间**: ~2-4 小时 (CPU)
-
-### 方法对比实验
-
-```bash
-# 比较 5 种方法: 1 dataset × 1 model × 5 methods × 10 seeds × 100 epochs
-for method in mim mean median knn zero; do
-    python src/main.py data=xjtu model=mlp method=$method \
-        experiment.seeds=[42..51] training.epochs=100
-done
-```
-
-**运行时间**: ~2.5-5 小时 (CPU)
-
----
-
-## 完整论文实验
-
-### 使用脚本自动化
-
-创建 `scripts/run_full_experiment.sh`:
-
-```bash
-#!/bin/bash
-
-DATASETS=(xjtu tju hust mit)
-MODELS=(mlp lstm gru cnn1d)
-METHODS=(mim mean median knn zero)
-SEEDS_START=42
-SEEDS_END=141
-EPOCHS=100
-
-for dataset in "${DATASETS[@]}"; do
-    for model in "${MODELS[@]}"; do
-        for method in "${METHODS[@]}"; do
-            echo "Running: $dataset / $model / $method"
-            python src/main.py \
-                data=$dataset \
-                model=$model \
-                method=$method \
-                experiment.seeds="[$(seq -s, $SEEDS_START $SEEDS_END)]" \
-                training.epochs=$EPOCHS \
-                wandb.enabled=false
-        done
-    done
-done
-```
-
-**执行**:
-```bash
-chmod +x scripts/run_full_experiment.sh
-./scripts/run_full_experiment.sh
-```
-
-**预期总时间**: ~600-1200 小时 (CPU)  
-**建议**: 使用多 GPU 并行或分布式集群
-
----
-
-## 实验监控
-
-### 实时查看进度
-
-```bash
-# 查看结果文件大小 (估算进度)
-watch -n 30 'ls -lh results/*.csv | wc -l'
-
-# 查看最新结果
-tail -f results/battery_soh_experiment_mlp_mim.csv
-```
-
-### 检查已完成配置
-
-```bash
-# 统计已完成的实验配置
-python -c "
-import os
-csvs = [f for f in os.listdir('results') if f.endswith('.csv')]
-print(f'Completed: {len(csvs)} configurations')
-for f in sorted(csvs):
-    print(f'  - {f}')
-"
-```
-
----
-
-## 结果分析
-
-### 加载所有结果
-
-```python
-import pandas as pd
-import glob
-
-# 加载所有 CSV
-results = []
-for csv_file in glob.glob('results/*.csv'):
-    df = pd.read_csv(csv_file)
-    results.append(df)
-
-all_results = pd.concat(results, ignore_index=True)
-print(f"Total evaluations: {len(all_results)}")
-```
-
-### 生成对比表
-
-```python
-# 按 dataset, model, method, missing_rate 分组统计
-summary = all_results.groupby(
-    ['dataset', 'model', 'method', 'missing_rate']
-)['test_mae'].agg(['mean', 'std', 'count'])
-
-print(summary)
-```
-
-### 统计显著性检验
-
-```python
-from scipy.stats import ttest_ind
-
-# 比较 MIM vs Mean 在每个缺失率下的差异
-for mr in [0.1, 0.3, 0.5, 0.7, 0.9]:
-    mim = all_results[
-        (all_results.method=='mim') & 
-        (all_results.missing_rate==mr)
-    ].test_mae
-    
-    mean = all_results[
-        (all_results.method=='mean') & 
-        (all_results.missing_rate==mr)
-    ].test_mae
-    
-    t, p = ttest_ind(mim, mean)
-    sig = '***' if p < 0.001 else '**' if p < 0.01 else '*' if p < 0.05 else ''
-    
-    print(f"MR={mr:.1f}: MIM={mim.mean():.4f}, Mean={mean.mean():.4f}, p={p:.4f} {sig}")
-```
-
-### 可视化
-
-```bash
-# 生成对比图
-python plot_results.py
-
-# 结果保存在
-ls results/comparison_plot.png
-```
-
----
-
-## 中断恢复
-
-### 检查已完成
-
-```bash
-# 查看已有结果文件
-ls results/*.csv
-
-# 统计行数 (每个种子应有 9 行，对应 9 个缺失率)
-wc -l results/*.csv
-```
-
-### 续跑未完成
-
-由于每个配置独立保存到 CSV，直接重新运行即可：
-
-```bash
-# 重新运行会覆盖原有 CSV，或追加新种子
-python src/main.py data=xjtu model=mlp method=mim \
-    experiment.seeds=[42..141] training.epochs=100
-```
-
-### 仅跑未完成配置
-
-```bash
-# 检查缺失的配置并补跑
-python << 'EOF'
-import os
-
-datasets = ['xjtu', 'tju', 'hust', 'mit']
-models = ['mlp', 'lstm', 'gru', 'cnn1d']
-methods = ['mim', 'mean', 'median', 'knn', 'zero']
-
-completed = set()
-for f in os.listdir('results'):
-    if f.endswith('.csv'):
-        # Parse: battery_soh_experiment_{dataset}_{model}_{method}.csv
-        parts = f.replace('.csv', '').split('_')
-        if len(parts) >= 5:
-            dataset = parts[-3]
-            model = parts[-2]
-            method = parts[-1]
-            completed.add((dataset, model, method))
-
-for dataset in datasets:
-    for model in models:
-        for method in methods:
-            if (dataset, model, method) not in completed:
-                print(f"Missing: {dataset} / {model} / {method}")
-EOF
-```
-
----
-
-## 硬件要求
-
-| 配置 | CPU | 内存 | 磁盘 | 预估时间 |
-|------|-----|------|------|----------|
-| 开发测试 | 4核 | 8GB | 1GB | 10分钟 |
-| 标准实验 | 8核 | 16GB | 5GB | 2-4小时 |
-| 完整论文 | 32核+ | 32GB+ | 20GB | 600-1200小时 |
-
-**优化建议**:
-- 使用 GPU: `training.accelerator=gpu`
-- 多进程并行: 每个配置独立运行
-- 分布式: 使用 SLURM/Kubernetes 调度
-
----
-
-## 故障排查
-
-### OOM (内存不足)
-
-```bash
-# 减小 batch size
-python src/main.py ... training.batch_size=32  # 默认64
-python src/main.py ... training.batch_size=16  # 更小
-```
-
-### 特征列错误
-
-```bash
-# 检查数据集配置
-head configs/data/xjtu.yaml
-
-# 检查数据文件列名
-head -1 "data/XJTU data/2C_battery-1.csv"
-```
-
-### 电池数量不足
-
-```bash
-# 检查数据目录
-ls "data/XJTU data/" | grep battery
-
-# 至少需要 3 个电池 (train/val/test 各1)
-```
-
-### 结果不一致
-
-```bash
-# 固定种子重跑验证
-python src/main.py ... experiment.seeds=[42] training.epochs=10
-
-# 比较两次结果
-diff results/battery_soh_experiment_mlp_mim.csv results/battery_soh_experiment_mlp_mim.csv.backup
-```
-
----
-
-## 输出文件规范
-
-### CSV 格式
-
-```csv
-seed,missing_rate,model,method,dataset,missing_mode,test_mae,test_rmse,test_r2
-42,0.1,mlp,mim,xjtu,mcar,0.0104,0.0132,0.9989
-42,0.2,mlp,mim,xjtu,mcar,0.0107,0.0135,0.9988
-...
-```
-
-### 图表格式
-
-```
-results/comparison_plot.png
-```
-
----
-
-*最后更新: 2026-02-26*  
-*对应代码: dev branch (Hydra + Lightning)*
+*文档版本: v3.0*
+*架构版本: 9层实验架构*
+*最后更新: 2026-03-19*
+*对应代码: c87f6b7*
