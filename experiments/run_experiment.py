@@ -68,14 +68,16 @@ def parse_args():
                        help='Use MIM indicators (L5)')
     
     # 训练阶段特定参数
-    parser.add_argument('--epochs', type=int, default=50,
+    parser.add_argument('--epochs', type=int, default=100,
                        help='Training epochs')
     parser.add_argument('--lr', type=float, default=0.001,
                        help='Learning rate')
     parser.add_argument('--batch-size', type=int, default=32,
                        help='Batch size')
-    parser.add_argument('--patience', type=int, default=10,
+    parser.add_argument('--patience', type=int, default=20,
                        help='Early stopping patience')
+    parser.add_argument('--val-mr', type=float, default=0.5,
+                       help='Validation missing rate for MIM (default: 0.5, use -1 for multi-MR average, use -2 for multi-MR individual monitoring)')
     parser.add_argument('--save-model', action='store_true',
                        help='Save trained model')
     parser.add_argument('--model-dir', type=str, default='models',
