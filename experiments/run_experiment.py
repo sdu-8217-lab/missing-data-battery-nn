@@ -78,6 +78,9 @@ def parse_args():
                        help='Early stopping patience')
     parser.add_argument('--val-mr', type=float, default=0.5,
                        help='Validation missing rate for MIM (default: 0.5, use -1 for multi-MR average, use -2 for multi-MR individual monitoring)')
+    parser.add_argument('--train-imputation', type=str, default='zero',
+                       choices=['mean', 'knn', 'iterative', 'zero'],
+                       help='Imputation method for MIM training (L6 extension): mean, knn, iterative, zero. The model will be trained with this specific imputation method.')
     parser.add_argument('--save-model', action='store_true',
                        help='Save trained model')
     parser.add_argument('--model-dir', type=str, default='models',
@@ -100,10 +103,25 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_model_path(model_dir: str, seed: int, batch: str, model_type: str, use_mim: bool) -> str:
-    """生成模型保存/加载路径"""
+def get_model_path(model_dir: str, seed: int, batch: str, model_type: str, use_mim: bool, 
+                   train_imputation: str = 'zero') -> str:
+    """生成模型保存/加载路径
+    
+    Args:
+        model_dir: 模型目录
+        seed: 随机种子
+        batch: 电池批次
+        model_type: 模型类型
+        use_mim: 是否使用MIM
+        train_imputation: MIM训练时使用的插补方法（non-MIM时忽略）
+    """
     mim_str = "mim" if use_mim else "no_mim"
-    return os.path.join(model_dir, f"seed{seed}_batch{batch}_model{model_type}_{mim_str}.pt")
+    if use_mim:
+        # MIM模型需要包含插补方法信息
+        return os.path.join(model_dir, f"seed{seed}_batch{batch}_model{model_type}_{mim_str}_{train_imputation}.pt")
+    else:
+        # non-MIM模型不需要插补方法（训练用完整数据）
+        return os.path.join(model_dir, f"seed{seed}_batch{batch}_model{model_type}_{mim_str}.pt")
 
 
 def create_model(model_type: str, input_dim: int, use_mim: bool) -> nn.Module:
@@ -148,7 +166,8 @@ def create_model(model_type: str, input_dim: int, use_mim: bool) -> nn.Module:
         raise ValueError(f"Unknown model type: {model_type}")
 
 
-def prepare_training_data(batch_id: str, seed: int, use_mim: bool, model_type: str = 'mlp') -> Tuple:
+def prepare_training_data(batch_id: str, seed: int, use_mim: bool, model_type: str = 'mlp',
+                          train_imputation: str = 'zero') -> Tuple:
     """
     准备训练数据
     
@@ -157,6 +176,7 @@ def prepare_training_data(batch_id: str, seed: int, use_mim: bool, model_type: s
         seed: 随机种子
         use_mim: 是否使用MIM
         model_type: 模型类型 ('mlp', 'lstm', 'cnn')
+        train_imputation: MIM训练时使用的插补方法 ('mean', 'knn', 'iterative', 'zero')
         
     Returns:
         如果use_mim=False: (X_train, y_train, X_val, y_val, train_mean, train_std)
@@ -233,6 +253,14 @@ def prepare_training_data(batch_id: str, seed: int, use_mim: bool, model_type: s
         )
     else:
         # use_mim=True: 生成多MR训练数据（MCAR）
+        # 导入插补工具
+        from src.data.imputation_utils import (
+            impute_missing_values, compute_train_statistics, generate_mcar_missing
+        )
+        
+        # 计算训练集统计量（用于插补）
+        train_stats = compute_train_statistics(X_train)
+        
         multi_mr_data = []
         train_mr_list = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
         
@@ -244,8 +272,16 @@ def prepare_training_data(batch_id: str, seed: int, use_mim: bool, model_type: s
                 # MCAR生成缺失
                 np.random.seed(seed + int(mr * 100))
                 mask = np.random.rand(*X_train.shape) < mr
-                X_mr = X_train.copy()
-                X_mr[mask] = 0  # 零值填充
+                X_missing = X_train.copy()
+                X_missing[mask] = np.nan  # 标记为缺失
+                
+                # 使用指定的插补方法填充
+                X_mr = impute_missing_values(
+                    X_missing, 
+                    method=train_imputation, 
+                    train_stats=train_stats, 
+                    seed=seed
+                )
             
             # 拼接掩码
             mask_tensor = torch.FloatTensor(mask.astype(float))
@@ -285,7 +321,8 @@ def train_model(args) -> Dict:
     # 准备数据
     if use_mim:
         multi_mr_data, X_val, y_val, train_mean, train_std = prepare_training_data(
-            args.batch, args.seed, use_mim=True, model_type=args.model
+            args.batch, args.seed, use_mim=True, model_type=args.model,
+            train_imputation=args.train_imputation
         )
         # 验证集也生成多MR用于早停
         val_data_list = []
@@ -302,13 +339,25 @@ def train_model(args) -> Dict:
                 else:
                     mask_shape = X_val.shape
                 mask = np.random.rand(*mask_shape) < mr
-                X_val_mr = X_val.clone()
-                # 将mask扩展到与X_val_mr相同的维度
+                
+                # 生成带缺失的验证数据并使用指定的插补方法填充
+                X_val_np = X_val.squeeze(1).numpy() if args.model in ['cnn', 'lstm'] else X_val.numpy()
+                X_val_missing = X_val_np.copy()
+                X_val_missing[mask] = np.nan
+                
+                from src.data.imputation_utils import impute_missing_values, compute_train_statistics
+                train_stats = compute_train_statistics(train_mean.reshape(1, -1))  # 使用已计算的统计量
+                X_val_imputed = impute_missing_values(
+                    X_val_missing,
+                    method=args.train_imputation,
+                    train_stats={'mean': train_mean},
+                    seed=args.seed
+                )
+                
+                X_val_mr = torch.FloatTensor(X_val_imputed)
                 if args.model in ['cnn', 'lstm']:
-                    mask_expanded = np.broadcast_to(mask[:, np.newaxis, :], X_val_mr.shape)
-                else:
-                    mask_expanded = mask
-                X_val_mr[mask_expanded] = 0
+                    X_val_mr = X_val_mr.unsqueeze(1)
+                
                 mask_val = torch.FloatTensor(mask.astype(float))
                 if args.model in ['cnn', 'lstm']:
                     # mask shape: [batch, features] -> [batch, 1, features] 匹配 X_val_mr
@@ -323,7 +372,8 @@ def train_model(args) -> Dict:
             val_data_list.append((X_val_combined, y_val))
     else:
         X_train, y_train, X_val, y_val, train_mean, train_std = prepare_training_data(
-            args.batch, args.seed, use_mim=False, model_type=args.model
+            args.batch, args.seed, use_mim=False, model_type=args.model,
+            train_imputation='zero'  # non-MIM时不使用插补，传默认值即可
         )
     
     # 创建模型
@@ -400,7 +450,8 @@ def train_model(args) -> Dict:
             if args.save_model:
                 os.makedirs(args.model_dir, exist_ok=True)
                 model_path = get_model_path(
-                    args.model_dir, args.seed, args.batch, args.model, use_mim
+                    args.model_dir, args.seed, args.batch, args.model, use_mim,
+                    getattr(args, 'train_imputation', 'zero')
                 )
                 torch.save({
                     'model_state_dict': model.state_dict(),
@@ -437,12 +488,28 @@ def test_model(args) -> Dict:
     print(f"{'='*60}\n")
     
     # 加载模型
+    # 对于MIM模型，需要确定训练时使用的插补方法
+    train_imputation = getattr(args, 'train_imputation', 'zero')
+    if use_mim and not hasattr(args, 'train_imputation'):
+        # 如果未指定，尝试从checkpoint推断或使用默认值
+        print(f"  Warning: train_imputation not specified for MIM model, using '{train_imputation}'")
+    
     model_path = get_model_path(
-        args.model_dir, args.seed, args.batch, args.model, use_mim
+        args.model_dir, args.seed, args.batch, args.model, use_mim,
+        train_imputation
     )
     
     if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model not found: {model_path}. Please train first.")
+        # 尝试旧的路径格式（不包含插补方法，向后兼容）
+        old_model_path = os.path.join(
+            args.model_dir, 
+            f"seed{args.seed}_batch{args.batch}_model{args.model}_{'mim' if use_mim else 'no_mim'}.pt"
+        )
+        if os.path.exists(old_model_path):
+            print(f"  Loading model from legacy path: {old_model_path}")
+            model_path = old_model_path
+        else:
+            raise FileNotFoundError(f"Model not found: {model_path}. Please train first.")
     
     checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
     
@@ -618,12 +685,23 @@ def batch_test_model(args) -> List[Dict]:
     print(f"{'='*60}\n")
     
     # 加载模型（只加载一次）
+    train_imputation = getattr(args, 'train_imputation', 'zero')
     model_path = get_model_path(
-        args.model_dir, args.seed, args.batch, args.model, use_mim
+        args.model_dir, args.seed, args.batch, args.model, use_mim,
+        train_imputation
     )
     
     if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model not found: {model_path}. Please train first.")
+        # 尝试旧的路径格式（向后兼容）
+        old_model_path = os.path.join(
+            args.model_dir,
+            f"seed{args.seed}_batch{args.batch}_model{args.model}_{'mim' if use_mim else 'no_mim'}.pt"
+        )
+        if os.path.exists(old_model_path):
+            print(f"  Loading model from legacy path: {old_model_path}")
+            model_path = old_model_path
+        else:
+            raise FileNotFoundError(f"Model not found: {model_path}. Please train first.")
     
     checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
     
