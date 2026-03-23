@@ -132,7 +132,7 @@ fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
 # 左图: 按MR分组的MIM改进率
 ax1 = axes[0]
-mrs = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+mrs = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 improvements = []
 
 for mr in mrs:
@@ -304,7 +304,7 @@ fig, ax = plt.subplots(figsize=(12, 8))
 
 # 创建热力图：MR × Imputation，颜色表示MIM效果
 pivot_data = []
-for mr in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+for mr in [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]:
     row = []
     for imp in ['mean', 'knn', 'iterative', 'zero']:
         subset = df[(df['test_mr'] == mr) & (df['imputation'] == imp)]
@@ -315,7 +315,7 @@ for mr in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
     pivot_data.append(row)
 
 pivot_df = pd.DataFrame(pivot_data, 
-                       index=[f'{int(mr*100)}%' for mr in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]],
+                       index=[f'{int(mr*100)}%' for mr in [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]],
                        columns=['Mean', 'KNN', 'Iterative', 'Zero'])
 
 # 使用diverging colormap

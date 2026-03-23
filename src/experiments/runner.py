@@ -129,9 +129,9 @@ class ExperimentRunner:
         
         model_config = model_config_map.get(record.model, f"paper_{record.model}")
         
-        # 获取缺失率列表（10档：0.0-0.9）
-        eval_mrs = record.eval_missing_rates if record.eval_missing_rates else "0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9"
-        mim_train_mrs = record.mim_train_missing_rates if record.mim_train_missing_rates else "0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9"
+        # 获取缺失率列表（20档：0.0-0.95，步长0.05）
+        eval_mrs = record.eval_missing_rates if record.eval_missing_rates else "0.0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95"
+        mim_train_mrs = record.mim_train_missing_rates if record.mim_train_missing_rates else "0.0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95"
         
         # 使用默认 config.yaml 作为基础，通过覆盖参数来配置
         cmd = [

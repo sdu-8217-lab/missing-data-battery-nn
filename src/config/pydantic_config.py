@@ -76,7 +76,7 @@ class MIMConfig:
     
     # MIM训练时的缺失率范围
     train_mr_list: List[float] = field(
-        default_factory=lambda: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        default_factory=lambda: [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     )
     
     # 验证策略
@@ -129,7 +129,7 @@ class TestingConfig:
     # 批处理测试时使用
     modes: List[str] = field(default_factory=lambda: ['MCAR', 'MAR', 'MNAR'])
     test_mrs: List[float] = field(
-        default_factory=lambda: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        default_factory=lambda: [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     )
     imputations: List[str] = field(
         default_factory=lambda: ['mean', 'knn', 'iterative', 'zero']
@@ -328,7 +328,7 @@ def get_100seeds_config(batch: str = '2C', model: str = 'mlp', use_mim: bool = F
         training=TrainingConfig(epochs=200, patience=30),
         testing=TestingConfig(
             modes=['MCAR', 'MAR', 'MNAR'],
-            test_mrs=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+            test_mrs=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95],
             imputations=['mean', 'knn', 'iterative', 'zero']
         )
     )

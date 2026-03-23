@@ -200,7 +200,7 @@ MIM构建过程在算法~\ref{alg:mim}中形式化描述。给定原始特征矩
 
 \subsubsection{训练数据增强}
 
-对于启用MIM的模型，训练过程同时纳入多种缺失率。设$\mathcal{P} = \{0.0, 0.1, 0.2, \ldots, 0.9\}$表示用于训练的缺失率集合。对于每个缺失率$p \in \mathcal{P}$，按照MCAR机制生成训练集的一个带缺失副本，并构造MIM输入。这些增强数据集被合并为统一的训练集：
+对于启用MIM的模型，训练过程同时纳入多种缺失率。设$\mathcal{P} = \{0.0, 0.05, 0.1, 0.15, \ldots, 0.95\}$表示用于训练的缺失率集合。对于每个缺失率$p \in \mathcal{P}$，按照MCAR机制生成训练集的一个带缺失副本，并构造MIM输入。这些增强数据集被合并为统一的训练集：
 \begin{equation}
     \mathcal{D}_{\text{train}}^{\text{aug}} = \bigcup_{p \in \mathcal{P}} \{(Z^{(p)}_i, y_i)\}_{i=1}^{n_{\text{train}}}
 \end{equation}
@@ -241,7 +241,7 @@ MIM模型在包含不同缺失率样本的增强数据集$\mathcal{D}_{\text{tra
 \begin{figure*}[!htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{fig4_joint_training.png}
-    \caption{多缺失率联合训练流程。原始训练集按10个缺失率生成副本，经MIM构造后合并为$\mathcal{D}_{\text{augmented}}$，用于训练统一的MIM模型。}
+    \caption{多缺失率联合训练流程。原始训练集按20个缺失率生成副本（步长0.05），经MIM构造后合并为$\mathcal{D}_{\text{augmented}}$，用于训练统一的MIM模型。}
     \label{fig:joint_training}
 \end{figure*}
 

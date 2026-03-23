@@ -27,7 +27,7 @@ def plot_zero_mim_vs_all_non_mim(df, output_dir):
     - Zero填充 + MIM (1条线)
     - 所有non-MIM插补方法 (4条线: zero, mean, knn, iterative)
     """
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     modes = ['MCAR', 'MAR', 'MNAR']
     
     fig, axes = plt.subplots(1, 3, figsize=(16, 5))
@@ -125,7 +125,7 @@ def plot_zero_mim_vs_all_non_mim_per_model(df, output_dir):
     """
     每个模型单独一张图：Zero+MIM vs 所有non-MIM插补
     """
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     modes = ['MCAR', 'MAR', 'MNAR']
     models = ['mlp', 'lstm', 'cnn']
     

@@ -26,7 +26,7 @@ def load_data(json_path):
 def plot_heatmap_by_model(df, output_dir):
     """为每个模型绘制热力图"""
     imputations = ['zero', 'mean', 'knn', 'iterative']
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     
     for model in ['mlp', 'lstm', 'cnn']:
         fig, axes = plt.subplots(2, 3, figsize=(15, 10))
@@ -89,7 +89,7 @@ def plot_heatmap_by_model(df, output_dir):
 def plot_line_by_imputation(df, output_dir):
     """按插补方法绘制MAE随MR变化的线图"""
     imputations = ['zero', 'mean', 'knn', 'iterative']
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     modes = ['MCAR', 'MAR', 'MNAR']
     
     for imp in imputations:
@@ -135,7 +135,7 @@ def plot_line_by_imputation(df, output_dir):
 def plot_mim_improvement(df, output_dir):
     """绘制MIM改进百分比热力图"""
     imputations = ['zero', 'mean', 'knn', 'iterative']
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     modes = ['MCAR', 'MAR', 'MNAR']
     
     for model in ['mlp', 'lstm', 'cnn']:
@@ -310,7 +310,7 @@ def plot_r2_comparison(df, output_dir):
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle('R² Score Comparison by Missing Rate', fontsize=14, fontweight='bold')
     
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     
     for idx, model in enumerate(['mlp', 'lstm', 'cnn']):
         ax = axes[idx]

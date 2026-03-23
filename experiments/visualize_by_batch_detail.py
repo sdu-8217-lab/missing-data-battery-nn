@@ -66,7 +66,7 @@ def plot_batch_detail(df, batch_name):
     model_markers = {'mlp': 'o', 'lstm': 's', 'cnn': '^'}
     model_colors = {'mlp': '#E64B35', 'lstm': '#4DBBD5', 'cnn': '#00A087'}
     
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     
     for imp_name, row, col in imputations:
         ax = axes[row, col]
@@ -151,7 +151,7 @@ def plot_batch_summary(df, batch_name):
     
     models = ['mlp', 'lstm', 'cnn']
     imputations = ['zero', 'mean', 'knn', 'iterative']
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     
     imp_colors = {'zero': '#3C5488', 'mean': '#E64B35', 
                   'knn': '#4DBBD5', 'iterative': '#00A087'}

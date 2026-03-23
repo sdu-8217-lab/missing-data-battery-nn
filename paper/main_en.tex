@@ -197,7 +197,7 @@ A critical challenge in deploying SOH prediction models under missing data condi
 
 \subsubsection{Training Data Augmentation}
 
-For MIM-enabled models, the training process incorporates multiple missing rates simultaneously. Let $\mathcal{P} = \{0.0, 0.1, 0.2, \ldots, 0.9\}$ denote the set of missing rates used for training. For each missing rate $p \in \mathcal{P}$, a copy of the training set is generated with missing values injected according to the MCAR mechanism, and MIM inputs are constructed. These augmented datasets are merged into a unified training set:
+For MIM-enabled models, the training process incorporates multiple missing rates simultaneously. Let $\mathcal{P} = \{0.0, 0.05, 0.1, 0.15, \ldots, 0.95\}$ denote the set of missing rates used for training. For each missing rate $p \in \mathcal{P}$, a copy of the training set is generated with missing values injected according to the MCAR mechanism, and MIM inputs are constructed. These augmented datasets are merged into a unified training set:
 \begin{equation}
     \mathcal{D}_{\text{train}}^{\text{aug}} = \bigcup_{p \in \mathcal{P}} \{(Z^{(p)}_i, y_i)\}_{i=1}^{n_{\text{train}}}
 \end{equation}
@@ -240,7 +240,7 @@ Figure~\ref{fig:joint_training} illustrates the multi-missing-rate joint trainin
 \begin{figure*}[!htb]
     \centering
     \includegraphics[width=\textwidth]{fig4_joint_training.png}
-    \caption{Multi-missing-rate joint training process. The original training set generates copies at 10 missing rates, which after MIM construction are merged into $\mathcal{D}_{\text{augmented}}$ for training a unified MIM model.}
+    \caption{Multi-missing-rate joint training process. The original training set generates copies at 20 missing rates (step 0.05), which after MIM construction are merged into $\mathcal{D}_{\text{augmented}}$ for training a unified MIM model.}
     \label{fig:joint_training}
 \end{figure*}
 
@@ -378,7 +378,7 @@ where $\mu_j$ and $\sigma_j$ represent the mean and standard deviation of featur
 
 To systematically evaluate model robustness under incomplete data conditions, a controlled missing data injection mechanism is implemented following the Missing Completely at Random (MCAR) assumption. Under MCAR, the probability of any feature being missing is independent of both observed values and unobserved latent variables, enabling unbiased assessment of method performance across varying degrees of data incompleteness.
 
-Nine distinct missing rate levels are examined: MR $\in$ \{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9\}, covering the spectrum from minor data gaps to severe information scarcity. For each missing rate level, missing values are independently sampled at the feature level according to a Bernoulli process with probability $p$ equal to the target missing rate.
+Twenty distinct missing rate levels are examined: MR $\in$ \{0.05, 0.1, 0.15, ..., 0.95\}, covering the spectrum from minor data gaps to severe information scarcity. For each missing rate level, missing values are independently sampled at the feature level according to a Bernoulli process with probability $p$ equal to the target missing rate.
 
 For each experimental run, missing masks are generated independently for different missing rates, ensuring that the evaluation captures method performance under diverse missing pattern realizations. This approach prevents overfitting to specific missing configurations and provides robust performance estimates.
 

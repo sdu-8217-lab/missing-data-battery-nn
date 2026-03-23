@@ -234,7 +234,7 @@ def prepare_training_data(batch_id: str, seed: int, use_mim: bool, model_type: s
     else:
         # use_mim=True: 生成多MR训练数据（MCAR）
         multi_mr_data = []
-        train_mr_list = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        train_mr_list = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
         
         for mr in train_mr_list:
             if mr == 0.0:
@@ -289,7 +289,7 @@ def train_model(args) -> Dict:
         )
         # 验证集也生成多MR用于早停
         val_data_list = []
-        for mr in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+        for mr in [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]:
             if mr == 0.0:
                 X_val_mr = X_val.clone()
                 mask_val = torch.zeros_like(X_val)
@@ -685,7 +685,7 @@ def batch_test_model(args) -> List[Dict]:
     
     # 定义所有测试配置
     modes = ['MCAR', 'MAR', 'MNAR']
-    test_mrs = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    test_mrs = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     imputations = ['mean', 'knn', 'iterative', 'zero']
     
     results = []

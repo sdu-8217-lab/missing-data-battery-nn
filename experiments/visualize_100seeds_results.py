@@ -135,7 +135,7 @@ def plot_overall_performance(df, output_dir):
 def plot_heatmaps(df, output_dir):
     """2. 热力图 (MR × Imputation)"""
     imputations = ['zero', 'mean', 'knn', 'iterative']
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     
     for model in ['mlp', 'lstm', 'cnn']:
         fig, axes = plt.subplots(2, 3, figsize=(16, 10))
@@ -188,7 +188,7 @@ def plot_heatmaps(df, output_dir):
 def plot_mim_improvement_heatmap(df, output_dir):
     """3. MIM改进百分比热力图"""
     imputations = ['zero', 'mean', 'knn', 'iterative']
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     modes = ['MCAR', 'MAR', 'MNAR']
     
     for model in ['mlp', 'lstm', 'cnn']:
@@ -248,7 +248,7 @@ def plot_mim_improvement_heatmap(df, output_dir):
 def plot_mae_by_missing_rate(df, output_dir):
     """4. MAE随缺失率变化线图"""
     imputations = ['zero', 'mean', 'knn', 'iterative']
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     modes = ['MCAR', 'MAR', 'MNAR']
     
     for imp in imputations:
@@ -289,7 +289,7 @@ def plot_mae_by_missing_rate(df, output_dir):
 
 def plot_zero_mim_comparison(df, output_dir):
     """5. Zero+MIM vs 所有non-MIM方法对比"""
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     modes = ['MCAR', 'MAR', 'MNAR']
     
     colors = {'zero': '#1f77b4', 'mean': '#ff7f0e', 'knn': '#2ca02c', 
@@ -341,7 +341,7 @@ def plot_zero_mim_comparison(df, output_dir):
 
 def plot_r2_comparison(df, output_dir):
     """6. R²分数对比"""
-    missing_rates = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    missing_rates = [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle('R² Score vs Missing Rate (100 Seeds)', fontsize=14, fontweight='bold')
