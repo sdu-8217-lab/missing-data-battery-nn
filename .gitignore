@@ -222,3 +222,25 @@ Thumbs.db
 # 归档文件
 archive/
 .cleanup_backup/
+
+# === 奥卡姆剃刀清理 - 自动忽略 ===
+# Python缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 实验日志和输出
+lightning_logs/
+experiments/logs/
+experiments/runs/
+*.log
+
+# 测试模型（保留核心模型目录）
+models/test_*
+models/debug_*
+models/compare_*
+models/strategy_*
+
+# 备份和临时
+.cleanup_backup/
