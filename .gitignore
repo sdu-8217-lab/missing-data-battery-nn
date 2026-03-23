@@ -221,3 +221,4 @@ Thumbs.db
 
 # 归档文件
 archive/
+.cleanup_backup/
