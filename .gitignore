@@ -29,6 +29,16 @@ wandb/                 # Weights & Biases 本地目录
 output/
 outputs/               # Hydra 默认输出目录
 
+# 实验输出目录（包含大量时间戳子目录）
+experiments/2C/
+experiments/3C/
+experiments/R2.5/
+experiments/R3/
+experiments/RW/
+experiments/Sim_satellite/
+experiments_v2/
+experiments_v3/
+
 # 数据集相关
 data/cache/
 data/processed/
@@ -36,18 +46,27 @@ data/raw/
 datasets/
 *.npy                  # NumPy 数组
 *.npz                  # 压缩的 NumPy 数组
+*.pkl                  # Python pickle 文件
+*.pickle               # Python pickle 文件（备用扩展名）
 
 # ======================
 # 临时文件和目录
 # ======================
 
+# 旧代码备份和临时目录
 tmp_legacy/            # 旧代码备份
-22602_140541/          # 临时实验目录
-tmp_*.py               # 临时脚本
-*_backup_*.csv         # 备份文件
+.rework/               # 重构工作目录
+.imputation_cache/     # 插补缓存
+battery_experiment_reproduce*  # 老代码压缩包及解压目录
+cleanup_backup_*/      # 清理备份
+
 # 临时问题分析文件
 PROBLEM_ANALYSIS.txt
 QUICK_FIX_INSTRUCTIONS.md
+
+# 奇怪的临时文件
+=2.14.0
+*.Zone.Identifier
 
 # ======================
 # Python 通用忽略规则
