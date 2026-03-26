@@ -225,6 +225,11 @@ Thumbs.db
 !paper/**/*.yml
 !paper/**/*.png                # 论文图表
 
+# 模型架构设计文档
+!model_configs.yaml            # 模型配置文件
+!MODEL_ARCHITECTURE_DESIGN.md  # 模型设计文档
+!model_architecture_design.py  # 模型设计脚本
+
 # 仅排除根目录的 figures，但允许 paper/figures
 /figures/
 !/paper/figures/

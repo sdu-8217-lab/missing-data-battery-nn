@@ -1,0 +1,104 @@
+# 神经网络模型架构配置
+# 3种模型 × 4种参数量级别 = 12个模型配置
+# 生成日期: 2026-03-27
+
+# 参数范围定义:
+# Level 1: 4096 ~ 8192 (2^12 ~ 2^13)
+# Level 2: 8192 ~ 16384 (2^13 ~ 2^14)
+# Level 3: 16384 ~ 32768 (2^14 ~ 2^15)
+# Level 4: 32768 ~ 65536 (2^15 ~ 2^16)
+
+mlp:
+  level_1:
+    description: "MLP Small - 参数量约5953(无MIM)/7233(有MIM)"
+    hidden_dims: [80, 56]
+    dropout: 0.15
+    target_params_no_mim: 5953
+    target_params_mim: 7233
+    
+  level_2:
+    description: "MLP Medium - 参数量约11801(无MIM)/13721(有MIM)"
+    hidden_dims: [120, 80]
+    dropout: 0.15
+    target_params_no_mim: 11801
+    target_params_mim: 13721
+    
+  level_3:
+    description: "MLP Large - 参数量约20537(无MIM)/23225(有MIM)"
+    hidden_dims: [168, 104]
+    dropout: 0.15
+    target_params_no_mim: 20537
+    target_params_mim: 23225
+    
+  level_4:
+    description: "MLP XLarge - 参数量约44529(无MIM)/48625(有MIM)"
+    hidden_dims: [256, 128, 56]
+    dropout: 0.15
+    target_params_no_mim: 44529
+    target_params_mim: 48625
+
+lstm:
+  level_1:
+    description: "LSTM Small - 参数量约5181(无MIM)/6973(有MIM)"
+    hidden_size: 28
+    num_layers: 1
+    dropout: 0.2
+    target_params_no_mim: 5181
+    target_params_mim: 6973
+    
+  level_2:
+    description: "LSTM Medium - 参数量约10957(无MIM)/13773(有MIM)"
+    hidden_size: 44
+    num_layers: 1
+    dropout: 0.2
+    target_params_no_mim: 10957
+    target_params_mim: 13773
+    
+  level_3:
+    description: "LSTM Large - 参数量约26797(无MIM)/29613(有MIM)"
+    hidden_size: 44
+    num_layers: 2
+    dropout: 0.2
+    target_params_no_mim: 26797
+    target_params_mim: 29613
+    
+  level_4:
+    description: "LSTM XLarge - 参数量约54337(无MIM)/58433(有MIM)"
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+    target_params_no_mim: 54337
+    target_params_mim: 58433
+
+cnn:
+  level_1:
+    description: "CNN Small - 参数量约5377(无MIM)/7297(有MIM)"
+    channels: [40, 28]
+    kernel_size: 3
+    dropout: 0.1
+    target_params_no_mim: 5377
+    target_params_mim: 7297
+    
+  level_2:
+    description: "CNN Medium - 参数量约12249(无MIM)/15705(有MIM)"
+    channels: [72, 40]
+    kernel_size: 3
+    dropout: 0.1
+    target_params_no_mim: 12249
+    target_params_mim: 15705
+    
+  level_3:
+    description: "CNN Large - 参数量约20945(无MIM)/25553(有MIM)"
+    channels: [96, 56]
+    kernel_size: 3
+    dropout: 0.1
+    target_params_no_mim: 20945
+    target_params_mim: 25553
+    
+  level_4:
+    description: "CNN XLarge - 参数量约36185(无MIM)/42713(有MIM)"
+    channels: [136, 72]
+    kernel_size: 3
+    dropout: 0.1
+    target_params_no_mim: 36185
+    target_params_mim: 42713
