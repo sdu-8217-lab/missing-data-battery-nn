@@ -67,6 +67,7 @@ def main():
     parser.add_argument("--data-dir", default="../data/raw/XJTU", help="数据目录")
     parser.add_argument("--skip-train", action="store_true", help="跳过训练阶段")
     parser.add_argument("--skip-eval", action="store_true", help="跳过评估阶段")
+    parser.add_argument("--seeds", type=int, nargs="+", help="随机种子列表（覆盖配置）")
     
     args = parser.parse_args()
     
@@ -105,6 +106,8 @@ def main():
             "--model-config", str(model_config_path),
             "--output-dir", args.output_dir
         ]
+        if args.seeds:
+            train_cmd.extend(["--seeds"] + [str(s) for s in args.seeds])
         
         if not run_command(train_cmd, cwd=exp_dir, description="阶段1: 模型训练"):
             print("训练阶段失败，中止")

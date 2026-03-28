@@ -4,10 +4,15 @@
 负责分界线以下的测试阶段（L7-L9）：3种缺失模式 × 20种MR × 4种插补 = 240组合
 
 用法:
+    # 串行评估（默认）
     python evaluate_models.py --models-dir results/phase1/3C/20260327/models
+    
+    # 并行评估（8进程，推荐用于多模型）
+    python evaluate_models.py --models-dir results/phase1/3C/20260327/models --workers 8
 """
 import sys
 import argparse
+import multiprocessing as mp
 from pathlib import Path
 from glob import glob
 
@@ -22,6 +27,7 @@ from src.config.experiment_config import ExperimentConfig
 from src.data.loader import XJTUDatasetLoader
 from src.evaluation.tester import ModelTester
 from src.utils.logger import setup_logger
+from src.models.factory import create_model
 
 
 def load_model_info(model_path: Path) -> dict:
@@ -40,7 +46,7 @@ def evaluate_single_model(
     model_path: Path,
     data: dict,
     test_config: dict,
-    logger
+    logger=None
 ) -> pd.DataFrame:
     """
     评估单个模型
@@ -49,9 +55,6 @@ def evaluate_single_model(
     """
     # 加载模型
     checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
-    
-    # 重建模型
-    from src.models.factory import create_model
     
     model_arch = checkpoint['model_arch']
     use_mim = checkpoint['config']['training']['use_mim']
@@ -101,6 +104,84 @@ def evaluate_single_model(
     return results
 
 
+def evaluate_single_model_parallel(args_tuple):
+    """
+    并行评估单个模型的包装函数（用于多进程）
+    
+    每个进程独立加载数据和模型，避免共享内存问题
+    """
+    model_path, test_config, data_dir = args_tuple
+    model_path = Path(model_path)
+    
+    try:
+        # 加载模型
+        checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
+        
+        model_arch = checkpoint['model_arch']
+        use_mim = checkpoint['config']['training']['use_mim']
+        model_type = model_arch['model_type']
+        seq_len = checkpoint['config']['training'].get('seq_len', 5)
+        is_sequence_model = model_type in ['lstm', 'gru', 'cnn1d', 'cnn']
+        batch = checkpoint['config']['data']['batch']
+        
+        # 独立加载数据
+        data_loader = XJTUDatasetLoader(
+            data_dir=data_dir,
+            batch=batch
+        )
+        
+        data = data_loader.prepare_data(
+            feature_cols=checkpoint['config']['data']['feature_cols'],
+            target_col=checkpoint['config']['data']['target_col'],
+            test_size=checkpoint['config']['data']['test_size'],
+            val_size=checkpoint['config']['data']['val_size'],
+            random_seed=checkpoint['seed']
+        )
+        
+        # 创建模型（CPU模式，避免GPU竞争）
+        model = create_model(
+            model_type=model_type,
+            input_dim=16,
+            use_mim=use_mim,
+            device='cpu',
+            **{k: v for k, v in model_arch.items() if k not in ['model_type', 'name', 'level']}
+        )
+        model.load_state_dict(checkpoint['model_state_dict'])
+        
+        # 创建测试器
+        tester = ModelTester(
+            model, 
+            device='cpu',
+            seq_len=seq_len,
+            is_sequence_model=is_sequence_model
+        )
+        
+        # 执行测试
+        results = tester.test_all_conditions(
+            X_test=data['X_test'],
+            y_test=data['y_test'],
+            use_mim=use_mim,
+            missing_modes=test_config.get('missing_modes', ['MCAR', 'MAR', 'MNAR']),
+            missing_rates=test_config.get('missing_rates', [i * 0.05 for i in range(20)]),
+            imputation_methods=test_config.get('imputation_methods', ['zero', 'mean', 'knn', 'iterative']),
+            base_seed=checkpoint['seed'],
+            batch_size=32
+        )
+        
+        # 添加模型信息
+        results['seed'] = checkpoint['seed']
+        results['batch'] = batch
+        results['model_type'] = model_arch['model_type']
+        results['use_mim'] = use_mim
+        results['param_count'] = checkpoint['param_count']
+        
+        return {'success': True, 'results': results, 'model': model_path.name}
+        
+    except Exception as e:
+        import traceback
+        return {'success': False, 'error': str(e), 'traceback': traceback.format_exc(), 'model': model_path.name}
+
+
 def main():
     parser = argparse.ArgumentParser(description="评估模型")
     parser.add_argument("--models-dir", required=True, help="模型文件目录")
@@ -110,6 +191,8 @@ def main():
     parser.add_argument("--imputation-methods", nargs="+", default=["zero", "mean", "knn", "iterative"])
     parser.add_argument("--missing-rates", type=float, nargs="+", default=None,
                        help="缺失率列表，默认使用0.05步长的20个值")
+    parser.add_argument("--workers", type=int, default=1,
+                       help="并行进程数 (默认: 1串行, >1启用并行)")
     
     args = parser.parse_args()
     
@@ -167,17 +250,34 @@ def main():
     }
     
     all_results = []
-    for i, model_path in enumerate(model_files, 1):
-        logger.info(f"[{i}/{len(model_files)}] 评估: {model_path.name}")
+    
+    if args.workers > 1:
+        # 并行评估模式
+        logger.info(f"启用并行评估: {args.workers} 进程")
         
-        try:
-            results = evaluate_single_model(model_path, data, test_config, logger)
-            all_results.append(results)
-            logger.info(f"  ✓ 完成: {len(results)} 条记录")
-        except Exception as e:
-            logger.error(f"  ✗ 失败: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
+        # 构建任务列表
+        tasks = [(str(mf), test_config, args.data_dir) for mf in model_files]
+        
+        with mp.Pool(processes=args.workers) as pool:
+            for i, result in enumerate(pool.imap_unordered(evaluate_single_model_parallel, tasks), 1):
+                if result['success']:
+                    all_results.append(result['results'])
+                    logger.info(f"[{i}/{len(model_files)}] ✓ {result['model']}: {len(result['results'])} 条记录")
+                else:
+                    logger.error(f"[{i}/{len(model_files)}] ✗ {result['model']}: {result['error'][:100]}")
+    else:
+        # 串行评估模式（默认）
+        for i, model_path in enumerate(model_files, 1):
+            logger.info(f"[{i}/{len(model_files)}] 评估: {model_path.name}")
+            
+            try:
+                results = evaluate_single_model(model_path, data, test_config, logger)
+                all_results.append(results)
+                logger.info(f"  ✓ 完成: {len(results)} 条记录")
+            except Exception as e:
+                logger.error(f"  ✗ 失败: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
     
     # 合并并保存结果
     if all_results:

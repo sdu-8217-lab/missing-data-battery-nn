@@ -1,11 +1,12 @@
 #!/bin/bash
-# 全量实验运行脚本 - 简洁版
-# 6 batches × 3 architectures × 4 levels × 2 modes = 144 experiments
+# 全量实验运行脚本 - 支持多种子
+# 6 batches × 3 architectures × 4 levels × 2 modes × n seeds = 144×n 实验
 #
 # 用法:
-#   ./scripts/run_all_experiments.sh              # 运行全部
-#   ./scripts/run_all_experiments.sh 3C           # 只运行3C batch
-#   ./scripts/run_all_experiments.sh 3C mlp       # 只运行3C的MLP
+#   ./scripts/run_all_experiments.sh                    # 运行全部（单种子）
+#   ./scripts/run_all_experiments.sh 3C                 # 只运行3C batch
+#   ./scripts/run_all_experiments.sh 3C mlp             # 只运行3C的MLP
+#   SEEDS="0 1 2" ./scripts/run_all_experiments.sh 3C   # 指定种子
 
 set -e
 source ~/miniforge3/bin/activate battery-nn
@@ -15,11 +16,14 @@ cd /home/chen/github/missing-data-battery-nn/experiments_new
 BATCH_FILTER="${1:-all}"
 ARCH_FILTER="${2:-all}"
 
+# 种子配置（可通过环境变量覆盖）
+SEEDS=(${SEEDS:-0})  # 默认单种子0，可设置 SEEDS="0 1 2 3 4 5 6 7 8 9"
+
 # 实验矩阵
 BATCHES=("2C" "3C" "R2.5" "R3" "RW" "Sim_satellite")
 ARCHS=("mlp" "lstm" "cnn")
 LEVELS=("level_1" "level_2" "level_3" "level_4")
-CONFIG_DIR="configs/experiments/batch_configs"
+CONFIG_DIR="configs/experiments/batch_configs_standard"
 OUTPUT_DIR="./results/full_scale"
 mkdir -p "$OUTPUT_DIR"
 
@@ -42,11 +46,16 @@ for batch in "${BATCHES[@]}"; do
     done
 done
 
+total_models=$((total * ${#SEEDS[@]}))
+
 echo "========================================" | tee -a "$LOG_FILE"
-echo "全量实验运行 - 144配置" | tee -a "$LOG_FILE"
+echo "全量实验运行 - 支持多种子" | tee -a "$LOG_FILE"
+echo "========================================" | tee -a "$LOG_FILE"
+echo "种子: ${SEEDS[@]} (${#SEEDS[@]} 个)" | tee -a "$LOG_FILE"
 echo "Filter: batch=$BATCH_FILTER, arch=$ARCH_FILTER" | tee -a "$LOG_FILE"
-echo "总计: $total 个实验" | tee -a "$LOG_FILE"
-echo "预计: $((total*2))-$((total*3)) 分钟" | tee -a "$LOG_FILE"
+echo "配置数: $total (batch × arch × level × mode)" | tee -a "$LOG_FILE"
+echo "总模型数: $total_models (configs × ${#SEEDS[@]} seeds)" | tee -a "$LOG_FILE"
+echo "预计: $((total_models*2))-$((total_models*4)) 分钟" | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
 
 current=0
@@ -79,6 +88,7 @@ for batch in "${BATCHES[@]}"; do
                     --config "$config" \
                     --model-config "$model_config" \
                     --output-dir "$exp_out" \
+                    --seeds ${SEEDS[@]} \
                     >> "$LOG_FILE" 2>&1; then
                     
                     exp_end=$(date +%s)
@@ -101,7 +111,8 @@ total_time=$((end - start))
 
 echo "" | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
-echo "完成: 成功=$success 失败=$fail 总计=$total" | tee -a "$LOG_FILE"
+echo "完成: 成功=$success 失败=$fail 总计=$total 配置" | tee -a "$LOG_FILE"
+echo "总模型数: $((success * ${#SEEDS[@]}))" | tee -a "$LOG_FILE"
 echo "耗时: $((total_time/60))分$((total_time%60))秒" | tee -a "$LOG_FILE"
 echo "日志: $LOG_FILE" | tee -a "$LOG_FILE"
 echo "========================================" | tee -a "$LOG_FILE"
