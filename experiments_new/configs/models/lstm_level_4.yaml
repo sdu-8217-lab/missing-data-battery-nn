@@ -1,0 +1,8 @@
+dropout: 0.2
+hidden_size: 64
+level: level_4
+model_type: lstm
+name: LSTM XLarge
+num_layers: 2
+target_params_mim: 58433
+target_params_no_mim: 54337

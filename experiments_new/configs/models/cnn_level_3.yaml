@@ -1,0 +1,10 @@
+channels:
+- 96
+- 56
+dropout: 0.1
+kernel_size: 3
+level: level_3
+model_type: cnn
+name: CNN Large
+target_params_mim: 25553
+target_params_no_mim: 20945

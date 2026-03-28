@@ -1,0 +1,9 @@
+dropout: 0.15
+hidden_layers:
+- 120
+- 80
+level: level_2
+model_type: mlp
+name: MLP Medium
+target_params_mim: 13721
+target_params_no_mim: 11801

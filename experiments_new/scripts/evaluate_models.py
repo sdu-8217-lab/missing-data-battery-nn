@@ -108,6 +108,8 @@ def main():
     parser.add_argument("--data-dir", default="../data/raw/XJTU", help="数据目录")
     parser.add_argument("--missing-modes", nargs="+", default=["MCAR", "MAR", "MNAR"])
     parser.add_argument("--imputation-methods", nargs="+", default=["zero", "mean", "knn", "iterative"])
+    parser.add_argument("--missing-rates", type=float, nargs="+", default=None,
+                       help="缺失率列表，默认使用0.05步长的20个值")
     
     args = parser.parse_args()
     
@@ -132,7 +134,8 @@ def main():
     logger.info("模型测试阶段 (分界线以下)")
     logger.info("="*60)
     logger.info(f"模型数: {len(model_files)}")
-    logger.info(f"测试组合: {len(args.missing_modes)} modes × 20 MRs × {len(args.imputation_methods)} imputations = {len(args.missing_modes) * 20 * len(args.imputation_methods)}")
+    n_mrs = len(args.missing_rates) if args.missing_rates else 20
+    logger.info(f"测试组合: {len(args.missing_modes)} modes × {n_mrs} MRs × {len(args.imputation_methods)} imputations = {len(args.missing_modes) * n_mrs * len(args.imputation_methods)}")
     logger.info("="*60)
     
     # 加载第一个模型以获取配置
@@ -156,10 +159,11 @@ def main():
     )
     
     # 评估所有模型
+    missing_rates = args.missing_rates if args.missing_rates else [i * 0.05 for i in range(20)]
     test_config = {
         'missing_modes': args.missing_modes,
         'imputation_methods': args.imputation_methods,
-        'missing_rates': [i * 0.05 for i in range(20)]
+        'missing_rates': missing_rates
     }
     
     all_results = []

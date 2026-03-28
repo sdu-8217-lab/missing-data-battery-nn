@@ -1,0 +1,11 @@
+# LSTM模型默认配置
+name: "LSTM"
+model_type: "lstm"
+
+# LSTM参数（configs_v3最佳）
+hidden_size: 48
+num_layers: 2
+dropout: 0.2
+
+# 序列长度
+seq_len: 5

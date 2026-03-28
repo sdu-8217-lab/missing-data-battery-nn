@@ -2,6 +2,14 @@
 # 项目特定忽略 (PyTorch/深度学习)
 # ======================
 
+# 先定义例外：保留关键文件（必须在忽略规则之前）
+# 注意：所有例外规则在文件末尾的"重新声明例外规则"部分统一声明
+# 以确保在全局忽略规则（如*.yaml）之后生效
+
+# 忽略旧的hydra配置系统（根目录）
+/configs/
+!.github/**/*.yml              # GitHub Actions
+
 # 模型文件
 *.pth
 *.pt
@@ -15,7 +23,6 @@ checkpoints/
 # 模型输出目录（根目录和常见子目录）
 /models/
 experiments/models/
-!src/models/          # 源代码目录例外：不忽略
 
 # 训练结果和输出
 results/
@@ -38,6 +45,24 @@ experiments/RW/
 experiments/Sim_satellite/
 experiments_v2/
 experiments_v3/
+
+# experiments_new 实验框架输出
+experiments_new/results/*/
+!experiments_new/results/.gitkeep
+experiments_new/outputs/*/
+!experiments_new/outputs/.gitkeep
+experiments_new/**/__pycache__/
+experiments_new/**/*.pyc
+experiments_new/**/*.pyo
+experiments_new/**/*.log
+experiments_new/**/nohup.out
+experiments_new/**/*.pt
+experiments_new/**/*.pth
+experiments_new/**/test_results.csv
+experiments_new/**/train_results.csv
+experiments_new/**/eval.log
+experiments_new/**/train.log
+experiments_new/**/run_*.log
 
 # 数据集相关
 data/cache/
@@ -213,20 +238,27 @@ Thumbs.db
 *.json
 *.png
 
-# YAML 文件默认全部忽略，只有明确规定的才保留
-**/*.yaml
-**/*.yml
+# YAML 文件 - 保留关键配置，其他忽略
+# 注意：例外规则已在前面的"先定义例外"部分声明
 
-# 例外：保留关键配置
-!environment.yml               # 根目录环境配置
-!configs/**/*.yaml             # Hydra 配置文件
-!configs/**/*.yml
-!paper/**/*.yaml               # 论文相关配置
+# 然后定义忽略规则（仅对未被例外的文件生效）
+*.yaml
+*.yml
+
+# 重新声明例外规则以确保生效（针对YAML）
+!environment.yml
+!pyproject.toml
+!model_configs.yaml
+# 保留实验框架配置
+!experiments_new/configs/**
+# 但忽略自动生成的批量配置（例外规则之后）
+experiments_new/configs/experiments/batch_configs/
+experiments_new/configs/experiments/batch_configs_*/
+experiments_new/configs/experiments/batch_configs_fast/
+!paper/**/*.yaml
 !paper/**/*.yml
-!paper/**/*.png                # 论文图表
-
-# 模型架构设计文档
-!model_configs.yaml            # 模型配置文件
+!.pre-commit-config.yaml
+!**/.github/**/*.yml         # GitHub Actions
 !MODEL_ARCHITECTURE_DESIGN.md  # 模型设计文档
 !model_architecture_design.py  # 模型设计脚本
 

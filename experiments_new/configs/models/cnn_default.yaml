@@ -1,0 +1,11 @@
+# CNN1D模型默认配置
+name: "CNN1D"
+model_type: "cnn1d"
+
+# CNN参数（configs_v3最佳）
+channels: [72, 32]
+kernel_size: 4
+dropout: 0.1
+
+# 序列长度
+seq_len: 5

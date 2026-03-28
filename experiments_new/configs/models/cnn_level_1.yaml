@@ -1,0 +1,10 @@
+channels:
+- 40
+- 28
+dropout: 0.1
+kernel_size: 3
+level: level_1
+model_type: cnn
+name: CNN Small
+target_params_mim: 7297
+target_params_no_mim: 5377

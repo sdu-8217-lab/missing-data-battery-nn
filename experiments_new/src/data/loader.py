@@ -45,6 +45,10 @@ class XJTUDatasetLoader:
         
         df = pd.read_csv(filepath)
         
+        # 处理无穷大值：替换为NaN然后前向/后向填充
+        df = df.replace([np.inf, -np.inf], np.nan)
+        df = df.ffill().bfill()
+        
         # 计算SOH（容量保持率）
         # 使用小写的 'capacity' 匹配数据文件
         capacity_col = 'capacity' if 'capacity' in df.columns else 'Capacity'
