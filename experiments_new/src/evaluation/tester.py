@@ -193,7 +193,9 @@ class ModelTester:
             for batch_x, _ in loader:
                 batch_x = batch_x.to(self.device)
                 outputs = self.model(batch_x)
-                predictions.append(outputs.cpu().numpy())
+                # 展平输出确保为一维数组 [batch, 1] -> [batch]
+                pred = outputs.cpu().numpy().flatten()
+                predictions.append(pred)
         
         return np.concatenate(predictions)
 

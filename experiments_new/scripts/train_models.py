@@ -46,6 +46,22 @@ def train_single_model(
 ) -> dict:
     """训练单个模型"""
     
+    # 断点续跑：检查模型是否已存在
+    model_type = model_arch_config['model_type']
+    use_mim = config.training.use_mim
+    model_filename = f"model_{config.data.batch}_{model_type}_mim{use_mim}_seed{seed}.pt"
+    
+    # 检查任何已存在的模型目录
+    existing_models = list(output_dir.rglob(f"*{model_filename}"))
+    if existing_models:
+        logger.info(f"[{seed}] 模型已存在，跳过: {existing_models[0]}")
+        return {
+            'seed': seed,
+            'model_path': str(existing_models[0]),
+            'status': 'skipped',
+            'message': 'Model already exists'
+        }
+    
     set_seed(seed)
     
     # 加载数据
@@ -85,12 +101,12 @@ def train_single_model(
         train_dataset,
         batch_size=config.training.batch_size,
         shuffle=True,
-        num_workers=0,
+        num_workers=4,
         pin_memory=torch.cuda.is_available()
     )
     
     val_loaders = {
-        name: DataLoader(ds, batch_size=config.training.batch_size, num_workers=0)
+        name: DataLoader(ds, batch_size=config.training.batch_size, num_workers=4)
         for name, ds in val_datasets.items()
     }
     
@@ -160,14 +176,35 @@ def train_single_model(
     }
 
 
+import fcntl
+
+def acquire_lock(lock_file):
+    """获取文件锁，确保单进程训练"""
+    try:
+        fd = open(lock_file, 'w')
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return fd
+    except IOError:
+        return None
+
 def main():
     parser = argparse.ArgumentParser(description="训练模型")
     parser.add_argument("--config", required=True, help="实验配置文件")
     parser.add_argument("--model-config", help="模型架构配置文件（覆盖实验配置）")
     parser.add_argument("--output-dir", help="输出目录")
     parser.add_argument("--seeds", type=int, nargs="+", help="随机种子列表")
+    parser.add_argument("--imputations", type=str, nargs="+", 
+                       default=None,
+                       help="多插补方法训练（如: zero mean knn iterative）")
     
     args = parser.parse_args()
+    
+    # 单进程锁
+    lock_file = '/tmp/train_models.lock'
+    lock_fd = acquire_lock(lock_file)
+    if lock_fd is None:
+        print("错误: 另一个训练实例正在运行，请等待完成")
+        return 1
     
     # 加载配置
     config = ExperimentConfig.from_yaml(args.config)
@@ -180,6 +217,9 @@ def main():
     
     # 确定种子
     seeds = args.seeds if args.seeds else list(range(config.seed, config.seed + config.n_repeats))
+    
+    # 确定插补方法
+    imputations = args.imputations if args.imputations else [config.training.imputation_method]
     
     # 创建输出目录
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -201,21 +241,37 @@ def main():
     logger.info(f"模型: {model_arch_config['model_type']}")
     logger.info(f"MIM: {config.training.use_mim}")
     logger.info(f"种子数: {len(seeds)}")
+    logger.info(f"插补方法: {imputations}")
     logger.info("="*60)
     
     # 保存配置
     config.to_yaml(str(output_dir / "config.yaml"))
     
-    # 训练所有模型
+    # 训练所有模型（支持多插补方法）
     all_results = []
+    total = len(seeds) * len(imputations)
+    current = 0
+    
     for seed in seeds:
-        try:
-            result = train_single_model(config, model_arch_config, seed, output_dir, logger)
-            all_results.append(result)
-        except Exception as e:
-            logger.error(f"[{seed}] 训练失败: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
+        for imp_method in imputations:
+            current += 1
+            logger.info(f"\n[{current}/{total}] 训练: seed={seed}, imputation={imp_method}")
+            
+            # 临时修改配置中的插补方法
+            original_imp = config.training.imputation_method
+            config.training.imputation_method = imp_method
+            
+            try:
+                result = train_single_model(config, model_arch_config, seed, output_dir, logger)
+                result['imputation_method'] = imp_method
+                all_results.append(result)
+            except Exception as e:
+                logger.error(f"[{seed}/{imp_method}] 训练失败: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
+            finally:
+                # 恢复原始插补方法
+                config.training.imputation_method = original_imp
     
     # 保存训练结果
     import pandas as pd
@@ -223,7 +279,7 @@ def main():
     results_df.to_csv(output_dir / "train_results.csv", index=False)
     
     logger.info("="*60)
-    logger.info(f"训练阶段完成 - 成功: {len(all_results)}/{len(seeds)}")
+    logger.info(f"训练阶段完成 - 成功: {len(all_results)}/{total}")
     logger.info(f"输出目录: {output_dir}")
     logger.info("="*60)
 
