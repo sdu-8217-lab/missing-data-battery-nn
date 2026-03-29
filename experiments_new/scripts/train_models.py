@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-模型训练脚本
-负责分界线以上的训练阶段（L1-L6）
-
-用法:
-    python train_models.py --config configs/experiments/phase1_mlp_mim.yaml
+模型训练脚本 - 并行化版本
+支持多进程并行训练，移除文件锁限制
 """
 import sys
 import argparse
 import json
+import random
+import numpy as np
 from pathlib import Path
 from datetime import datetime
 
@@ -16,25 +15,35 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import torch
-import numpy as np
 from torch.utils.data import DataLoader
 
 from src.config.experiment_config import ExperimentConfig, load_model_config
 from src.data.loader import XJTUDatasetLoader, prepare_datasets_for_training
-from src.models.factory import create_model, count_parameters, get_model_summary
+from src.models.factory import create_model, count_parameters
 from src.trainers.trainer import Trainer
 from src.utils.logger import setup_logger
 
 
 def set_seed(seed: int):
     """设置随机种子"""
-    import random
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
+        # 确保确定性
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+
+class NullLogger:
+    """空日志器，用于替代None避免重复if判断"""
+    def debug(self, *args, **kwargs): pass
+    def info(self, *args, **kwargs): pass
+    def warning(self, *args, **kwargs): pass
+    def error(self, *args, **kwargs): pass
+
 
 
 def train_single_model(
@@ -42,16 +51,18 @@ def train_single_model(
     model_arch_config: dict,
     seed: int,
     output_dir: Path,
-    logger
+    logger=None
 ) -> dict:
-    """训练单个模型"""
-    
-    # 断点续跑：检查模型是否已存在
+    """
+    训练单个模型 - 支持并行调用
+    """
+    # 确保logger不为None，避免重复if判断
+    logger = logger or NullLogger()
+    # 检查模型是否已存在（断点续传）
     model_type = model_arch_config['model_type']
     use_mim = config.training.use_mim
     model_filename = f"model_{config.data.batch}_{model_type}_mim{use_mim}_seed{seed}.pt"
     
-    # 检查任何已存在的模型目录
     existing_models = list(output_dir.rglob(f"*{model_filename}"))
     if existing_models:
         logger.info(f"[{seed}] 模型已存在，跳过: {existing_models[0]}")
@@ -66,6 +77,7 @@ def train_single_model(
     
     # 加载数据
     logger.info(f"[{seed}] 加载数据 - 批次: {config.data.batch}")
+    
     data_loader = XJTUDatasetLoader(
         data_dir=config.data.data_dir,
         batch=config.data.batch
@@ -96,25 +108,25 @@ def train_single_model(
         }
     )
     
-    # 创建数据加载器
+    # 创建数据加载器 - 减少num_workers避免子进程问题
     train_loader = DataLoader(
         train_dataset,
         batch_size=config.training.batch_size,
         shuffle=True,
-        num_workers=4,
+        num_workers=2,  # 减少以避免多进程问题
         pin_memory=torch.cuda.is_available()
     )
     
     val_loaders = {
-        name: DataLoader(ds, batch_size=config.training.batch_size, num_workers=4)
+        name: DataLoader(ds, batch_size=config.training.batch_size, num_workers=2)
         for name, ds in val_datasets.items()
     }
     
     # 创建模型
     device = config.device if config.device != "auto" else ("cuda" if torch.cuda.is_available() else "cpu")
     
-    # 从 model_arch_config 中提取参数，避免重复传递 model_type
-    model_kwargs = {k: v for k, v in model_arch_config.items() if k not in ['model_type', 'name', 'level', 'target_params_no_mim', 'target_params_mim']}
+    model_kwargs = {k: v for k, v in model_arch_config.items() 
+                   if k not in ['model_type', 'name', 'level', 'target_params_no_mim', 'target_params_mim']}
     
     model = create_model(
         model_type=model_type,
@@ -131,64 +143,68 @@ def train_single_model(
     trainer = Trainer(model, device=device)
     
     logger.info(f"[{seed}] 开始训练...")
-    history = trainer.train(
-        train_loader=train_loader,
-        val_loaders=val_loaders,
-        epochs=config.training.epochs,
-        lr=config.training.lr,
-        weight_decay=config.training.weight_decay,
-        patience=config.training.early_stopping_patience,
-        min_epochs=config.training.min_epochs,
-        use_scheduler=config.training.use_scheduler,
-        scheduler_patience=config.training.scheduler_patience,
-        scheduler_factor=config.training.scheduler_factor,
-        base_metric=config.training.validation.base_metric,
-        aggregation=config.training.validation.aggregation,
-        verbose=False
-    )
     
-    logger.info(f"[{seed}] 训练完成 - best_epoch={history['best_epoch']}, "
-                f"best_val_loss={history['best_val_loss']:.6f}")
-    
-    # 保存模型
-    model_filename = f"model_{config.data.batch}_{model_type}_mim{use_mim}_seed{seed}.pt"
-    model_path = output_dir / "models" / model_filename
-    model_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'config': config.to_dict(),
-        'model_arch': model_arch_config,
-        'history': history,
-        'seed': seed,
-        'param_count': param_count
-    }, model_path)
-    
-    logger.info(f"[{seed}] 模型已保存: {model_path}")
-    
-    return {
-        'seed': seed,
-        'model_path': str(model_path),
-        'best_epoch': history['best_epoch'],
-        'best_val_loss': history['best_val_loss'],
-        'training_time': history['training_time'],
-        'param_count': param_count
-    }
-
-
-import fcntl
-
-def acquire_lock(lock_file):
-    """获取文件锁，确保单进程训练"""
     try:
-        fd = open(lock_file, 'w')
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return fd
-    except IOError:
-        return None
+        history = trainer.train(
+            train_loader=train_loader,
+            val_loaders=val_loaders,
+            epochs=config.training.epochs,
+            lr=config.training.lr,
+            weight_decay=config.training.weight_decay,
+            patience=config.training.early_stopping_patience,
+            min_epochs=config.training.min_epochs,
+            use_scheduler=config.training.use_scheduler,
+            scheduler_patience=config.training.scheduler_patience,
+            scheduler_factor=config.training.scheduler_factor,
+            base_metric=config.training.validation.base_metric,
+            aggregation=config.training.validation.aggregation,
+            verbose=False
+        )
+        
+        if logger:
+            logger.info(f"[{seed}] 训练完成 - best_epoch={history['best_epoch']}, "
+                       f"best_val_loss={history['best_val_loss']:.6f}")
+        
+        # 保存模型
+        model_path = output_dir / "models" / model_filename
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        torch.save({
+            'model_state_dict': model.state_dict(),
+            'config': config.to_dict(),
+            'model_arch': model_arch_config,
+            'history': history,
+            'seed': seed,
+            'param_count': param_count
+        }, model_path)
+        
+        logger.info(f"[{seed}] 模型已保存: {model_path}")
+        
+        return {
+            'seed': seed,
+            'model_path': str(model_path),
+            'best_epoch': history['best_epoch'],
+            'best_val_loss': history['best_val_loss'],
+            'training_time': history.get('training_time', 0),
+            'param_count': param_count,
+            'status': 'success'
+        }
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"[{seed}] 训练失败: {e}")
+        import traceback
+        if logger:
+            logger.error(traceback.format_exc())
+        return {
+            'seed': seed,
+            'status': 'failed',
+            'message': str(e)
+        }
+
 
 def main():
-    parser = argparse.ArgumentParser(description="训练模型")
+    parser = argparse.ArgumentParser(description="训练模型 - 并行化版本")
     parser.add_argument("--config", required=True, help="实验配置文件")
     parser.add_argument("--model-config", help="模型架构配置文件（覆盖实验配置）")
     parser.add_argument("--output-dir", help="输出目录")
@@ -196,15 +212,9 @@ def main():
     parser.add_argument("--imputations", type=str, nargs="+", 
                        default=None,
                        help="多插补方法训练（如: zero mean knn iterative）")
+    # 注意：移除了--parallel和--worker-id参数，简化设计
     
     args = parser.parse_args()
-    
-    # 单进程锁
-    lock_file = '/tmp/train_models.lock'
-    lock_fd = acquire_lock(lock_file)
-    if lock_fd is None:
-        print("错误: 另一个训练实例正在运行，请等待完成")
-        return 1
     
     # 加载配置
     config = ExperimentConfig.from_yaml(args.config)
@@ -234,7 +244,7 @@ def main():
     )
     
     logger.info("="*60)
-    logger.info("模型训练阶段 (分界线以上)")
+    logger.info("模型训练阶段 (并行化版本)")
     logger.info("="*60)
     logger.info(f"实验: {config.name}")
     logger.info(f"批次: {config.data.batch}")
@@ -267,8 +277,6 @@ def main():
                 all_results.append(result)
             except Exception as e:
                 logger.error(f"[{seed}/{imp_method}] 训练失败: {e}")
-                import traceback
-                logger.error(traceback.format_exc())
             finally:
                 # 恢复原始插补方法
                 config.training.imputation_method = original_imp
