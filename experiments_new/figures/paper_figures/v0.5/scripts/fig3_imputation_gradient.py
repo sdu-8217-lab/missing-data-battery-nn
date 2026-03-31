@@ -217,9 +217,7 @@ def main():
     plot_subplot_b(ax2)
     plot_subplot_c(ax3)
     
-    plt.suptitle('Figure 3: MIM Effectiveness Decreases with Imputation Quality\n'
-                 'Key Finding: Zero (Low Quality) > Mean (Medium) > Iterative (High)', 
-                 fontsize=14, fontweight='bold', y=1.02)
+
     
     # 保存
     output_png = OUTPUT_DIR / 'figure3_imputation_gradient_v2.png'

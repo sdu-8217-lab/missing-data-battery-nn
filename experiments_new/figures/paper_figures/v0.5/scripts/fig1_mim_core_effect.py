@@ -307,9 +307,7 @@ def main():
     plot_subplot_c(axes[1, 0])
     plot_subplot_d(axes[1, 1])
     
-    plt.suptitle('Figure 1: MIM Core Effect on SOH Prediction\n(2C Batch, MLP Architecture)', 
-                 fontsize=14, fontweight='bold', y=0.98)
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout()
     
     # 保存
     output_png = OUTPUT_DIR / 'figure1_mim_core_effect_v2.png'

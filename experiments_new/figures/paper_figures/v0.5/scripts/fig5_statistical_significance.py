@@ -233,11 +233,7 @@ def main():
     plot_subplot_a(axes[0])
     plot_subplot_b(axes[1])
     plot_subplot_c(axes[2])
-    
-    plt.suptitle('Figure 5: Statistical Significance of MIM Improvements\n'
-                 'Demonstrating Consistent Statistical Reliability Across Seeds', 
-                 fontsize=14, fontweight='bold')
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.tight_layout()
     
     # 保存
     output_png = OUTPUT_DIR / 'figure5_statistical_significance.png'

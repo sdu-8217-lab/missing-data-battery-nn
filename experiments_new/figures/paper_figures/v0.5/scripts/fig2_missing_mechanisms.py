@@ -164,11 +164,7 @@ def main():
     # 第二行: 种子分布
     for i, mode in enumerate(modes):
         plot_seed_distribution(axes[1, i], mode)
-    
-    plt.suptitle('Figure 2: MIM Robustness Across Missing Mechanisms\n'
-                 'Demonstrating Consistent Performance in MCAR, MAR, and MNAR', 
-                 fontsize=14, fontweight='bold', y=0.98)
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.tight_layout()
     
     # 保存
     output_png = OUTPUT_DIR / 'figure2_missing_mechanisms_v2.png'

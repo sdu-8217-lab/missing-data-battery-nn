@@ -216,10 +216,7 @@ def main():
     plot_subplot_a(axes[0])
     plot_subplot_b(axes[1])
     plot_subplot_c(axes[2])
-    
-    plt.suptitle('Figure 4: MIM Performance Across Model Architectures and Parameter Scales', 
-                 fontsize=14, fontweight='bold')
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.tight_layout()
     
     # 保存
     output_png = OUTPUT_DIR / 'figure4_architecture_scaling_v2.png'
