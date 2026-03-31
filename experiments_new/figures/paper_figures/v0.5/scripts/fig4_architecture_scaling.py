@@ -66,8 +66,8 @@ def plot_subplot_a(ax):
     architectures = ["mlp", "cnn"]  # lstm 数据暂未训练
     for arch in architectures:
         arch_data = df[df['architecture'] == arch]
-        baseline_data = arch_data[arch_data['config_type'] == False]
-        mim_data = arch_data[arch_data['config_type'] == True]
+        baseline_data = arch_data[arch_data['config_type'] == 'baseline']
+        mim_data = arch_data[arch_data['config_type'] == 'mim']
         
         improvements = []
         for mr in missing_rates:
@@ -103,8 +103,8 @@ def plot_subplot_b(ax):
                 param_matrix[i, j] = 0
                 continue
             
-            baseline = subset[subset['config_type'] == False]
-            mim = subset[subset['config_type'] == True]
+            baseline = subset[subset['config_type'] == 'baseline']
+            mim = subset[subset['config_type'] == 'mim']
             
             # 计算平均改进率
             improvements = []
@@ -155,8 +155,8 @@ def plot_subplot_c(ax):
     level1_improvements = []
     for imp in imputations:
         subset = df[(df['level'] == 'level_1') & (df['imputation_method'] == imp)]
-        baseline = subset[subset['config_type'] == False]
-        mim = subset[subset['config_type'] == True]
+        baseline = subset[subset['config_type'] == 'baseline']
+        mim = subset[subset['config_type'] == 'mim']
         
         improvements = []
         for mr in [0.2, 0.4, 0.6]:
@@ -173,8 +173,8 @@ def plot_subplot_c(ax):
         if len(subset) == 0:
             level4_improvements.append(0)
             continue
-        baseline = subset[subset['config_type'] == False]
-        mim = subset[subset['config_type'] == True]
+        baseline = subset[subset['config_type'] == 'baseline']
+        mim = subset[subset['config_type'] == 'mim']
         
         improvements = []
         for mr in [0.2, 0.4, 0.6]:

@@ -36,8 +36,8 @@ df = pd.read_csv('results/plotting_data_v0.5.csv')
 
 # 使用 2C MLP 作为主数据
 data = df[(df['batch'] == '2C') & (df['architecture'] == 'mlp')].copy()
-baseline_data = data[data['config_type'] == False]
-mim_data = data[data['config_type'] == True]
+baseline_data = data[data['config_type'] == 'baseline']
+mim_data = data[data['config_type'] == 'mim']
 
 print(f"数据加载完成")
 

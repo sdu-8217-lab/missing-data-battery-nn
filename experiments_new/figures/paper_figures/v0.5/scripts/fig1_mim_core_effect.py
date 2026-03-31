@@ -61,8 +61,8 @@ df = pd.read_csv('results/plotting_data_v0.5.csv')
 data = df[(df['batch'] == '2C') & (df['architecture'] == 'mlp')].copy()
 
 # 分离 Baseline (use_mim=False) 和 MIM (use_mim=True)
-baseline_data = data[data['config_type'] == False]
-mim_data = data[data['config_type'] == True]
+baseline_data = data[data['config_type'] == 'baseline']
+mim_data = data[data['config_type'] == 'mim']
 
 print(f"数据加载完成: Baseline={len(baseline_data)}, MIM={len(mim_data)}")
 
@@ -246,8 +246,8 @@ def plot_subplot_d(ax):
             if len(subset) == 0:
                 continue
             
-            baseline = subset[subset['config_type'] == False]
-            mim = subset[subset['config_type'] == True]
+            baseline = subset[subset['config_type'] == 'baseline']
+            mim = subset[subset['config_type'] == 'mim']
             
             if len(baseline) == 0 or len(mim) == 0:
                 continue
