@@ -35,8 +35,8 @@ df = pd.read_csv('results/plotting_data_v0.5.csv')
 
 # 2C MLP 数据
 data = df[(df['batch'] == '2C') & (df['architecture'] == 'mlp')].copy()
-baseline_data = data[data['use_mim'] == False]
-mim_data = data[data['use_mim'] == True]
+baseline_data = data[data['config_type'] == False]
+mim_data = data[data['config_type'] == True]
 
 print(f"数据加载完成")
 
@@ -70,8 +70,11 @@ def plot_subplot_a(ax):
         positions.extend([pos, pos+0.6])
         pos += 2
     
-    # 绘制小提琴图
-    parts = ax.violinplot(all_data, positions=positions, widths=0.5,
+    # 绘制小提琴图（过滤空数据）
+    all_data = [d for d in all_data if len(d) > 0]
+    if len(all_data) == 0:
+        all_data = [[0]]
+    parts = ax.violinplot(all_data, positions=positions[:len(all_data)], widths=0.5,
                           showmeans=True, showmedians=True)
     
     # 设置颜色
@@ -130,10 +133,15 @@ def plot_subplot_b(ax):
                 x_labels.append(f'{imp.title()}\nMR={int(mr*100)}%')
                 bar_colors.append(COLORS[imp])
     
+    if len(means) == 0:
+        means = [0]
+        errors = [0]
+        x_labels = ['No Data']
+    
     x = np.arange(len(means))
     
     # 绘制误差棒图
-    bars = ax.bar(x, means, yerr=errors, capsize=5, color=bar_colors, 
+    bars = ax.bar(x, means, yerr=errors, capsize=5, color=bar_colors[:len(means)], 
                   alpha=0.7, edgecolor='black', linewidth=1)
     
     # 添加数值标注
@@ -147,7 +155,8 @@ def plot_subplot_b(ax):
     ax.set_title('(b) 95% Confidence Interval of Improvement\n(10-seed bootstrap)', 
                  fontweight='bold')
     ax.grid(True, alpha=0.3, linestyle='--', axis='y')
-    ax.set_ylim(0, max(means) + max(errors) + 15)
+    y_max = max(means) + max(errors) + 15 if means else 100
+    ax.set_ylim(0, y_max)
 
 # ==================== 子图 (c): Wilcoxon 检验 p-value ====================
 def plot_subplot_c(ax):

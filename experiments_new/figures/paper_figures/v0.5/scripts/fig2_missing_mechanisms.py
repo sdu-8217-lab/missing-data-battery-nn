@@ -36,8 +36,8 @@ df = pd.read_csv('results/plotting_data_v0.5.csv')
 
 # 2C MLP 数据
 data = df[(df['batch'] == '2C') & (df['architecture'] == 'mlp')].copy()
-baseline_data = data[data['use_mim'] == False]
-mim_data = data[data['use_mim'] == True]
+baseline_data = data[data['config_type'] == False]
+mim_data = data[data['config_type'] == True]
 
 print(f"数据加载完成")
 
@@ -128,7 +128,11 @@ def plot_seed_distribution(ax, mode, imp='mean'):
         if len(m) > 0:
             mim_seeds.append(m[0])
     
-    # 绘制小提琴图
+    # 绘制小提琴图（检查空数据）
+    if len(baseline_seeds) == 0:
+        baseline_seeds = [0]
+    if len(mim_seeds) == 0:
+        mim_seeds = [0]
     parts = ax.violinplot([baseline_seeds, mim_seeds], positions=[1, 2], 
                           showmeans=True, showmedians=True)
     

@@ -32,6 +32,27 @@ COLORS = {
 
 OUTPUT_DIR = Path(__file__).parent.parent  # 上级目录
 
+
+# 参数数量表（硬编码，对应 Table 1）
+PARAM_TABLE = {
+    ('mlp', 'level_1'): 5953,
+    ('mlp', 'level_2'): 11801,
+    ('mlp', 'level_3'): 20537,
+    ('mlp', 'level_4'): 44529,
+    ('cnn', 'level_1'): 5377,
+    ('cnn', 'level_2'): 12249,
+    ('cnn', 'level_3'): 20945,
+    ('cnn', 'level_4'): 36185,
+    ('lstm', 'level_1'): 5181,
+    ('lstm', 'level_2'): 10957,
+    ('lstm', 'level_3'): 26797,
+    ('lstm', 'level_4'): 54337,
+}
+
+def get_param_count(arch, level):
+    """获取指定架构和层级的参数量"""
+    return PARAM_TABLE.get((arch, level), 0)
+
 # ==================== 数据加载与处理 ====================
 print("加载数据...")
 df = pd.read_csv('results/plotting_data_v0.5.csv')
@@ -40,8 +61,8 @@ df = pd.read_csv('results/plotting_data_v0.5.csv')
 data = df[(df['batch'] == '2C') & (df['architecture'] == 'mlp')].copy()
 
 # 分离 Baseline (use_mim=False) 和 MIM (use_mim=True)
-baseline_data = data[data['use_mim'] == False]
-mim_data = data[data['use_mim'] == True]
+baseline_data = data[data['config_type'] == False]
+mim_data = data[data['config_type'] == True]
 
 print(f"数据加载完成: Baseline={len(baseline_data)}, MIM={len(mim_data)}")
 
@@ -225,8 +246,8 @@ def plot_subplot_d(ax):
             if len(subset) == 0:
                 continue
             
-            baseline = subset[subset['use_mim'] == False]
-            mim = subset[subset['use_mim'] == True]
+            baseline = subset[subset['config_type'] == False]
+            mim = subset[subset['config_type'] == True]
             
             if len(baseline) == 0 or len(mim) == 0:
                 continue
@@ -241,7 +262,7 @@ def plot_subplot_d(ax):
             
             if improvements:
                 avg_improvement = np.mean(improvements)
-                param_count = subset['param_count'].iloc[0]
+                param_count = get_param_count(arch, level)
                 configs.append({
                     'architecture': arch,
                     'level': level,

@@ -32,6 +32,27 @@ OUTPUT_DIR = Path(__file__).parent.parent
 print("加载数据...")
 df = pd.read_csv('results/plotting_data_v0.5.csv')
 
+
+# 参数数量表（硬编码，对应 Table 1）
+PARAM_TABLE = {
+    ('mlp', 'level_1'): 5953,
+    ('mlp', 'level_2'): 11801,
+    ('mlp', 'level_3'): 20537,
+    ('mlp', 'level_4'): 44529,
+    ('cnn', 'level_1'): 5377,
+    ('cnn', 'level_2'): 12249,
+    ('cnn', 'level_3'): 20945,
+    ('cnn', 'level_4'): 36185,
+    ('lstm', 'level_1'): 5181,
+    ('lstm', 'level_2'): 10957,
+    ('lstm', 'level_3'): 26797,
+    ('lstm', 'level_4'): 54337,
+}
+
+def get_param_count(arch, level):
+    """获取指定架构和层级的参数量"""
+    return PARAM_TABLE.get((arch, level), 0)
+
 def calculate_improvement(b, m):
     if pd.isna(b) or pd.isna(m) or b == 0:
         return 0
@@ -42,10 +63,11 @@ def plot_subplot_a(ax):
     """绘制三种架构的改进率曲线"""
     missing_rates = sorted(df['missing_rate'].unique())
     
-    for arch in ['mlp', 'cnn', 'lstm']:
+    architectures = ["mlp", "cnn"]  # lstm 数据暂未训练
+    for arch in architectures:
         arch_data = df[df['architecture'] == arch]
-        baseline_data = arch_data[arch_data['use_mim'] == False]
-        mim_data = arch_data[arch_data['use_mim'] == True]
+        baseline_data = arch_data[arch_data['config_type'] == False]
+        mim_data = arch_data[arch_data['config_type'] == True]
         
         improvements = []
         for mr in missing_rates:
@@ -81,8 +103,8 @@ def plot_subplot_b(ax):
                 param_matrix[i, j] = 0
                 continue
             
-            baseline = subset[subset['use_mim'] == False]
-            mim = subset[subset['use_mim'] == True]
+            baseline = subset[subset['config_type'] == False]
+            mim = subset[subset['config_type'] == True]
             
             # 计算平均改进率
             improvements = []
@@ -93,7 +115,7 @@ def plot_subplot_b(ax):
                     improvements.append(calculate_improvement(b, m))
             
             improvement_matrix[i, j] = np.mean(improvements) if improvements else 0
-            param_matrix[i, j] = subset['param_count'].iloc[0] if len(subset) > 0 else 0
+            param_matrix[i, j] = get_param_count(arch, level) if len(subset) > 0 else 0
     
     # 绘制热力图
     im = ax.imshow(improvement_matrix, cmap='RdYlGn', aspect='auto', vmin=0, vmax=70)
@@ -133,8 +155,8 @@ def plot_subplot_c(ax):
     level1_improvements = []
     for imp in imputations:
         subset = df[(df['level'] == 'level_1') & (df['imputation_method'] == imp)]
-        baseline = subset[subset['use_mim'] == False]
-        mim = subset[subset['use_mim'] == True]
+        baseline = subset[subset['config_type'] == False]
+        mim = subset[subset['config_type'] == True]
         
         improvements = []
         for mr in [0.2, 0.4, 0.6]:
@@ -151,8 +173,8 @@ def plot_subplot_c(ax):
         if len(subset) == 0:
             level4_improvements.append(0)
             continue
-        baseline = subset[subset['use_mim'] == False]
-        mim = subset[subset['use_mim'] == True]
+        baseline = subset[subset['config_type'] == False]
+        mim = subset[subset['config_type'] == True]
         
         improvements = []
         for mr in [0.2, 0.4, 0.6]:
