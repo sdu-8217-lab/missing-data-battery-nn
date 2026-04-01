@@ -95,9 +95,10 @@
         }
         
         .arrow-icon svg {
-            width: 24px;
-            height: 24px;
-            /* 视觉中心修正：箭头略微上移 */
+            width: 28px;  /* 水平拉长 */
+            height: 20px;
+            fill: white;   /* 内部填充白色 */
+            /* 视觉中心修正 */
             transform: translateY(-1px);
         }
         
@@ -344,9 +345,9 @@
             <!-- 分隔线 -->
             <div class="divider">
                 <div class="arrow-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12 5 19 12 12 19"></polyline>
+                    <svg viewBox="0 0 28 20" fill="white">
+                        <path d="M0 9h20v2H0z"/>
+                        <path d="M18 2l8 8-8 8V2z"/>
                     </svg>
                 </div>
                 <div class="divider-line"></div>
