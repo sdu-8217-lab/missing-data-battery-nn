@@ -209,30 +209,35 @@
             min-width: 120px;
         }
         
-        /* 统计信息 */
+        /* 统计信息 - 简洁学术风格 */
         .stats-box {
             background: #f8f9fa;
-            border: 2px solid #C5504B;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
+            border-top: 2px solid #5B5B5B;
+            padding: 15px 20px;
             margin-top: 20px;
         }
         
-        .stats-value {
-            font-size: 28px;
-            font-weight: 800;
-            color: #C5504B;
-            line-height: 1.2;
+        .stats-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 8px;
         }
         
-        .stats-label {
-            font-size: 12px;
-            color: #5B5B5B;
+        .stats-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .stats-num {
+            font-size: 18px;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 4px;
+            color: #333333;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        
+        .stats-desc {
+            font-size: 13px;
+            color: #555555;
         }
         
         /* 图例 */
@@ -419,11 +424,13 @@
                     
                     <!-- 统计 -->
                     <div class="stats-box">
-                        <div class="stats-value">720</div>
-                        <div class="stats-label">Total Models Trained</div>
-                        <div style="margin-top: 15px;">
-                            <div class="stats-value">129,600</div>
-                            <div class="stats-label">Total Test Conditions</div>
+                        <div class="stats-row">
+                            <span class="stats-num">720</span>
+                            <span class="stats-desc">trained models</span>
+                        </div>
+                        <div class="stats-row">
+                            <span class="stats-num">129,600</span>
+                            <span class="stats-desc">test conditions</span>
                         </div>
                     </div>
                 </div>
