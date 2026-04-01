@@ -548,7 +548,7 @@ The complete experimental pipeline, from data preprocessing through model traini
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{figure6_experimental_flow.png}
+    \includegraphics[width=0.75\textwidth]{figure6_experimental_flow.png}
     \caption{Experimental pipeline overview: from XJTU battery dataset through data preprocessing, layer-wise greedy experimental design (L1--L5), to final evaluation and BMS configuration recommendations.}
     \label{fig:experimental_flow}
 \end{figure}
@@ -567,7 +567,7 @@ The primary selection criterion is the MIM improvement rate, defined as $\Delta_
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/greedy_ablation_4panel.png}
+    \includegraphics[width=0.9\textwidth]{figures/greedy_ablation_4panel.png}
     \caption{Greedy layer-wise ablation results. (a) Layer 1: architecture comparison (MLP, CNN, LSTM); (b) Layer 2: model scale (Level 1--4); (c) Layer 3: imputation method (Zero, Mean, Iterative); (d) Layer 4: missing mechanism (MCAR, MAR, MNAR). Improvement rate = $(\text{MAE}_{\text{BL}} - \text{MAE}_{\text{MIM}}) / \text{MAE}_{\text{BL}} \times 100\%$.}
     \label{fig:greedy_ablation}
 \end{figure}
@@ -585,7 +585,7 @@ The inverted-U trend across model scales is clearly visible in Figure~\ref{fig:g
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{figure4_architecture_scaling_v2.png}
+    \includegraphics[width=0.75\textwidth]{figure4_architecture_scaling_v2.png}
     \caption{Model scale vs. MIM improvement rate across four parameter levels (Level 1--4). Left: MAE comparison between Baseline and MIM; Right: improvement rate and MAE reduction. MLP architecture, Mean imputation, MCAR mechanism, 3 seeds.}
     \label{fig:architecture_scaling}
 \end{figure}
@@ -597,7 +597,7 @@ The third layer characterizes the critical interaction between imputation qualit
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/improvement_vs_mr.png}
+    \includegraphics[width=0.9\textwidth]{figures/improvement_vs_mr.png}
     \caption{MIM improvement rate vs. missing rate (MR) for three imputation methods under the optimal configuration (MLP, Level 2, MCAR). The shaded region denotes $\pm$1 standard deviation across 3 random seeds.}
     \label{fig:improvement_vs_mr}
 \end{figure}
@@ -622,7 +622,7 @@ A consistent gradient is observed across imputation strategies (Figure~\ref{fig:
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{figure3_imputation_gradient_v2.png}
+    \includegraphics[width=0.75\textwidth]{figure3_imputation_gradient_v2.png}
     \caption{Imputation method comparison under the optimal configuration (MLP, Level 2, MCAR). MAE curves for Zero, Mean, and Iterative imputation under Baseline and MIM strategies across missing rates.}
     \label{fig:imputation_gradient}
 \end{figure}
@@ -636,7 +636,7 @@ The mechanism comparison is shown in Figure~\ref{fig:greedy_ablation}(d) and det
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{figure2_missing_mechanisms_v2.png}
+    \includegraphics[width=0.75\textwidth]{figure2_missing_mechanisms_v2.png}
     \caption{MAE comparison across three missing data mechanisms (MCAR, MAR, MNAR) under Baseline and MIM strategies. MLP + Level 2 + Mean imputation, 3 seeds.}
     \label{fig:missing_mechanisms}
 \end{figure}
@@ -670,7 +670,7 @@ Given that Layers 1--4 exhibit consistent trends with relatively low cross-seed 
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{figure5_statistical_significance.png}
+    \includegraphics[width=0.75\textwidth]{figure5_statistical_significance.png}
     \caption{Statistical significance of MIM improvement across layers. Wilcoxon signed-rank test results comparing Baseline and MIM MAE distributions across seeds and missing rates. Stars denote significance levels.}
     \label{fig:statistical_significance}
 \end{figure}
