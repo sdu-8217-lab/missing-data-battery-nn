@@ -47,7 +47,16 @@
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             gap: 30px;
-            align-items: start;
+            align-items: stretch;  /* 让两个 phase 等高对齐 */
+        }
+        
+        .phase-section {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .phase-box {
+            flex: 1;  /* 填充剩余空间 */
         }
         
         /* 阶段标题 */
@@ -71,6 +80,7 @@
             padding: 25px;
             border: 1px solid #e9ecef;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            flex: 1;
         }
         
         /* 分隔线 */
