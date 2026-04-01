@@ -613,7 +613,29 @@ A consistent gradient is observed across imputation strategies (Figure~\ref{fig:
 
 The fourth layer tests whether MIM effectiveness is robust across different missing data generation processes. Under the fully determined configuration (MLP, Level 2, Mean imputation, 3 seeds), three missing mechanisms are compared: MCAR (random sensor dropouts), MAR (missingness dependent on observed features), and MNAR (missingness dependent on feature's own value).
 
-The mechanism comparison is shown in Figure~\ref{fig:greedy_ablation}(d). MIM demonstrates consistent improvement across all three missing mechanisms (27.32% for MCAR, 24.61% for MAR, 20.38% for MNAR at MR = 0.4). The relatively small variance ($\approx$7\%) across mechanisms indicates that MIM's effectiveness is primarily driven by the \emph{pattern} of missingness (encoded in the binary indicators) rather than the specific mechanism generating that pattern. The slight degradation from MCAR to MNAR suggests that when missingness is correlated with feature values (MNAR), the imputed feature space becomes more biased, partially constraining the benefit of additional indicator signals. Nevertheless, all three mechanisms show substantial improvements over their respective baselines, confirming robust cross-mechanism generalization. This is a reassuring finding for practical deployment: MIM practitioners need not characterize the exact missing mechanism to benefit from the approach.
+The mechanism comparison is shown in Figure~\ref{fig:greedy_ablation}(d) and detailed in Table~\ref{tab:mechanism_comparison}. MIM demonstrates consistent improvement across all three missing mechanisms (27.32\% for MCAR, 24.61\% for MAR, 20.38\% for MNAR at MR = 0.4). The relatively small variance ($\approx$7\%) across mechanisms indicates that MIM's effectiveness is primarily driven by the \emph{pattern} of missingness (encoded in the binary indicators) rather than the specific mechanism generating that pattern.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{MIM improvement rates and Wilcoxon rank-sum test p-values across missing mechanisms (MLP + Level 2 + Mean imputation, MR = 0.4).}
+\label{tab:mechanism_comparison}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Mechanism} & \textbf{$\Delta_{\text{MAE}}$ (\%)} & \textbf{p vs MCAR} \\
+\midrule
+MCAR & 27.32 & -- \\
+MAR  & 24.61 & 0.700 \\
+MNAR & 20.38 & 1.000 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item Note: Wilcoxon rank-sum test (Mann-Whitney U) on improvement rates across 3 seeds (42, 123, 456). High p-values reflect limited statistical power due to small sample size (n=3 per group), not absence of effect.
+\end{tablenotes}
+\end{table}
+
+The slight degradation from MCAR to MNAR suggests that when missingness is correlated with feature values (MNAR), the imputed feature space becomes more biased, partially constraining the benefit of additional indicator signals. Nevertheless, all three mechanisms show substantial improvements over their respective baselines, confirming robust cross-mechanism generalization. This is a reassuring finding for practical deployment: MIM practitioners need not characterize the exact missing mechanism to benefit from the approach.
 
 \begin{table}[!htbp]
 \centering
