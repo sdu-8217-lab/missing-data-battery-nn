@@ -81,12 +81,12 @@
         .indicator-block { background: #C5504B; }
         .concat-block { background: #7030A0; }
         
-        /* Sizes */
-        .block-input { width: 140px; height: 50px; }
-        .block-model { width: 100px; height: 60px; }
-        .block-output { width: 100px; height: 45px; }
-        .block-small { width: 85px; height: 50px; }
-        .block-concat { width: 160px; height: 45px; }
+        /* Sizes - aligned widths */
+        .block-input { width: 130px; height: 50px; }
+        .block-model { width: 130px; height: 60px; }
+        .block-output { width: 130px; height: 45px; }
+        .block-small { width: 60px; height: 50px; }
+        .block-concat { width: 130px; height: 45px; }
         
         /* Arrow */
         .arrow-v {
@@ -128,11 +128,13 @@
             color: #5B5B5B;
         }
         
-        /* Input row for MIM */
+        /* Input row for MIM - aligned with concat block */
         .input-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            width: 130px;
+            gap: 5px;
         }
         
         /* Concat indicator */
