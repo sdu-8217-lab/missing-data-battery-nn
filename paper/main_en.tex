@@ -637,26 +637,6 @@ MNAR & 20.38 & 1.000 \\
 
 The slight degradation from MCAR to MNAR suggests that when missingness is correlated with feature values (MNAR), the imputed feature space becomes more biased, partially constraining the benefit of additional indicator signals. Nevertheless, all three mechanisms show substantial improvements over their respective baselines, confirming robust cross-mechanism generalization. This is a reassuring finding for practical deployment: MIM practitioners need not characterize the exact missing mechanism to benefit from the approach.
 
-\begin{table}[!htbp]
-\centering
-\small
-\caption{MIM improvement rates and Wilcoxon rank-sum test p-values across missing mechanisms (MLP + Level 2 + Mean imputation, MR = 0.4).}
-\label{tab:mechanism_comparison}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Mechanism} & \textbf{$\Delta_{\text{MAE}}$ (\%)} & \textbf{p vs MCAR} \\
-\midrule
-MCAR & 27.32 & -- \\
-MAR  & 24.61 & 0.700 \\
-MNAR & 20.38 & 1.000 \\
-\bottomrule
-\end{tabular}
-\begin{tablenotes}
-\small
-\item Note: Wilcoxon rank-sum test (Mann-Whitney U) on improvement rates across 3 seeds (42, 123, 456). High p-values reflect limited statistical power due to small sample size (n=3 per group), not absence of effect.
-\end{tablenotes}
-\end{table}
-
 %------------------------------------------------------------------------------
 \subsection{Layer 5: Statistical Robustness Verification}\label{sec:results_robustness}
 
