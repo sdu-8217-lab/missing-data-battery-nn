@@ -41,7 +41,7 @@
 \usepackage{threeparttable}
 
 % Image paths
-\graphicspath{{figures/}{../experiments_new/figures/paper_figures/v0.5/}}
+\graphicspath{{figures/}}
 
 \begin{document}
 
@@ -82,7 +82,7 @@ When input features exhibit significant missing data, traditional data-driven mo
 
 \begin{figure*}[!htb]
     \centering
-    \includegraphics[width=\textwidth]{fig1_problem_scenario.png}
+    \includegraphics[width=\textwidth]{problem_scenario.png}
     \caption{Schematic diagram of data missing problems in battery SOH prediction. (a) BMS monitoring chain and potential failure sources; (b) Cycle-level feature matrix and MCAR missing patterns.}
     \label{fig:problem_scenario}
 \end{figure*}
@@ -209,7 +209,7 @@ Figure~\ref{fig:baseline_vs_mim} illustrates the structural difference between t
 
 \begin{figure}[!htb]
     \centering
-    \includegraphics[width=\columnwidth]{fig2_baseline_vs_mim.png}
+    \includegraphics[width=\columnwidth]{baseline_vs_mim_comparison.png}
     \caption{Comparison of Baseline and MIM input strategies. (a) Baseline: 16-dimensional imputed features $\hat{X}$; (b) MIM: concatenated 32-dimensional extended input $[\hat{X} \,|\, M]$.}
     \label{fig:baseline_vs_mim}
 \end{figure}
@@ -263,7 +263,7 @@ Figure~\ref{fig:joint_training} illustrates the multi-missing-rate joint trainin
 
 \begin{figure*}[!htb]
     \centering
-    \includegraphics[width=\textwidth]{fig4_joint_training.png}
+    \includegraphics[width=\textwidth]{joint_training_strategy.png}
     \caption{Multi-missing-rate joint training process. The original training set generates copies at 10 missing rates, which after MIM construction are merged into $\mathcal{D}_{\text{augmented}}$ for training a unified MIM model.}
     \label{fig:joint_training}
 \end{figure*}
@@ -539,7 +539,7 @@ The complete experimental pipeline, from data preprocessing through model traini
 
 \begin{figure*}[!htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{figure6_experimental_flow.png}
+    \includegraphics[width=0.95\textwidth]{experimental_flow.png}
     \caption{Experimental pipeline overview: from XJTU battery dataset through data preprocessing, layer-wise greedy experimental design (L1--L5), to final evaluation and BMS configuration recommendations.}
     \label{fig:experimental_flow}
 \end{figure*}
@@ -558,7 +558,7 @@ The primary selection criterion is the MIM improvement rate, defined as $\Delta_
 
 \begin{figure*}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/greedy_ablation_4panel.png}
+    \includegraphics[width=\textwidth]{greedy_ablation.png}
     \caption{Greedy layer-wise ablation results. (a) Layer 1: architecture comparison (MLP, CNN, LSTM); (b) Layer 2: model scale (Level 1--4); (c) Layer 3: imputation method (Zero, Mean, Iterative); (d) Layer 4: missing mechanism (MCAR, MAR, MNAR). Improvement rate = $(\text{MAE}_{\text{BL}} - \text{MAE}_{\text{MIM}}) / \text{MAE}_{\text{BL}} \times 100\%$.}
     \label{fig:greedy_ablation}
 \end{figure*}
@@ -576,7 +576,7 @@ The inverted-U trend across model scales is clearly visible in Figure~\ref{fig:g
 
 \begin{figure*}[!htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{figure4_architecture_scaling_v2.png}
+    \includegraphics[width=0.9\textwidth]{architecture_scaling.png}
     \caption{Model scale vs. MIM improvement rate across four parameter levels (Level 1--4). Left: MAE comparison between Baseline and MIM; Right: improvement rate and MAE reduction. MLP architecture, Mean imputation, MCAR mechanism, 3 seeds.}
     \label{fig:architecture_scaling}
 \end{figure*}
@@ -588,7 +588,7 @@ The third layer characterizes the critical interaction between imputation qualit
 
 \begin{figure*}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/improvement_vs_mr.png}
+    \includegraphics[width=\textwidth]{improvement_vs_missing_rate.png}
     \caption{MIM improvement rate vs. missing rate (MR) for three imputation methods under the optimal configuration (MLP, Level 2, MCAR). The shaded region denotes $\pm$1 standard deviation across 3 random seeds.}
     \label{fig:improvement_vs_mr}
 \end{figure*}
@@ -613,7 +613,7 @@ A consistent gradient is observed across imputation strategies (Figure~\ref{fig:
 
 \begin{figure*}[!htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{figure3_imputation_gradient_v2.png}
+    \includegraphics[width=0.9\textwidth]{imputation_gradient.png}
     \caption{Imputation method comparison under the optimal configuration (MLP, Level 2, MCAR). MAE curves for Zero, Mean, and Iterative imputation under Baseline and MIM strategies across missing rates.}
     \label{fig:imputation_gradient}
 \end{figure*}
@@ -627,7 +627,7 @@ The mechanism comparison is shown in Figure~\ref{fig:greedy_ablation}(d) and det
 
 \begin{figure*}[!htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{figure2_missing_mechanisms_v2.png}
+    \includegraphics[width=0.9\textwidth]{missing_mechanisms.png}
     \caption{MAE comparison across three missing data mechanisms (MCAR, MAR, MNAR) under Baseline and MIM strategies. MLP + Level 2 + Mean imputation, 3 seeds.}
     \label{fig:missing_mechanisms}
 \end{figure*}
@@ -661,7 +661,7 @@ Given that Layers 1--4 exhibit consistent trends with relatively low cross-seed 
 
 \begin{figure*}[!htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{figure5_statistical_significance.png}
+    \includegraphics[width=0.9\textwidth]{statistical_significance.png}
     \caption{Statistical significance of MIM improvement across layers. Wilcoxon signed-rank test results comparing Baseline and MIM MAE distributions across seeds and missing rates. Stars denote significance levels.}
     \label{fig:statistical_significance}
 \end{figure*}
