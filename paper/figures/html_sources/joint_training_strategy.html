@@ -71,22 +71,37 @@
             background: #4472C4;
         }
         
-        /* MR=0 block */
+        /* MR=0 block - full water */
         .mr-zero-block {
             width: 115px;
             height: 130px;
             background: #70AD47;
+            position: relative;
+            overflow: hidden;
+        }
+        .mr-zero-block::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.3) 100%);
+        }
+        .mr-zero-content {
+            position: relative;
+            z-index: 2;
         }
         .mr-zero-note {
             font-size: 11px;
-            color: rgba(255,255,255,0.85);
+            color: rgba(255,255,255,0.9);
             margin-top: 8px;
         }
         
         /* MR Pools container */
         .mr-pools-container {
-            width: 320px;
-            height: 140px;
+            width: 360px;
+            height: 160px;
             border: 2px solid #5B9BD5;
             border-radius: 8px;
             background: #f8f9fa;
@@ -106,31 +121,46 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
         }
         
-        /* MR pool block */
+        /* MR pool block with water level */
         .mr-pool {
-            width: 70px;
-            height: 65px;
+            width: 65px;
+            height: 80px;
             border-radius: 6px;
             border: 1px solid #5B9BD5;
             background: #fff;
+            position: relative;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
+            padding-bottom: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .mr-pool-text {
             font-size: 13px;
             font-weight: 700;
             color: #4472C4;
+            z-index: 2;
+            position: relative;
         }
         .mr-pool-sub {
-            font-size: 10px;
+            font-size: 9px;
             color: #718096;
-            margin-top: 4px;
+            margin-top: 2px;
+            z-index: 2;
+            position: relative;
+        }
+        .water-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(91, 155, 213, 0.2) 0%, rgba(91, 155, 213, 0.4) 100%);
+            z-index: 1;
         }
         
         .ellipsis {
@@ -144,7 +174,7 @@
             font-size: 11px;
             color: #5B5B5B;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 12px;
         }
         
         /* Augmented dataset */
@@ -221,10 +251,12 @@
                 <div class="arrow-label">MIM<br>Construct</div>
             </div>
             
-            <!-- MR=0 -->
+            <!-- MR=0 (Full Pool) -->
             <div class="block mr-zero-block">
-                <div class="block-title">MR = 0</div>
-                <div class="mr-zero-note">Complete Data</div>
+                <div class="mr-zero-content">
+                    <div class="block-title">MR = 0</div>
+                    <div class="mr-zero-note">Complete Data</div>
+                </div>
             </div>
             
             <!-- Arrow -->
@@ -232,24 +264,28 @@
                 <div class="arrow-h"></div>
             </div>
             
-            <!-- MR Pools (representative values) -->
+            <!-- MR Pools with water levels -->
             <div class="mr-pools-container">
                 <div class="mr-pools-label">Missing Rate Pools</div>
                 <div class="mr-pools-row">
                     <div class="mr-pool">
+                        <div class="water-level" style="height: 95%;"></div>
                         <div class="mr-pool-text">5%</div>
                         <div class="mr-pool-sub">MR=0.05</div>
                     </div>
                     <div class="mr-pool">
+                        <div class="water-level" style="height: 90%;"></div>
                         <div class="mr-pool-text">10%</div>
                         <div class="mr-pool-sub">MR=0.10</div>
                     </div>
                     <div class="mr-pool">
+                        <div class="water-level" style="height: 80%;"></div>
                         <div class="mr-pool-text">20%</div>
                         <div class="mr-pool-sub">MR=0.20</div>
                     </div>
                     <div class="ellipsis">...</div>
                     <div class="mr-pool">
+                        <div class="water-level" style="height: 5%;"></div>
                         <div class="mr-pool-text">95%</div>
                         <div class="mr-pool-sub">MR=0.95</div>
                     </div>
