@@ -91,9 +91,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 24px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .arrow-icon svg {
+            width: 24px;
+            height: 24px;
+            /* 视觉中心修正：箭头略微上移 */
+            transform: translateY(-1px);
         }
         
         .divider-line {
@@ -338,7 +343,12 @@
             
             <!-- 分隔线 -->
             <div class="divider">
-                <div class="arrow-icon">→</div>
+                <div class="arrow-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </div>
                 <div class="divider-line"></div>
             </div>
             
