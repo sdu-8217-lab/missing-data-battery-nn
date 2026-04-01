@@ -99,7 +99,7 @@
         .divider-line {
             width: 2px;
             flex: 1;
-            background: linear-gradient(to bottom, #cbd5e0, #a0aec0, #cbd5e0);
+            background: repeating-linear-gradient(to bottom, #999 0, #999 6px, transparent 6px, transparent 12px);
             margin: 15px 0;
             min-height: 400px;
         }
@@ -155,14 +155,14 @@
         .layer-l6 .layer-header { color: #008B8B; }
         .layer-l6 .layer-number { background: #008B8B; }
         
-        .layer-l7 .layer-header { color: #5B5B5B; }
-        .layer-l7 .layer-number { background: #7F7F7F; }
+        .layer-l7 .layer-header { color: #008B8B; }
+        .layer-l7 .layer-number { background: #008B8B; }
         
-        .layer-l8 .layer-header { color: #C59100; }
-        .layer-l8 .layer-number { background: #C59100; }
+        .layer-l8 .layer-header { color: #008B8B; }
+        .layer-l8 .layer-number { background: #008B8B; }
         
-        .layer-l9 .layer-header { color: #2F5597; }
-        .layer-l9 .layer-number { background: #2F5597; }
+        .layer-l9 .layer-header { color: #008B8B; }
+        .layer-l9 .layer-number { background: #008B8B; }
         
         /* 卡片网格 */
         .cards {
@@ -383,13 +383,13 @@
                     </div>
                     
                     <!-- L7: Missing Rates -->
-                    <div class="layer layer-l7">
+                    <div class="layer layer-l6">
                         <div class="layer-header">
                             <span class="layer-number">L7</span>
                             Missing Rate
                         </div>
                         <div class="cards">
-                            <div class="card card-gray card-wide" style="font-size: 12px;">
+                            <div class="card card-teal card-wide" style="font-size: 12px;">
                                 MR = 0%, 5%, 10%, ..., 95%<br>
                                 <small>(20 levels)</small>
                             </div>
@@ -397,28 +397,28 @@
                     </div>
                     
                     <!-- L8: Imputation Methods -->
-                    <div class="layer layer-l8">
+                    <div class="layer layer-l6">
                         <div class="layer-header">
                             <span class="layer-number">L8</span>
                             Imputation Methods (3 types)
                         </div>
                         <div class="cards">
-                            <div class="card card-red card-wide">Zero</div>
-                            <div class="card card-yellow card-wide">Mean</div>
-                            <div class="card card-blue card-wide">Iterative</div>
+                            <div class="card card-teal card-wide">Zero</div>
+                            <div class="card card-teal card-wide">Mean</div>
+                            <div class="card card-teal card-wide">Iterative</div>
                         </div>
                     </div>
                     
                     <!-- L9: Evaluation Metrics -->
-                    <div class="layer layer-l9">
+                    <div class="layer layer-l6">
                         <div class="layer-header">
                             <span class="layer-number">L9</span>
                             Evaluation Metrics
                         </div>
                         <div class="cards">
-                            <div class="card card-dark">RMSE</div>
-                            <div class="card card-dark">MAE</div>
-                            <div class="card card-dark">R²</div>
+                            <div class="card card-teal">RMSE</div>
+                            <div class="card card-teal">MAE</div>
+                            <div class="card card-teal">R²</div>
                         </div>
                     </div>
                     
