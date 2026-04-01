@@ -1,0 +1,16 @@
+{
+  "experiment_name": "l1_cnn_level_2_mim_seed2",
+  "model_type": "cnn",
+  "level": "level_2",
+  "use_mim": true,
+  "seed": 2,
+  "param_count": 15705,
+  "best_val_loss": 0.0014875800813161021,
+  "test_loss": 0.0011660848321602044,
+  "mae": 0.009154357016086578,
+  "mse": 0.00020096913794986904,
+  "rmse": 0.014176358468830585,
+  "r2": 0.937009334564209,
+  "mape": 0.9948353171348572,
+  "metrics_calculated": true
+}

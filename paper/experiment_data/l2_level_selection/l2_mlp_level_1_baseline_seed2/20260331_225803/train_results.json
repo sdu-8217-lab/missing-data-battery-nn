@@ -1,0 +1,16 @@
+{
+  "experiment_name": "l2_mlp_level_1_baseline_seed2",
+  "model_type": "mlp",
+  "level": "level_1",
+  "use_mim": false,
+  "seed": 2,
+  "param_count": 5953,
+  "best_val_loss": 0.00147273406659478,
+  "test_loss": 0.0011646864243528596,
+  "mae": 0.00935982447117567,
+  "mse": 0.0002303307701367885,
+  "rmse": 0.015176651999354362,
+  "r2": 0.9278063774108887,
+  "mape": 1.0236070156097412,
+  "metrics_calculated": true
+}

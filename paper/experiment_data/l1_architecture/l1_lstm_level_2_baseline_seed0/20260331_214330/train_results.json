@@ -1,0 +1,16 @@
+{
+  "experiment_name": "l1_lstm_level_2_baseline_seed0",
+  "model_type": "lstm",
+  "level": "level_2",
+  "use_mim": false,
+  "seed": 0,
+  "param_count": 10957,
+  "best_val_loss": 0.0014954255843415078,
+  "test_loss": 0.0014826564050995064,
+  "mae": 0.022647693753242493,
+  "mse": 0.0006817872636020184,
+  "rmse": 0.0261110570281744,
+  "r2": 0.7714114189147949,
+  "mape": 2.3876819610595703,
+  "metrics_calculated": true
+}

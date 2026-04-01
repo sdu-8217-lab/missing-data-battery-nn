@@ -1,0 +1,16 @@
+{
+  "experiment_name": "l3_mlp_level_2_iterative_baseline_seed0",
+  "model_type": "mlp",
+  "level": "level_2",
+  "use_mim": false,
+  "seed": 0,
+  "param_count": 11801,
+  "best_val_loss": 0.0008143424029390395,
+  "test_loss": 0.0007398800511205939,
+  "mae": 0.007709265220910311,
+  "mse": 0.00014956123777665198,
+  "rmse": 0.012229523621499538,
+  "r2": 0.9498553276062012,
+  "mape": 0.8351761698722839,
+  "metrics_calculated": true
+}

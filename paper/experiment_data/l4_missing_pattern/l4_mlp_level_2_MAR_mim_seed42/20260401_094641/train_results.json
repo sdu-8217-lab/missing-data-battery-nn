@@ -1,0 +1,16 @@
+{
+  "experiment_name": "l4_mlp_level_2_MAR_mim_seed42",
+  "model_type": "mlp",
+  "level": "level_2",
+  "use_mim": true,
+  "seed": 42,
+  "param_count": 13721,
+  "best_val_loss": 0.00039778973712697546,
+  "test_loss": 0.0010768711291515164,
+  "mae": 0.02196136862039566,
+  "mse": 0.0008056856459006667,
+  "rmse": 0.028384601697325706,
+  "r2": 0.6345277428627014,
+  "mape": 2.2747063636779785,
+  "metrics_calculated": true
+}
