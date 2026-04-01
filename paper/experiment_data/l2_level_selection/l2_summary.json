@@ -1,0 +1,143 @@
+{
+  "total_time": 2266.8469483852386,
+  "results": {
+    "level_1": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 171.6369264125824
+        },
+        "1": {
+          "success": true,
+          "time": 207.32485103607178
+        },
+        "2": {
+          "success": true,
+          "time": 104.03770399093628
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 102.98293447494507
+        },
+        "1": {
+          "success": true,
+          "time": 100.69441628456116
+        },
+        "2": {
+          "success": true,
+          "time": 100.88957333564758
+        }
+      }
+    },
+    "level_2": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 0
+        },
+        "1": {
+          "success": true,
+          "time": 0
+        },
+        "2": {
+          "success": true,
+          "time": 0
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 0
+        },
+        "1": {
+          "success": true,
+          "time": 0
+        },
+        "2": {
+          "success": true,
+          "time": 0
+        }
+      }
+    },
+    "level_3": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 69.28247046470642
+        },
+        "1": {
+          "success": true,
+          "time": 68.84621810913086
+        },
+        "2": {
+          "success": true,
+          "time": 64.25174117088318
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 66.16144180297852
+        },
+        "1": {
+          "success": true,
+          "time": 195.19557070732117
+        },
+        "2": {
+          "success": true,
+          "time": 173.61964082717896
+        }
+      }
+    },
+    "level_4": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 136.92180395126343
+        },
+        "1": {
+          "success": true,
+          "time": 121.86091637611389
+        },
+        "2": {
+          "success": true,
+          "time": 155.15118837356567
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 204.94299578666687
+        },
+        "1": {
+          "success": true,
+          "time": 122.59590220451355
+        },
+        "2": {
+          "success": true,
+          "time": 100.42716670036316
+        }
+      }
+    }
+  },
+  "reused_from_l1": 6,
+  "newly_trained": 18,
+  "config": {
+    "architecture": "mlp",
+    "levels": [
+      "level_1",
+      "level_2",
+      "level_3",
+      "level_4"
+    ],
+    "imputation": "mean",
+    "missing_mode": "MCAR",
+    "seeds": [
+      0,
+      1,
+      2
+    ]
+  }
+}

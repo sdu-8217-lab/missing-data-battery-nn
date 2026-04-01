@@ -1,0 +1,112 @@
+{
+  "total_time": 1379.8224329948425,
+  "results": {
+    "MCAR": {
+      "baseline": {
+        "42": {
+          "success": true,
+          "time": 0
+        },
+        "123": {
+          "success": true,
+          "time": 0
+        },
+        "456": {
+          "success": true,
+          "time": 0
+        }
+      },
+      "mim": {
+        "42": {
+          "success": true,
+          "time": 0
+        },
+        "123": {
+          "success": true,
+          "time": 0
+        },
+        "456": {
+          "success": true,
+          "time": 0
+        }
+      }
+    },
+    "MAR": {
+      "baseline": {
+        "42": {
+          "success": true,
+          "time": 92.13357663154602
+        },
+        "123": {
+          "success": true,
+          "time": 134.87495613098145
+        },
+        "456": {
+          "success": true,
+          "time": 212.16436076164246
+        }
+      },
+      "mim": {
+        "42": {
+          "success": true,
+          "time": 124.32774424552917
+        },
+        "123": {
+          "success": true,
+          "time": 165.66252303123474
+        },
+        "456": {
+          "success": true,
+          "time": 106.22572207450867
+        }
+      }
+    },
+    "MNAR": {
+      "baseline": {
+        "42": {
+          "success": true,
+          "time": 78.67077732086182
+        },
+        "123": {
+          "success": true,
+          "time": 63.86162066459656
+        },
+        "456": {
+          "success": true,
+          "time": 67.82647895812988
+        }
+      },
+      "mim": {
+        "42": {
+          "success": true,
+          "time": 133.2406289577484
+        },
+        "123": {
+          "success": true,
+          "time": 66.93211221694946
+        },
+        "456": {
+          "success": true,
+          "time": 133.88389086723328
+        }
+      }
+    }
+  },
+  "reused_from_l3": 6,
+  "newly_trained": 12,
+  "config": {
+    "architecture": "mlp",
+    "level": "level_2",
+    "imputation": "mean",
+    "patterns": [
+      "MCAR",
+      "MAR",
+      "MNAR"
+    ],
+    "seeds": [
+      42,
+      123,
+      456
+    ]
+  }
+}

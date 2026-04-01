@@ -1,0 +1,143 @@
+{
+  "total_time": 2307.091229200363,
+  "results": {
+    "zero": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 209.72376775741577
+        },
+        "1": {
+          "success": true,
+          "time": 62.997557163238525
+        },
+        "2": {
+          "success": true,
+          "time": 57.6410915851593
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 60.620614767074585
+        },
+        "1": {
+          "success": true,
+          "time": 120.57989764213562
+        },
+        "2": {
+          "success": true,
+          "time": 182.21452832221985
+        }
+      }
+    },
+    "mean": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 0
+        },
+        "1": {
+          "success": true,
+          "time": 0
+        },
+        "2": {
+          "success": true,
+          "time": 0
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 0
+        },
+        "1": {
+          "success": true,
+          "time": 0
+        },
+        "2": {
+          "success": true,
+          "time": 0
+        }
+      }
+    },
+    "knn": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 113.14432096481323
+        },
+        "1": {
+          "success": true,
+          "time": 151.1517186164856
+        },
+        "2": {
+          "success": true,
+          "time": 63.84062695503235
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 141.67929410934448
+        },
+        "1": {
+          "success": true,
+          "time": 95.72437524795532
+        },
+        "2": {
+          "success": true,
+          "time": 119.42967081069946
+        }
+      }
+    },
+    "iterative": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 190.04097294807434
+        },
+        "1": {
+          "success": true,
+          "time": 289.4560205936432
+        },
+        "2": {
+          "success": true,
+          "time": 141.92466855049133
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 146.14407801628113
+        },
+        "1": {
+          "success": true,
+          "time": 86.04743528366089
+        },
+        "2": {
+          "success": true,
+          "time": 74.70679974555969
+        }
+      }
+    }
+  },
+  "reused_from_l2": 6,
+  "newly_trained": 18,
+  "config": {
+    "architecture": "mlp",
+    "level": "level_2",
+    "imputations": [
+      "zero",
+      "mean",
+      "knn",
+      "iterative"
+    ],
+    "missing_mode": "MCAR",
+    "seeds": [
+      0,
+      1,
+      2
+    ]
+  }
+}

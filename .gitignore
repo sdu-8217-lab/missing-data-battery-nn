@@ -196,6 +196,7 @@ Thumbs.db
 !paper/**/*.html
 !paper/**/*.yaml
 !paper/**/*.yml
+!paper/experiment_data/**/*.json
 
 # 仅排除根目录的 figures，但允许 paper/figures
 /figures/

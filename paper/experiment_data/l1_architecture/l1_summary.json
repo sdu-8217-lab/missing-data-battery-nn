@@ -1,0 +1,110 @@
+{
+  "total_time": 2248.980647087097,
+  "results": {
+    "mlp": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 69.96883583068848
+        },
+        "1": {
+          "success": true,
+          "time": 158.50978541374207
+        },
+        "2": {
+          "success": true,
+          "time": 165.33863806724548
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 107.10691595077515
+        },
+        "1": {
+          "success": true,
+          "time": 193.78083109855652
+        },
+        "2": {
+          "success": true,
+          "time": 124.91777777671814
+        }
+      }
+    },
+    "cnn": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 191.86751413345337
+        },
+        "1": {
+          "success": true,
+          "time": 114.04797673225403
+        },
+        "2": {
+          "success": true,
+          "time": 77.98464035987854
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 115.76396465301514
+        },
+        "1": {
+          "success": true,
+          "time": 124.7370195388794
+        },
+        "2": {
+          "success": true,
+          "time": 120.62187767028809
+        }
+      }
+    },
+    "lstm": {
+      "baseline": {
+        "0": {
+          "success": true,
+          "time": 72.26327466964722
+        },
+        "1": {
+          "success": true,
+          "time": 243.96482253074646
+        },
+        "2": {
+          "success": true,
+          "time": 106.46481204032898
+        }
+      },
+      "mim": {
+        "0": {
+          "success": true,
+          "time": 107.23828482627869
+        },
+        "1": {
+          "success": true,
+          "time": 81.1207902431488
+        },
+        "2": {
+          "success": true,
+          "time": 73.25843572616577
+        }
+      }
+    }
+  },
+  "config": {
+    "architectures": [
+      "mlp",
+      "cnn",
+      "lstm"
+    ],
+    "level": "level_2",
+    "imputation": "mean",
+    "missing_mode": "MCAR",
+    "seeds": [
+      0,
+      1,
+      2
+    ]
+  }
+}
