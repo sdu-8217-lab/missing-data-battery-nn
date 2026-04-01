@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figure 6: Experimental Pipeline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* 标题 */
+        .title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .title h1 {
+            font-size: 28px;
+            color: #1a202c;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .title .subtitle {
+            font-size: 14px;
+            color: #718096;
+            margin-top: 8px;
+        }
+        
+        /* 主布局 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        /* 阶段标题 */
+        .phase-header {
+            background: #2F5597;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        
+        .phase-box {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        
+        /* 分隔线 */
+        .divider {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding-top: 60px;
+        }
+        
+        .arrow-icon {
+            width: 50px;
+            height: 50px;
+            background: #2F5597;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .divider-line {
+            width: 2px;
+            flex: 1;
+            background: linear-gradient(to bottom, #cbd5e0, #a0aec0, #cbd5e0);
+            margin: 15px 0;
+            min-height: 400px;
+        }
+        
+        /* 层级 */
+        .layer {
+            margin-bottom: 25px;
+        }
+        
+        .layer:last-child {
+            margin-bottom: 0;
+        }
+        
+        .layer-header {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .layer-number {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: white;
+            font-weight: 700;
+        }
+        
+        /* 层颜色 - 学术配色 */
+        .layer-l1 .layer-header { color: #4472C4; }
+        .layer-l1 .layer-number { background: #4472C4; }
+        
+        .layer-l2 .layer-header { color: #7030A0; }
+        .layer-l2 .layer-number { background: #7030A0; }
+        
+        .layer-l3 .layer-header { color: #C5504B; }
+        .layer-l3 .layer-number { background: #C5504B; }
+        
+        .layer-l4 .layer-header { color: #ED7D31; }
+        .layer-l4 .layer-number { background: #ED7D31; }
+        
+        .layer-l5 .layer-header { color: #70AD47; }
+        .layer-l5 .layer-number { background: #70AD47; }
+        
+        .layer-l6 .layer-header { color: #008B8B; }
+        .layer-l6 .layer-number { background: #008B8B; }
+        
+        .layer-l7 .layer-header { color: #5B5B5B; }
+        .layer-l7 .layer-number { background: #7F7F7F; }
+        
+        .layer-l8 .layer-header { color: #C59100; }
+        .layer-l8 .layer-number { background: #C59100; }
+        
+        .layer-l9 .layer-header { color: #2F5597; }
+        .layer-l9 .layer-number { background: #2F5597; }
+        
+        /* 卡片网格 */
+        .cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .card {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        /* 学术配色 - 更沉稳 */
+        .card-blue { background: #4472C4; }
+        .card-purple { background: #7030A0; }
+        .card-red { background: #C5504B; }
+        .card-orange { background: #ED7D31; }
+        .card-green { background: #70AD47; }
+        .card-teal { background: #008B8B; }
+        .card-yellow { background: #FFC000; color: #333333; }
+        .card-gray { background: #7F7F7F; }
+        .card-dark { background: #2F5597; }
+        
+        /* 特殊卡片 */
+        .card-large {
+            padding: 15px 25px;
+            font-size: 14px;
+        }
+        
+        .card-wide {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        /* 统计信息 */
+        .stats-box {
+            background: #f8f9fa;
+            border: 2px solid #C5504B;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .stats-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #C5504B;
+            line-height: 1.2;
+        }
+        
+        .stats-label {
+            font-size: 12px;
+            color: #5B5B5B;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+        
+        /* 图例 */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #4a5568;
+        }
+        
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .divider {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">
+            <h1>Figure 6: Complete Experimental Architecture (L1–L9)</h1>
+            <div class="subtitle">XJTU Battery Dataset → Data Preprocessing → Layer-wise Greedy Experimental Design → Evaluation</div>
+        </div>
+        
+        <div class="main-grid">
+            <!-- 训练阶段 -->
+            <div class="phase-section">
+                <div class="phase-header">Training Phase</div>
+                <div class="phase-box">
+                    <!-- L1: Seeds -->
+                    <div class="layer layer-l1">
+                        <div class="layer-header">
+                            <span class="layer-number">L1</span>
+                            Random Seeds (10 total)
+                        </div>
+                        <div class="cards">
+                            <div class="card card-blue">Seed 0</div>
+                            <div class="card card-blue">Seed 42</div>
+                            <div class="card card-blue">Seed 123</div>
+                            <div class="card card-blue" style="opacity: 0.6;">...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- L2: Batches -->
+                    <div class="layer layer-l2">
+                        <div class="layer-header">
+                            <span class="layer-number">L2</span>
+                            Battery Batches (3 datasets)
+                        </div>
+                        <div class="cards">
+                            <div class="card card-purple card-wide">2C</div>
+                            <div class="card card-purple card-wide">3C</div>
+                            <div class="card card-purple card-wide">R2.5</div>
+                        </div>
+                    </div>
+                    
+                    <!-- L3: Architectures -->
+                    <div class="layer layer-l3">
+                        <div class="layer-header">
+                            <span class="layer-number">L3</span>
+                            Neural Architectures (3 types)
+                        </div>
+                        <div class="cards">
+                            <div class="card card-red card-wide">MLP</div>
+                            <div class="card card-red card-wide">CNN</div>
+                            <div class="card card-red card-wide">LSTM</div>
+                        </div>
+                    </div>
+                    
+                    <!-- L4: Model Levels -->
+                    <div class="layer layer-l4">
+                        <div class="layer-header">
+                            <span class="layer-number">L4</span>
+                            Model Levels (4 scales)
+                        </div>
+                        <div class="cards">
+                            <div class="card card-orange">L1 (~6K)</div>
+                            <div class="card card-orange">L2 (~12K)</div>
+                            <div class="card card-orange">L3 (~21K)</div>
+                            <div class="card card-orange">L4 (~45K)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- L5: MIM Config -->
+                    <div class="layer layer-l5">
+                        <div class="layer-header">
+                            <span class="layer-number">L5</span>
+                            MIM Configuration (2 variants)
+                        </div>
+                        <div class="cards">
+                            <div class="card card-gray card-large card-wide">Baseline<br><small>(No MIM)</small></div>
+                            <div class="card card-green card-large card-wide">MIM<br><small>(With Indicator)</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 分隔线 -->
+            <div class="divider">
+                <div class="arrow-icon">→</div>
+                <div class="divider-line"></div>
+            </div>
+            
+            <!-- 测试阶段 -->
+            <div class="phase-section">
+                <div class="phase-header">Testing Phase</div>
+                <div class="phase-box">
+                    <!-- L6: Missing Mechanisms -->
+                    <div class="layer layer-l6">
+                        <div class="layer-header">
+                            <span class="layer-number">L6</span>
+                            Missing Mechanisms (3 types)
+                        </div>
+                        <div class="cards">
+                            <div class="card card-teal card-wide">MCAR</div>
+                            <div class="card card-teal card-wide">MAR</div>
+                            <div class="card card-teal card-wide">MNAR</div>
+                        </div>
+                    </div>
+                    
+                    <!-- L7: Missing Rates -->
+                    <div class="layer layer-l7">
+                        <div class="layer-header">
+                            <span class="layer-number">L7</span>
+                            Missing Rate
+                        </div>
+                        <div class="cards">
+                            <div class="card card-gray card-wide" style="font-size: 12px;">
+                                MR = 0%, 5%, 10%, ..., 95%<br>
+                                <small>(20 levels)</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- L8: Imputation Methods -->
+                    <div class="layer layer-l8">
+                        <div class="layer-header">
+                            <span class="layer-number">L8</span>
+                            Imputation Methods (3 types)
+                        </div>
+                        <div class="cards">
+                            <div class="card card-red card-wide">Zero</div>
+                            <div class="card card-yellow card-wide">Mean</div>
+                            <div class="card card-blue card-wide">Iterative</div>
+                        </div>
+                    </div>
+                    
+                    <!-- L9: Evaluation Metrics -->
+                    <div class="layer layer-l9">
+                        <div class="layer-header">
+                            <span class="layer-number">L9</span>
+                            Evaluation Metrics
+                        </div>
+                        <div class="cards">
+                            <div class="card card-dark">RMSE</div>
+                            <div class="card card-dark">MAE</div>
+                            <div class="card card-dark">R²</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 统计 -->
+                    <div class="stats-box">
+                        <div class="stats-value">720</div>
+                        <div class="stats-label">Total Models Trained</div>
+                        <div style="margin-top: 15px;">
+                            <div class="stats-value">129,600</div>
+                            <div class="stats-label">Total Test Conditions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 图例 -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #4472C4;"></div>
+                <span>L1: Seeds</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #7030A0;"></div>
+                <span>L2: Batches</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #C5504B;"></div>
+                <span>L3: Architectures</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ED7D31;"></div>
+                <span>L4: Model Levels</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #70AD47;"></div>
+                <span>L5: MIM Config</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #008B8B;"></div>
+                <span>L6-L9: Test Config</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 简单的入场动画
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 30);
+            });
+        });
+    </script>
+</body>
+</html>
