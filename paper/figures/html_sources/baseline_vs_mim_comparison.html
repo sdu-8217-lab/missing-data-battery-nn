@@ -13,118 +13,82 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 30px 20px;
         }
         .container {
             background: white;
-            width: 1200px;
-            padding: 30px;
+            width: 1100px;
+            padding: 25px 30px;
             border-radius: 8px;
             border: 1px solid #e9ecef;
         }
-        .content-wrapper {
-            display: flex;
-            gap: 50px;
-        }
-        .panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-        .panel-title {
-            font-size: 16px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 30px;
-            color: #1a202c;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #e9ecef;
-        }
-        .panel-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 0;
-            position: relative;
+        
+        /* Grid layout for alignment */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 40px;
+            align-items: start;
         }
         
-        /* Common block styles */
+        .panel-title {
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #1a202c;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        /* Flow container - uses flex for vertical flow */
+        .flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        /* Unified block styles - all same size */
         .block {
+            width: 200px;
+            height: 75px;
             border-radius: 8px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         }
         
         .block-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: #fff;
         }
         .block-subtitle {
-            font-size: 14px;
+            font-size: 12px;
             color: rgba(255,255,255,0.9);
-            margin-top: 6px;
+            margin-top: 3px;
         }
         .block-note {
-            font-size: 12px;
+            font-size: 10px;
             color: rgba(255,255,255,0.8);
-            margin-top: 4px;
+            margin-top: 2px;
         }
         
-        /* Block colors */
-        .input-block {
-            width: 280px;
-            height: 100px;
-            background: #4472C4;
-        }
+        /* Color assignments */
+        .input-block { background: #4472C4; }
+        .model-block { background: #70AD47; }
+        .output-block { background: #ED7D31; }
+        .indicator-block { background: #C5504B; }
+        .concat-block { background: #7030A0; }
         
-        .model-block {
-            width: 220px;
-            height: 110px;
-            background: #70AD47;
-            margin: 20px 0;
-        }
-        .model-block .block-title {
-            font-size: 42px;
-            font-weight: 300;
-            font-style: italic;
-        }
-        
-        .output-block {
-            width: 180px;
-            height: 80px;
-            background: #ED7D31;
-        }
-        
-        .small-block {
-            width: 150px;
-            height: 90px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        
-        .concat-block {
-            width: 260px;
-            height: 75px;
-            background: #7030A0;
-            margin: 15px 0;
-        }
-        
-        /* Arrow styles */
+        /* Arrow */
         .arrow-v {
             width: 3px;
-            height: 40px;
+            height: 25px;
             background: #5B5B5B;
             position: relative;
         }
@@ -132,55 +96,77 @@
             content: '';
             position: absolute;
             bottom: 0;
-            left: -6px;
-            border-top: 10px solid #5B5B5B;
-            border-left: 7px solid transparent;
-            border-right: 7px solid transparent;
+            left: -5px;
+            border-top: 8px solid #5B5B5B;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
         }
         
-        /* MIM specific */
-        .mim-inputs {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+        /* Plus sign */
         .plus-sign {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 700;
             color: #5B5B5B;
-        }
-        .concat-text {
-            font-size: 13px;
-            color: #5B5B5B;
-            margin: 8px 0;
-            font-style: italic;
-            font-weight: 500;
+            line-height: 1;
         }
         
-        /* Annotation */
-        .annotation {
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            padding: 15px 20px;
+        /* Horizontal input group for MIM */
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .small-block {
+            width: 120px;
+            height: 75px;
+        }
+        
+        /* Concatenation indicator */
+        .concat-indicator {
+            font-size: 11px;
+            color: #5B5B5B;
+            font-style: italic;
+            font-weight: 500;
+            margin: 2px 0;
+        }
+        
+        /* Annotations */
+        .annotation-box {
+            padding: 10px 15px;
             background: #f8f9fa;
-            border-left: 3px solid #70AD47;
-            font-size: 14px;
+            border-radius: 6px;
+            font-size: 12px;
             font-weight: 600;
             color: #2d3748;
             text-align: center;
-            line-height: 1.6;
-        }
-        .annotation-left {
-            right: auto;
-            left: 0;
-            border-left: none;
-            border-right: 3px solid #70AD47;
+            border-left: 3px solid #70AD47;
+            margin-top: 8px;
         }
         .green-text {
             color: #70AD47;
+        }
+        
+        /* Middle column for comparison indicators */
+        .comparison-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 45px;
+        }
+        
+        .vs-badge {
+            width: 45px;
+            height: 45px;
+            background: #5B5B5B;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 200px;
         }
         
         sub {
@@ -191,15 +177,15 @@
 </head>
 <body>
     <div class="container">
-        <div class="content-wrapper">
-            <!-- Left Panel: Baseline -->
+        <div class="content-grid">
+            <!-- Left: Baseline -->
             <div class="panel">
                 <div class="panel-title">(a) Baseline: Imputation Only</div>
-                <div class="panel-content">
+                <div class="flow">
                     <div class="block input-block">
                         <div class="block-title">X&#770;</div>
                         <div class="block-subtitle">Imputed Features</div>
-                        <div class="block-note"><em>n</em> &times; 16</div>
+                        <div class="block-note">dim = 16</div>
                     </div>
                     <div class="arrow-v"></div>
                     <div class="block model-block">
@@ -211,33 +197,42 @@
                         <div class="block-title"><em>y</em>&#770;</div>
                         <div class="block-subtitle">SOH Prediction</div>
                     </div>
-                    <div class="annotation annotation-left">
-                        Input Dim = 16
+                    <div class="annotation-box">
+                        Input: 16D
                     </div>
                 </div>
             </div>
             
-            <!-- Right Panel: MIM -->
+            <!-- Middle: VS indicator -->
+            <div class="comparison-col">
+                <div class="vs-badge">VS</div>
+            </div>
+            
+            <!-- Right: MIM -->
             <div class="panel">
                 <div class="panel-title">(b) MIM: Imputation + Missing Indicator</div>
-                <div class="panel-content">
-                    <div class="mim-inputs">
-                        <div class="small-block" style="background: #4472C4;">
+                <div class="flow">
+                    <!-- Input row -->
+                    <div class="input-group">
+                        <div class="block small-block input-block">
                             <div class="block-title">X&#770;</div>
-                            <div class="block-subtitle"><em>n</em> &times; 16</div>
-                            <div class="block-note">Imputed</div>
+                            <div class="block-subtitle">Imputed</div>
+                            <div class="block-note">16D</div>
                         </div>
                         <div class="plus-sign">+</div>
-                        <div class="small-block" style="background: #C5504B;">
+                        <div class="block small-block indicator-block">
                             <div class="block-title"><em>M</em></div>
-                            <div class="block-subtitle"><em>n</em> &times; 16</div>
-                            <div class="block-note">0 = Observed, 1 = Missing</div>
+                            <div class="block-subtitle">Indicator</div>
+                            <div class="block-note">16D (0/1)</div>
                         </div>
                     </div>
-                    <div class="concat-text">Concatenation</div>
+                    
+                    <div class="concat-indicator">↓ Concatenation ↓</div>
+                    
                     <div class="block concat-block">
                         <div class="block-title"><em>Z</em> = [X&#770; | <em>M</em>]</div>
-                        <div class="block-subtitle"><em>n</em> &times; 32</div>
+                        <div class="block-subtitle">Concatenated Input</div>
+                        <div class="block-note">dim = 32</div>
                     </div>
                     <div class="arrow-v"></div>
                     <div class="block model-block">
@@ -249,9 +244,8 @@
                         <div class="block-title"><em>y</em>&#770;</div>
                         <div class="block-subtitle">SOH Prediction</div>
                     </div>
-                    <div class="annotation">
-                        Input Dim = 32<br>
-                        <span class="green-text">(&times;2 Features)</span>
+                    <div class="annotation-box">
+                        Input: 32D <span class="green-text">(×2)</span>
                     </div>
                 </div>
             </div>
