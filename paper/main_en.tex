@@ -546,6 +546,13 @@ This layer-wise approach serves two purposes: (1) it isolates the contribution o
 
 The complete experimental pipeline, from data preprocessing through model training to evaluation, is designed to ensure full reproducibility of reported results. Source code and configuration files will be made available upon publication to facilitate independent verification and extension of this work.
 
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{experiments_new/figures/paper_figures/v0.5/figure6_experimental_flow.png}
+    \caption{Experimental pipeline overview: from XJTU battery dataset through data preprocessing, layer-wise greedy experimental design (L1--L5), to final evaluation and BMS configuration recommendations.}
+    \label{fig:experimental_flow}
+\end{figure}
+
 %==============================================================================
 \section{Results and Discussion}\label{sec:results}
 
@@ -567,8 +574,6 @@ The primary selection criterion is the MIM improvement rate, defined as $\Delta_
 
 The results indicate that MLP achieves the highest MIM improvement rate of 27.32%, compared to 3.26% for CNN and 1.33% for LSTM. MLP is therefore selected as the representative architecture for all subsequent experimental layers. Notably, MLP's direct feedforward feature mapping allows cleaner learning of indicator--feature interactions compared to sequential or convolutional processing, where the missing indicator signal may be modulated or diluted by temporal/state-dependent gating mechanisms.
 
-The results indicate that MLP achieves the highest MIM improvement rate of 27.32%, compared to 3.26% for CNN and 1.33% for LSTM. MLP is therefore selected as the representative architecture for all subsequent experimental layers. Notably, MLP's direct feedforward feature mapping allows cleaner learning of indicator--feature interactions compared to sequential or convolutional processing, where the missing indicator signal may be modulated or diluted by temporal/state-dependent gating mechanisms.
-
 %------------------------------------------------------------------------------
 \subsection{Layer 2: Effect of Model Scale}\label{sec:results_scale}
 
@@ -577,6 +582,13 @@ With the representative architecture (MLP) determined, the second layer investig
 Unlike Layer~1, this layer does not perform ``selection'' but rather characterizes the \emph{trend} of MIM effectiveness as a function of model capacity. This distinction is important because the scale--MIM interaction itself constitutes a meaningful scientific finding.
 
 The inverted-U trend across model scales is clearly visible in Figure~\ref{fig:greedy_ablation}(b). At Level 2 (20,537 parameters), MIM achieves the highest improvement rate of 27.32%, while the improvement is negative at Level~1 (-2.19%, 5,953 parameters) and lower at Level~3 (19.06%, 20,537 parameters) and Level~4 (4.79%, 44,529 parameters). The overall trend exhibits an inverted-U pattern with respect to model scale, suggesting that the smallest models (Level 1) lack sufficient capacity to leverage the MIM indicator as an additional input channel, effectively treating it as noise that degrades performance. Conversely, the largest models (Level 4) are over-parameterized relative to the effective information that MIM can provide, diluting the indicator signal through excessive capacity. Based on these results, Level~2 is selected for subsequent layers as it represents the optimal accuracy-efficiency trade-off.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{experiments_new/figures/paper_figures/v0.5/figure4_architecture_scaling_v2.png}
+    \caption{Model scale vs. MIM improvement rate across four parameter levels (Level 1--4). Left: MAE comparison between Baseline and MIM; Right: improvement rate and MAE reduction. MLP architecture, Mean imputation, MCAR mechanism, 3 seeds.}
+    \label{fig:architecture_scaling}
+\end{figure}
 
 %------------------------------------------------------------------------------
 \subsection{Layer 3: Interaction with Imputation Methods}\label{sec:results_imputation}
@@ -608,12 +620,26 @@ Iterative  & 1.8\%  & 3.6\%  & 5.1\%  & 4.2\% \\
 
 A consistent gradient is observed across imputation strategies (Figure~\ref{fig:improvement_vs_mr}): Mean imputation yields the highest MIM improvement (27.32% at MR = 0.4), followed by Zero (15.05%) and Iterative (3.56%). This finding contradicts the initial hypothesis that simpler imputation strategies amplify MIM benefits; instead, Mean imputation's distribution-preserving property creates the most favorable condition for the model to learn effective indicator--feature interactions. The information-theoretic interpretation is that Mean imputation reduces imputation noise while retaining enough feature uncertainty for the missing indicators to provide complementary signal. Iterative imputation, despite its superior feature reconstruction, may already capture inter-feature correlations that overlap with what the missing indicators would signal, diminishing their marginal value. KNN imputation, notably, produces negative MIM improvements across most missing rates (up to $-57.7\%$ at MR = 0.65), indicating severe distributional distortion that the missing indicators cannot compensate for. This finding has important practical implications: Mean imputation represents the optimal accuracy-complexity trade-off for MIM deployment (see Section~\ref{sec:implications}).
 
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{experiments_new/figures/paper_figures/v0.5/figure3_imputation_gradient_v2.png}
+    \caption{Imputation method comparison under the optimal configuration (MLP, Level 2, MCAR). MAE curves for Zero, Mean, and Iterative imputation under Baseline and MIM strategies across missing rates.}
+    \label{fig:imputation_gradient}
+\end{figure}
+
 %------------------------------------------------------------------------------
 \subsection{Layer 4: Generalization Across Missing Mechanisms}\label{sec:results_mechanisms}
 
 The fourth layer tests whether MIM effectiveness is robust across different missing data generation processes. Under the fully determined configuration (MLP, Level 2, Mean imputation, 3 seeds), three missing mechanisms are compared: MCAR (random sensor dropouts), MAR (missingness dependent on observed features), and MNAR (missingness dependent on feature's own value).
 
 The mechanism comparison is shown in Figure~\ref{fig:greedy_ablation}(d) and detailed in Table~\ref{tab:mechanism_comparison}. MIM demonstrates consistent improvement across all three missing mechanisms (27.32\% for MCAR, 24.61\% for MAR, 20.38\% for MNAR at MR = 0.4). The relatively small variance ($\approx$7\%) across mechanisms indicates that MIM's effectiveness is primarily driven by the \emph{pattern} of missingness (encoded in the binary indicators) rather than the specific mechanism generating that pattern.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{experiments_new/figures/paper_figures/v0.5/figure2_missing_mechanisms_v2.png}
+    \caption{MAE comparison across three missing data mechanisms (MCAR, MAR, MNAR) under Baseline and MIM strategies. MLP + Level 2 + Mean imputation, 3 seeds.}
+    \label{fig:missing_mechanisms}
+\end{figure}
 
 \begin{table}[!htbp]
 \centering
@@ -641,6 +667,13 @@ The slight degradation from MCAR to MNAR suggests that when missingness is corre
 \subsection{Layer 5: Statistical Robustness Verification}\label{sec:results_robustness}
 
 Given that Layers 1--4 exhibit consistent trends with relatively low cross-seed variance (3 seeds per condition), Layer 5 with additional random seeds was deemed unnecessary. The 3-seed validation provides sufficient statistical reliability for the main findings: all reported improvements are robust across random initializations, and the layer-wise selection decisions are not artifacts of a specific seed. Future work may revisit Layer 5 for large-scale validation if deployment-scale statistical guarantees are required.
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{experiments_new/figures/paper_figures/v0.5/figure5_statistical_significance.png}
+    \caption{Statistical significance of MIM improvement across layers. Wilcoxon signed-rank test results comparing Baseline and MIM MAE distributions across seeds and missing rates. Stars denote significance levels.}
+    \label{fig:statistical_significance}
+\end{figure}
 
 %------------------------------------------------------------------------------
 \subsection{BMS-Oriented Configuration Recommendations}\label{sec:bms}
