@@ -13,44 +13,64 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 10px;
+            padding: 15px;
         }
         .container {
             background: white;
-            width: 600px;
-            padding: 12px 15px;
+            width: 700px;
+            padding: 15px 20px;
             border-radius: 6px;
             border: 1px solid #e9ecef;
         }
         
-        /* Single row layout */
-        .content-row {
+        .content-wrapper {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            gap: 25px;
         }
         
-        /* Compact block */
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #1a202c;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* Block styles */
         .block {
-            border-radius: 5px;
+            border-radius: 6px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }
         
         .block-title {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 700;
             color: #fff;
         }
         .block-subtitle {
-            font-size: 9px;
+            font-size: 10px;
             color: rgba(255,255,255,0.9);
-            margin-top: 1px;
+            margin-top: 2px;
         }
         
         /* Colors */
@@ -60,14 +80,32 @@
         .indicator-block { background: #C5504B; }
         .concat-block { background: #7030A0; }
         
-        /* Size variants */
-        .size-s { width: 55px; height: 45px; }
-        .size-m { width: 70px; height: 45px; }
-        .size-l { width: 85px; height: 45px; }
+        /* Sizes */
+        .block-input { width: 140px; height: 50px; }
+        .block-model { width: 100px; height: 60px; }
+        .block-output { width: 100px; height: 45px; }
+        .block-small { width: 85px; height: 50px; }
+        .block-concat { width: 160px; height: 45px; }
         
         /* Arrow */
+        .arrow-v {
+            width: 2px;
+            height: 12px;
+            background: #5B5B5B;
+            position: relative;
+        }
+        .arrow-v::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -4px;
+            border-top: 6px solid #5B5B5B;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+        
         .arrow-h {
-            width: 12px;
+            width: 15px;
             height: 2px;
             background: #5B5B5B;
             position: relative;
@@ -76,94 +114,108 @@
             content: '';
             position: absolute;
             right: 0;
-            top: -3px;
-            border-left: 5px solid #5B5B5B;
-            border-top: 4px solid transparent;
-            border-bottom: 4px solid transparent;
+            top: -4px;
+            border-left: 6px solid #5B5B5B;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
         }
         
         /* Plus */
-        .plus {
-            font-size: 14px;
+        .plus-sign {
+            font-size: 18px;
             font-weight: 700;
             color: #5B5B5B;
         }
         
-        /* Bracket for concat */
-        .bracket {
-            font-size: 24px;
-            font-weight: 300;
+        /* Input row for MIM */
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Concat indicator */
+        .concat-arrow {
+            font-size: 11px;
             color: #5B5B5B;
-            line-height: 1;
-        }
-        
-        /* Label */
-        .label {
-            font-size: 10px;
-            color: #4a5568;
             font-weight: 600;
-            text-align: center;
-            min-width: 20px;
         }
         
-        /* Section divider */
-        .divider {
-            width: 1px;
-            height: 60px;
-            background: #e9ecef;
-            margin: 0 5px;
+        /* Dim badge */
+        .dim-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(0,0,0,0.25);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 3px;
         }
         
         sub {
-            font-size: 0.7em;
+            font-size: 0.75em;
             vertical-align: sub;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="content-row">
-            <!-- Baseline -->
-            <div class="label">(a)</div>
-            <div class="block size-m input-block">
-                <div class="block-title">X&#770;</div>
-                <div class="block-subtitle">16D</div>
-            </div>
-            <div class="arrow-h"></div>
-            <div class="block size-s model-block">
-                <div class="block-title"><em>f</em></div>
-            </div>
-            <div class="arrow-h"></div>
-            <div class="block size-s output-block">
-                <div class="block-title"><em>y</em>&#770;</div>
+        <div class="content-wrapper">
+            <!-- Left: Baseline -->
+            <div class="panel">
+                <div class="panel-title">(a) Baseline: Imputation Only</div>
+                <div class="flow">
+                    <div class="block block-input input-block">
+                        <div class="block-title">X&#770;</div>
+                        <div class="block-subtitle">Imputed Features</div>
+                        <div class="dim-badge">16D</div>
+                    </div>
+                    <div class="arrow-v"></div>
+                    <div class="block block-model model-block">
+                        <div class="block-title"><em>f</em>(&middot;)</div>
+                        <div class="block-subtitle">Neural Network</div>
+                    </div>
+                    <div class="arrow-v"></div>
+                    <div class="block block-output output-block">
+                        <div class="block-title"><em>y</em>&#770;</div>
+                        <div class="block-subtitle">SOH Prediction</div>
+                    </div>
+                </div>
             </div>
             
-            <!-- Divider -->
-            <div class="divider"></div>
-            
-            <!-- MIM -->
-            <div class="label">(b)</div>
-            <div class="block size-s input-block">
-                <div class="block-title">X&#770;</div>
-                <div class="block-subtitle">16D</div>
-            </div>
-            <div class="plus">+</div>
-            <div class="block size-s indicator-block">
-                <div class="block-title"><em>M</em></div>
-                <div class="block-subtitle">16D</div>
-            </div>
-            <div class="bracket">&rarr;</div>
-            <div class="block size-l concat-block">
-                <div class="block-title">[<em>X&#770;</em>|<em>M</em>]</div>
-                <div class="block-subtitle">32D</div>
-            </div>
-            <div class="arrow-h"></div>
-            <div class="block size-s model-block">
-                <div class="block-title"><em>f</em></div>
-            </div>
-            <div class="arrow-h"></div>
-            <div class="block size-s output-block">
-                <div class="block-title"><em>y</em>&#770;</div>
+            <!-- Right: MIM -->
+            <div class="panel">
+                <div class="panel-title">(b) MIM: Imputation + Missing Indicator</div>
+                <div class="flow">
+                    <div class="input-row">
+                        <div class="block block-small input-block">
+                            <div class="block-title">X&#770;</div>
+                            <div class="block-subtitle">Imputed</div>
+                            <div class="dim-badge">16D</div>
+                        </div>
+                        <div class="plus-sign">+</div>
+                        <div class="block block-small indicator-block">
+                            <div class="block-title"><em>M</em></div>
+                            <div class="block-subtitle">Indicator</div>
+                            <div class="dim-badge">16D</div>
+                        </div>
+                    </div>
+                    <div class="concat-arrow">↓ Concatenate ↓</div>
+                    <div class="block block-concat concat-block">
+                        <div class="block-title">[<em>X&#770;</em> | <em>M</em>]</div>
+                        <div class="dim-badge">32D</div>
+                    </div>
+                    <div class="arrow-v"></div>
+                    <div class="block block-model model-block">
+                        <div class="block-title"><em>f</em>(&middot;)</div>
+                        <div class="block-subtitle">Neural Network</div>
+                    </div>
+                    <div class="arrow-v"></div>
+                    <div class="block block-output output-block">
+                        <div class="block-title"><em>y</em>&#770;</div>
+                        <div class="block-subtitle">SOH Prediction</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
