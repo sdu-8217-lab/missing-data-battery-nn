@@ -310,8 +310,8 @@ def main():
     plt.tight_layout()
     
     # 保存
-    output_png = OUTPUT_DIR / 'figure1_mim_core_effect_v2.png'
-    output_pdf = OUTPUT_DIR / 'figure1_mim_core_effect_v2.pdf'
+    output_png = OUTPUT_DIR / 'mim_core_effect.png'
+    output_pdf = OUTPUT_DIR / 'mim_core_effect.pdf'
     
     plt.savefig(output_png, dpi=300, bbox_inches='tight', facecolor='white')
     plt.savefig(output_pdf, bbox_inches='tight', facecolor='white')

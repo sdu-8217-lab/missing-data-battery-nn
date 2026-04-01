@@ -43,7 +43,7 @@ def main():
     parser = argparse.ArgumentParser(description='Convert HTML to PNG')
     parser.add_argument('--html', type=Path, default=Path('figure6_experimental_flow.html'),
                         help='Input HTML file path')
-    parser.add_argument('--output', type=Path, default=Path('../figure6_experimental_flow_v2.png'),
+    parser.add_argument('--output', type=Path, default=Path('../experimental_flow.png'),
                         help='Output PNG file path')
     parser.add_argument('--width', type=int, default=1400, help='Viewport width')
     parser.add_argument('--height', type=int, default=900, help='Viewport height')

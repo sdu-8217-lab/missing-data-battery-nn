@@ -236,8 +236,8 @@ def main():
     plt.tight_layout()
     
     # 保存
-    output_png = OUTPUT_DIR / 'figure5_statistical_significance.png'
-    output_pdf = OUTPUT_DIR / 'figure5_statistical_significance.pdf'
+    output_png = OUTPUT_DIR / 'statistical_significance.png'
+    output_pdf = OUTPUT_DIR / 'statistical_significance.pdf'
     
     plt.savefig(output_png, dpi=300, bbox_inches='tight', facecolor='white')
     plt.savefig(output_pdf, dpi=300, bbox_inches='tight', facecolor='white')

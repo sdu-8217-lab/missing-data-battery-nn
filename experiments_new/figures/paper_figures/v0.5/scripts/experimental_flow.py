@@ -208,8 +208,8 @@ def main():
     ax.legend(handles=legend_elements, loc='lower left', fontsize=9, frameon=True)
     
     # ==================== 保存 ====================
-    output_png = OUTPUT_DIR / 'figure6_experimental_flow.png'
-    output_pdf = OUTPUT_DIR / 'figure6_experimental_flow.pdf'
+    output_png = OUTPUT_DIR / 'experimental_flow.png'
+    output_pdf = OUTPUT_DIR / 'experimental_flow.pdf'
     
     plt.savefig(output_png, dpi=300, bbox_inches='tight', facecolor='white')
     plt.savefig(output_pdf, dpi=300, bbox_inches='tight', facecolor='white')
