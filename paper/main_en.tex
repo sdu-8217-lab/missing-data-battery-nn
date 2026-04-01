@@ -583,12 +583,12 @@ Unlike Layer~1, this layer does not perform ``selection'' but rather characteriz
 
 The inverted-U trend across model scales is clearly visible in Figure~\ref{fig:greedy_ablation}(b). At Level 2 (20,537 parameters), MIM achieves the highest improvement rate of 27.32%, while the improvement is negative at Level~1 (-2.19%, 5,953 parameters) and lower at Level~3 (19.06%, 20,537 parameters) and Level~4 (4.79%, 44,529 parameters). The overall trend exhibits an inverted-U pattern with respect to model scale, suggesting that the smallest models (Level 1) lack sufficient capacity to leverage the MIM indicator as an additional input channel, effectively treating it as noise that degrades performance. Conversely, the largest models (Level 4) are over-parameterized relative to the effective information that MIM can provide, diluting the indicator signal through excessive capacity. Based on these results, Level~2 is selected for subsequent layers as it represents the optimal accuracy-efficiency trade-off.
 
-\begin{figure}[!htbp]
+\begin{figure*}[!htbp]
     \centering
-    \includegraphics[width=0.75\textwidth]{figure4_architecture_scaling_v2.png}
+    \includegraphics[width=0.9\textwidth]{figure4_architecture_scaling_v2.png}
     \caption{Model scale vs. MIM improvement rate across four parameter levels (Level 1--4). Left: MAE comparison between Baseline and MIM; Right: improvement rate and MAE reduction. MLP architecture, Mean imputation, MCAR mechanism, 3 seeds.}
     \label{fig:architecture_scaling}
-\end{figure}
+\end{figure*}
 
 %------------------------------------------------------------------------------
 \subsection{Layer 3: Interaction with Imputation Methods}\label{sec:results_imputation}
