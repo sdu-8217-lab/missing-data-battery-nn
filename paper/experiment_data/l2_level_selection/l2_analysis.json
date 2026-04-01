@@ -1,0 +1,41 @@
+{
+  "analysis": {
+    "level_1": {
+      "baseline_mean": 0.001395074912242441,
+      "baseline_std": 0.0002573520167017634,
+      "mim_mean": 0.0014256960376399265,
+      "mim_std": 0.00028288117008137776,
+      "improvement": -2.1949448827995357,
+      "param_count": 5953
+    },
+    "level_2": {
+      "baseline_mean": 0.001909133775545339,
+      "baseline_std": 0.000528304932649439,
+      "mim_mean": 0.001387527172178355,
+      "mim_std": 0.00021261154949709008,
+      "improvement": 27.321637176419888,
+      "param_count": 11801
+    },
+    "level_3": {
+      "baseline_mean": 0.0022368054920714614,
+      "baseline_std": 0.000294569010807134,
+      "mim_mean": 0.0018104655023393624,
+      "mim_std": 0.0005512185361297319,
+      "improvement": 19.060217405728647,
+      "param_count": 20537
+    },
+    "level_4": {
+      "baseline_mean": 0.0014946113558713546,
+      "baseline_std": 0.00033419614900938484,
+      "mim_mean": 0.0014229852096628512,
+      "mim_std": 0.00030339611797346703,
+      "improvement": 4.7922923860527975,
+      "param_count": 44529
+    }
+  },
+  "best_level": "level_2",
+  "best_improvement": 27.321637176419888,
+  "worst_level": "level_1",
+  "worst_improvement": -2.1949448827995357,
+  "timestamp": "2026-03-31T15:29:38"
+}

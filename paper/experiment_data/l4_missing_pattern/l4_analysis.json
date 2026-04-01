@@ -1,0 +1,42 @@
+{
+  "analysis": {
+    "MCAR": {
+      "baseline_mean": 0.001909133775545339,
+      "baseline_std": 0.000528304932649439,
+      "mim_mean": 0.001387527172178355,
+      "mim_std": 0.00021261154949709008,
+      "improvement": 27.321637176419888
+    },
+    "MAR": {
+      "baseline_mean": 0.0013355815240412392,
+      "baseline_std": 1.4621540625163072e-05,
+      "mim_mean": 0.0010068524021045095,
+      "mim_std": 5.574417707334652e-05,
+      "improvement": 24.613182798609856
+    },
+    "MNAR": {
+      "baseline_mean": 0.002445294436513069,
+      "baseline_std": 0.00033127583455536564,
+      "mim_mean": 0.0019470019315669775,
+      "mim_std": 0.0006038376276795806,
+      "improvement": 20.377607600360985
+    }
+  },
+  "best_pattern": "MCAR",
+  "best_improvement": 27.321637176419888,
+  "worst_pattern": "MNAR",
+  "worst_improvement": 20.377607600360985,
+  "ranking": [
+    "MCAR",
+    "MAR",
+    "MNAR"
+  ],
+  "final_config": {
+    "architecture": "MLP",
+    "level": "level_2",
+    "imputation": "mean",
+    "missing_pattern": "MCAR",
+    "param_count": 11801
+  },
+  "timestamp": "2026-04-01T02:01:47"
+}

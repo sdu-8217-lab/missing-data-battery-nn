@@ -1,0 +1,30 @@
+{
+  "recommendation": "mlp",
+  "analysis": {
+    "mlp": {
+      "baseline_mean": 0.001909133775545339,
+      "baseline_std": 0.000528304932649439,
+      "mim_mean": 0.001387527172178355,
+      "mim_std": 0.00021261154949709008,
+      "improvement": 27.321637176419888,
+      "param_count": 11801
+    },
+    "cnn": {
+      "baseline_mean": 0.001416004353424926,
+      "baseline_std": 0.0002034016040315302,
+      "mim_mean": 0.0013699128973253792,
+      "mim_std": 0.00023507021699644602,
+      "improvement": 3.2550363272587597,
+      "param_count": 12249
+    },
+    "lstm": {
+      "baseline_mean": 0.0014890516991488169,
+      "baseline_std": 7.308132947983771e-05,
+      "mim_mean": 0.0014692922825571208,
+      "mim_std": 0.000192116490401537,
+      "improvement": 1.3269798894820855,
+      "param_count": 10957
+    }
+  },
+  "timestamp": "2026-03-31T13:54:46"
+}

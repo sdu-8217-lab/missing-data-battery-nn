@@ -1,0 +1,43 @@
+{
+  "analysis": {
+    "zero": {
+      "baseline_mean": 0.0025133119420850144,
+      "baseline_std": 0.0005695738722224197,
+      "mim_mean": 0.0021350674730307123,
+      "mim_std": 0.0006083020539438637,
+      "improvement": 15.049642772974488
+    },
+    "mean": {
+      "baseline_mean": 0.001909133775545339,
+      "baseline_std": 0.000528304932649439,
+      "mim_mean": 0.001387527172178355,
+      "mim_std": 0.00021261154949709008,
+      "improvement": 27.321637176419888
+    },
+    "knn": {
+      "baseline_mean": 0.001386441246480251,
+      "baseline_std": 0.0006321363458101467,
+      "mim_mean": 0.0008896975979759102,
+      "mim_std": 0.0001447541284780676,
+      "improvement": 35.82868367234605
+    },
+    "iterative": {
+      "baseline_mean": 0.0008086085416833365,
+      "baseline_std": 0.0001619308811759787,
+      "mim_mean": 0.0007798541457910407,
+      "mim_std": 0.00016810247456758835,
+      "improvement": 3.5560341512638227
+    }
+  },
+  "best_imputation": "knn",
+  "best_improvement": 35.82868367234605,
+  "worst_imputation": "iterative",
+  "worst_improvement": 3.5560341512638227,
+  "ranking": [
+    "knn",
+    "mean",
+    "zero",
+    "iterative"
+  ],
+  "timestamp": "2026-03-31T16:45:01"
+}

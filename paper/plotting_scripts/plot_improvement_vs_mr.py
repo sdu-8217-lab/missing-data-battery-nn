@@ -19,7 +19,7 @@ matplotlib.rcParams['ytick.labelsize'] = 9
 matplotlib.rcParams['legend.fontsize'] = 10
 
 # 加载 L3 MR 分析数据
-l3_mr_file = Path(__file__).parent.parent / "results" / "l3_mr_analysis.json"
+l3_mr_file = Path(__file__).parent.parent / "experiment_data" / "l3_mr_analysis.json"
 if l3_mr_file.exists():
     with open(l3_mr_file, 'r') as f:
         data = json.load(f)
