@@ -155,7 +155,7 @@ def train_model(arch, config_type, seed, imputation, pattern):
     
     cmd = [
         sys.executable,
-        "scripts/train_l1_models_fixed.py",
+        str(BASE_DIR / "scripts" / "train_l1_models_fixed.py"),
         "--config", str(exp_config),
         "--model-config", str(model_config),
         "--seed", str(seed),

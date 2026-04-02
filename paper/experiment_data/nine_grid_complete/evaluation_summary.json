@@ -1,0 +1,2162 @@
+[
+  {
+    "model": "nine_lstm_level_2_MNAR_knn_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.9857664259296366,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_zero_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04687591184167723,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_knn_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.035917029373616155,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_iterative_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.9980794519745342,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_mean_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04543390356756249,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_zero_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.6894484645685736,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_knn_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.07121366700608915,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_iterative_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04075299733677142,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_iterative_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 1.0153064366085616,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_iterative_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 1.0162365887557856,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_iterative_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04713568540715049,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_iterative_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0599666018282763,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_knn_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.044320963619695807,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_zero_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.09864619187681405,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_mean_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0287809516105864,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_mean_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.03386511427327701,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_knn_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.7777938655576292,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_mean_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.7164994922367235,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_mean_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04210197790617933,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_zero_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.0448410146020393,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_iterative_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.046866137321260534,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_mean_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04268104576886192,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_mean_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0827986122597857,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_knn_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8503805298013776,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_mean_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04531209890402506,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_iterative_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0470324174401657,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_mean_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.045805097361445314,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_mean_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.03835328785199406,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_knn_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.08599882048229712,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_knn_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 1.0055710724357578,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_knn_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.044340713880742795,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_knn_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.038783185846878794,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_zero_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.06463786002997118,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_knn_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0334655041609022,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_zero_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.08125815983338351,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_zero_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.15118314922728637,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_zero_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.05232323795093626,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_iterative_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04443300362932584,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_knn_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.04436276155898387,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_iterative_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.03983511278024741,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_iterative_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.9907012725982878,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_iterative_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.043080583369227196,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_knn_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.8077796431992268,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_knn_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.0409116698637561,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_zero_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04398746644973385,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_mean_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.047814168555285745,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_iterative_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.800897864237493,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_zero_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.0670122997034157,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_mean_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0534290354746603,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_iterative_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.03061667864670341,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_iterative_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.045829775874726,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_mean_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.7665496053908085,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_zero_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.7846139776323056,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_zero_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04175455948367501,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_mean_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04123537005398972,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_zero_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.34425764627551214,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_mean_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.047339474941433965,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_mean_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.04496712672559864,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_knn_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.03849086641286842,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_zero_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.05052162883568468,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_zero_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04938560308689286,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_zero_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.6209689922779146,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_zero_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.5623421761247527,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_mean_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.7245015820634076,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_knn_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8417271055132803,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_mean_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.8136286215022075,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_mean_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.7287022864591787,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_knn_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.05108760602442625,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_mean_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.04461072174619828,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_knn_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04617417801103024,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_zero_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.42219727397664353,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_zero_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.05745868679946389,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_knn_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.04056845492277522,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_iterative_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.043916318159638056,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_knn_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.0718320742151914,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_zero_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.045053410047838756,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_iterative_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0153526724118802,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_knn_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 1.0019001544647963,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_iterative_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.7974931685007585,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_iterative_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.041045722932507994,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_mean_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04433177228787132,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_mean_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.042587079495012344,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_mean_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.7763252886746144,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_zero_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.1732523556678042,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_zero_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.5767939728882099,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_zero_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.07019949985772463,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_zero_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.10345241127247636,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_iterative_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.050826790162205045,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_knn_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04059097788058554,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_mean_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04209960237246837,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_zero_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.5541808051254535,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_iterative_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.9611065308366034,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_iterative_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.03978635580633801,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_knn_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.7753900270956781,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_zero_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04471390870534956,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_iterative_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.04425910689831485,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_zero_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.5277211571785522,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_zero_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.6737071506043145,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_zero_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.16767989645382672,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_zero_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.5219167544409764,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_mean_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04507362701396465,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_knn_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.044852951876232734,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_mean_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04452851553550034,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_mean_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.02188280215653769,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_iterative_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.06340951133737376,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_iterative_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04366628529240741,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_mean_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.0444010360578095,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_iterative_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8812788849450124,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_mean_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04338376791124609,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_knn_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0116107528096618,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_zero_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.672343791604761,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_zero_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.043743170960922784,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_mean_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.042036397409629264,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_knn_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.017444573612448628,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_iterative_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.7937970789883351,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_mean_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.04468172558825642,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_knn_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.9795560701552841,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_mean_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8342455359909748,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_zero_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04307165997470106,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_knn_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.03876557915925269,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_iterative_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04251682777416385,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_zero_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.23583760702726517,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_zero_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.5243208266337291,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_zero_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.8065814827861623,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_iterative_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.04011709194716317,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_mean_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04255602730746733,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_mean_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.9968392917639982,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_mean_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8507480171409746,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_knn_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.7322267961588999,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_mean_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.044132454169603375,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_mean_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.9500864590320799,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_knn_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 1.0488769682662133,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_iterative_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04552628571639119,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_knn_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.043662226395693046,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_iterative_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04752570929189012,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_iterative_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.042843776213172535,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_mean_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.946684080621979,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_mean_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.022392780084287762,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_knn_baseline_seed1",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.041019207097423745,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_knn_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 1.0040261380814275,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_knn_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04433724449933588,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_knn_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.047413178463257856,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_zero_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.7926888507988239,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_knn_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.039821131159798816,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_zero_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.04497648711122566,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_iterative_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.046849268651486586,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_mean_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04536471308622589,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_zero_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.07326663406379409,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_iterative_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.7845099675271725,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_knn_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.058647848025912906,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_knn_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04096696886264426,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_mean_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04259964841796349,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_iterative_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 1.0396428519025311,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_iterative_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.039303437883510685,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_knn_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.052905113523998695,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_mean_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 1.0508328610588713,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_mean_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04485016609923772,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_iterative_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.036415862996562,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_iterative_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8578849431959291,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_knn_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.04068845322346328,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_iterative_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04530710679655334,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_zero_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.8519241592311241,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_knn_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.8041914510343289,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_knn_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.030089387172321225,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_iterative_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.038973226132822086,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_mean_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.931505393927884,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_mean_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.04207229091910516,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_zero_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04157912186678694,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_iterative_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.8027110634125245,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_mean_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.026061113697015702,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_knn_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04052777706070434,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_iterative_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8111968370888447,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_knn_baseline_seed1",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.810115832350037,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_iterative_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.7713186259576233,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_knn_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.03969652200774538,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_zero_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.08255521539231851,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_iterative_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04205020156875506,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MNAR_zero_mim_seed0",
+    "arch": "lstm",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.5928206880085432,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_zero_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.07001363099745948,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_iterative_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04173105142204667,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_iterative_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.058985969263280556,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_zero_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.04524906504034173,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_mean_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8749023492642792,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_knn_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04047248416702492,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_zero_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.5801850430483335,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_knn_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 1.0205504100229261,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_iterative_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.035176163471277694,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_mean_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 1.0370955431979605,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_zero_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04272805160663015,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_iterative_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.041305538976255024,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_mean_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.04493393635025527,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_iterative_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.044735555595352514,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_zero_mim_seed1",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.602526265642426,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_iterative_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.03811523643766493,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_zero_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.04444551062209214,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_mean_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04612995301114365,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_mean_baseline_seed2",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.04246727868945893,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_knn_baseline_seed1",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 1,
+    "avg_mae": 0.04450494163204319,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MNAR_mean_mim_seed2",
+    "arch": "mlp",
+    "pattern": "MNAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.043205025467869314,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_zero_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.06542592228528694,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_zero_mim_seed2",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.8615779238555645,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_mean_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.04585485852099308,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_knn_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04435966064345034,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MCAR_zero_baseline_seed0",
+    "arch": "lstm",
+    "pattern": "MCAR",
+    "imputation": "zero",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.8164862969744493,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MAR_knn_mim_seed0",
+    "arch": "cnn",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.0372638148193384,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_mean_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "mean",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.04387433349874092,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_iterative_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04570747635178372,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_knn_baseline_seed2",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.03922375779909293,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MCAR_knn_baseline_seed0",
+    "arch": "cnn",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.04614440416149544,
+    "status": "success"
+  },
+  {
+    "model": "nine_lstm_level_2_MAR_knn_baseline_seed2",
+    "arch": "lstm",
+    "pattern": "MAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 2,
+    "avg_mae": 0.8617948251579022,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_zero_mim_seed1",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.3500885685427396,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_iterative_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.04136918041387374,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MAR_iterative_mim_seed0",
+    "arch": "mlp",
+    "pattern": "MAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 0,
+    "avg_mae": 0.054876439749873364,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_zero_mim_seed1",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "zero",
+    "config": "mim",
+    "seed": 1,
+    "avg_mae": 0.058798119104711055,
+    "status": "success"
+  },
+  {
+    "model": "nine_cnn_level_2_MNAR_iterative_mim_seed2",
+    "arch": "cnn",
+    "pattern": "MNAR",
+    "imputation": "iterative",
+    "config": "mim",
+    "seed": 2,
+    "avg_mae": 0.048368446864827254,
+    "status": "success"
+  },
+  {
+    "model": "nine_mlp_level_2_MCAR_knn_baseline_seed0",
+    "arch": "mlp",
+    "pattern": "MCAR",
+    "imputation": "knn",
+    "config": "baseline",
+    "seed": 0,
+    "avg_mae": 0.0445788059099854,
+    "status": "success"
+  }
+]
