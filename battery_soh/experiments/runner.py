@@ -1,16 +1,14 @@
 """Experiment runner implementing the 9-Level Architecture."""
 
 import csv
-import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
-import torch
 
 from battery_soh import Seed, MissingRate
-from battery_soh.core.constants import set_seed, XJTU_BATCHES, MISSING_MODES, IMPUTATION_METHODS
+from battery_soh.core.constants import set_seed
 from battery_soh.data import XJTULoader, BatteryWiseSplit
 from battery_soh.models import create_model, count_parameters
 from battery_soh.training import LightningTrainer, TrainingConfig
@@ -32,10 +30,18 @@ class ExperimentConfig:
 
 @dataclass  
 class EvalConfig:
-    """L7-L9 configuration (Below the Divide - Testing)."""
+    """L7-L9 configuration (Below the Divide - Testing).
+    
+    Supports A1/A2 experiments:
+    - mim_variant: "standard", "random", "shuffled", "copy" (for A1)
+    - block_size: For block missing pattern (for A2)
+    """
     missing_mode: str
     missing_rate: float
     imputation_method: str
+    # A1/A2 extensions
+    mim_variant: str = "standard"
+    block_size: Optional[int] = None
 
 
 @dataclass
@@ -51,6 +57,9 @@ class ExperimentResult:
     test_missing_mode: str
     test_missing_rate: float
     imputation_method: str
+    # Extensions
+    mim_variant: str
+    block_size: Optional[int]
     # Metrics
     mae: float
     rmse: float
@@ -76,13 +85,7 @@ class ExperimentRunner:
     ) -> ExperimentResult:
         """Run a single experiment (L1-L6 train + L7-L9 evaluate).
         
-        Args:
-            config: L1-L6 training configuration
-            eval_config: L7-L9 evaluation configuration. If None, uses test MR=0.0
-            verbose: Print progress
-            
-        Returns:
-            ExperimentResult with all metrics
+        Supports A1 (MIM ablation) and A2 (block missing) experiments.
         """
         # Set seed (L1)
         set_seed(Seed(config.seed))
@@ -137,12 +140,20 @@ class ExperimentRunner:
         if eval_config is None:
             eval_config = EvalConfig("MCAR", 0.0, "mean")
         
-        evaluator = Evaluator(
-            missing_mode=eval_config.missing_mode,
-            missing_rate=eval_config.missing_rate,
-            imputation_method=eval_config.imputation_method,
-            use_mim=config.use_mim
-        )
+        # Build evaluator kwargs
+        evaluator_kwargs = {
+            "missing_mode": eval_config.missing_mode,
+            "missing_rate": eval_config.missing_rate,
+            "imputation_method": eval_config.imputation_method,
+            "use_mim": config.use_mim,
+            "mim_variant": eval_config.mim_variant,
+        }
+        
+        # Add block_size if specified (for A2)
+        if eval_config.block_size is not None:
+            evaluator_kwargs["block_size"] = eval_config.block_size
+        
+        evaluator = Evaluator(**evaluator_kwargs)
         
         metrics = evaluator.evaluate(model, test.X, test.y, Seed(config.seed))
         
@@ -158,6 +169,8 @@ class ExperimentRunner:
             test_missing_mode=eval_config.missing_mode,
             test_missing_rate=eval_config.missing_rate,
             imputation_method=eval_config.imputation_method,
+            mim_variant=eval_config.mim_variant,
+            block_size=eval_config.block_size,
             mae=metrics.mae,
             rmse=metrics.rmse,
             r2=metrics.r2,
@@ -175,12 +188,7 @@ class ExperimentRunner:
         eval_configs: list[EvalConfig],
         output_file: str = "results.csv"
     ) -> Path:
-        """Run batch experiments (Cartesian product of L1-L6 × L7-L9).
-        
-        This implements the efficient evaluation strategy from meta.md:
-        - Train models for L1-L6 combinations
-        - Evaluate each trained model across all L7-L9 combinations
-        """
+        """Run batch experiments (Cartesian product of L1-L6 × L7-L9)."""
         results_file = self.output_dir / output_file
         
         # Write header
@@ -189,6 +197,7 @@ class ExperimentRunner:
             writer.writerow([
                 'seed', 'batch', 'model_type', 'use_mim', 'train_missing_rate',
                 'test_missing_mode', 'test_missing_rate', 'imputation_method',
+                'mim_variant', 'block_size',
                 'mae', 'rmse', 'r2', 'n_params', 'training_epochs', 'best_val_loss'
             ])
         
@@ -212,8 +221,6 @@ class ExperimentRunner:
                         )
                         
                         try:
-                            model_result = self.run(train_config, verbose=False)
-                            
                             # L7-L9: Evaluate trained model across all test conditions
                             for eval_cfg in eval_configs:
                                 result = self.run(train_config, eval_cfg, verbose=False)
@@ -225,13 +232,17 @@ class ExperimentRunner:
                                         result.seed, result.batch, result.model_type,
                                         result.use_mim, result.train_missing_rate,
                                         result.test_missing_mode, result.test_missing_rate,
-                                        result.imputation_method, result.mae, result.rmse,
-                                        result.r2, result.n_params, result.training_epochs,
+                                        result.imputation_method, result.mim_variant,
+                                        result.block_size if result.block_size else '',
+                                        result.mae, result.rmse, result.r2,
+                                        result.n_params, result.training_epochs,
                                         result.best_val_loss
                                     ])
                                 
                         except Exception as e:
                             print(f"Error: {e}")
+                            import traceback
+                            traceback.print_exc()
                             continue
         
         print(f"\n{'='*60}")
@@ -250,14 +261,11 @@ def run_experiment(
     test_missing_mode: str = "MCAR",
     test_missing_rate: float = 0.3,
     imputation_method: str = "mean",
+    mim_variant: str = "standard",
+    block_size: Optional[int] = None,
     epochs: int = 200
 ) -> ExperimentResult:
-    """Quick function to run a single experiment.
-    
-    Example:
-        >>> result = run_experiment(seed=42, model_type="mlp", use_mim=True)
-        >>> print(f"MAE: {result.mae:.4f}")
-    """
+    """Quick function to run a single experiment."""
     runner = ExperimentRunner()
     config = ExperimentConfig(
         seed=seed,
@@ -269,6 +277,8 @@ def run_experiment(
     eval_config = EvalConfig(
         missing_mode=test_missing_mode,
         missing_rate=test_missing_rate,
-        imputation_method=imputation_method
+        imputation_method=imputation_method,
+        mim_variant=mim_variant,
+        block_size=block_size
     )
     return runner.run(config, eval_config)
