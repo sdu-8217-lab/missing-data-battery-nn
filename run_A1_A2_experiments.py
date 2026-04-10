@@ -134,14 +134,24 @@ def run_single_experiment(
     n_params = count_parameters(model)
     print(f"Model: {model_type}, {n_params:,} params")
     
+    # Prepare training data with MIM mask (all zeros since training data is complete)
+    train_X = train.X
+    val_X = val.X
+    if True:  # Always add MIM mask for A1/A2 experiments
+        # Add zero mask (no missing in training data)
+        train_mask = np.zeros_like(train_X, dtype=np.float32)
+        val_mask = np.zeros_like(val_X, dtype=np.float32)
+        train_X = np.concatenate([train_X, train_mask], axis=1)
+        val_X = np.concatenate([val_X, val_mask], axis=1)
+    
     # Train
     train_config = TrainingConfig(epochs=epochs, patience=30)
     trainer = LightningTrainer(train_config)
     
     result = trainer.fit(
         model,
-        train_data=(train.X, train.y),
-        val_data=(val.X, val.y)
+        train_data=(train_X, train.y),
+        val_data=(val_X, val.y)
     )
     
     print(f"Training complete: {result.total_epochs} epochs, best_val_loss={result.best_val_loss:.4f}")
@@ -151,7 +161,7 @@ def run_single_experiment(
         "missing_mode": config.get("missing_mode", "MCAR"),
         "missing_rate": config.get("missing_rate", 0.4),
         "imputation_method": "mean",
-        "use_mim": config.get("use_mim", True),
+        "use_mim": True,
         "mim_variant": config.get("mim_variant", "standard"),
     }
     
