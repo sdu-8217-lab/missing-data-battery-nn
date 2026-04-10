@@ -1,4 +1,4 @@
-"""Core module - Types, interfaces, and constants."""
+"""Core module - Types and constants."""
 
 from battery_soh.core.types import (
     Seed,
@@ -12,13 +12,6 @@ from battery_soh.core.types import (
     Mask,
     BatteryIds,
 )
-from battery_soh.core.interfaces import (
-    DataLoader,
-    Model,
-    Trainer,
-    MissingGenerator,
-    Imputer,
-)
 from battery_soh.core.constants import (
     N_FEATURES,
     N_FEATURES_WITH_MIM,
@@ -26,6 +19,8 @@ from battery_soh.core.constants import (
     MISSING_MODES,
     IMPUTATION_METHODS,
     MODEL_TYPES,
+    MIN_PARAMS,
+    MAX_PARAMS,
     set_seed,
 )
 
@@ -41,12 +36,6 @@ __all__ = [
     "Labels",
     "Mask",
     "BatteryIds",
-    # Interfaces
-    "DataLoader",
-    "Model",
-    "Trainer",
-    "MissingGenerator",
-    "Imputer",
     # Constants
     "N_FEATURES",
     "N_FEATURES_WITH_MIM",
@@ -54,6 +43,7 @@ __all__ = [
     "MISSING_MODES",
     "IMPUTATION_METHODS",
     "MODEL_TYPES",
-    # Functions
+    "MIN_PARAMS",
+    "MAX_PARAMS",
     "set_seed",
 ]
