@@ -1,9 +1,0 @@
-# MLP模型默认配置
-name: "MLP"
-model_type: "mlp"
-
-# 隐藏层结构（configs_v3最佳）
-hidden_layers: [192, 96, 48, 24]
-
-# Dropout比率
-dropout: 0.15

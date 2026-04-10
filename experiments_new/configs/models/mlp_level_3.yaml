@@ -1,9 +1,0 @@
-dropout: 0.15
-hidden_layers:
-- 168
-- 104
-level: level_3
-model_type: mlp
-name: MLP Large
-target_params_mim: 23225
-target_params_no_mim: 20537

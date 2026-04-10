@@ -1,8 +1,0 @@
-dropout: 0.2
-hidden_size: 44
-level: level_3
-model_type: lstm
-name: LSTM Large
-num_layers: 2
-target_params_mim: 29613
-target_params_no_mim: 26797

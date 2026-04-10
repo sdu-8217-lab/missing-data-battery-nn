@@ -1,8 +1,0 @@
-dropout: 0.2
-hidden_size: 28
-level: level_1
-model_type: lstm
-name: LSTM Small
-num_layers: 1
-target_params_mim: 6973
-target_params_no_mim: 5181

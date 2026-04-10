@@ -1,8 +1,0 @@
-dropout: 0.2
-hidden_size: 44
-level: level_2
-model_type: lstm
-name: LSTM Medium
-num_layers: 1
-target_params_mim: 13773
-target_params_no_mim: 10957

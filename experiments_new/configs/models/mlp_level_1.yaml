@@ -1,9 +1,0 @@
-dropout: 0.15
-hidden_layers:
-- 80
-- 56
-level: level_1
-model_type: mlp
-name: MLP Small
-target_params_mim: 7233
-target_params_no_mim: 5953
