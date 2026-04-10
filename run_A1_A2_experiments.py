@@ -35,7 +35,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from battery_soh import Seed
+from battery_soh import Seed, MissingRate
 from battery_soh.core.constants import set_seed
 from battery_soh.data import XJTULoader, BatteryWiseSplit
 from battery_soh.models import create_model, count_parameters
@@ -134,23 +134,63 @@ def run_single_experiment(
     n_params = count_parameters(model)
     print(f"Model: {model_type}, {n_params:,} params")
     
-    # Prepare training data with MIM mask (all zeros since training data is complete)
+    # Prepare training data with MIM mask
+    # For MIM training, we need multi-MR training data (0.0-0.95) according to meta.md
     train_X = train.X
     val_X = val.X
-    if True:  # Always add MIM mask for A1/A2 experiments
-        # Add zero mask (no missing in training data)
-        train_mask = np.zeros_like(train_X, dtype=np.float32)
-        val_mask = np.zeros_like(val_X, dtype=np.float32)
-        train_X = np.concatenate([train_X, train_mask], axis=1)
-        val_X = np.concatenate([val_X, val_mask], axis=1)
+    
+    if config.get("mim_variant") in ["standard", "random", "shuffled", "copy"]:
+        # G1-G4: Standard MIM training with multi-MR data
+        from battery_soh.missing.generators import MCARGenerator
+        from battery_soh.missing.imputers import MeanImputer
+        
+        gen = MCARGenerator()
+        imputer = MeanImputer()
+        
+        # Generate multi-MR training data (0.0, 0.1, 0.2, ..., 0.9)
+        training_mrs = np.arange(0.0, 1.0, 0.1)
+        train_datasets = []
+        
+        for i, mr in enumerate(training_mrs):
+            # Generate missing data for this MR
+            missing_seed = Seed(seed + i * 100)  # Different seed for each MR
+            X_missing, mask = gen.generate(train_X.copy(), MissingRate(mr), missing_seed)
+            
+            # Impute missing values
+            X_imputed = imputer.fit_transform(X_missing)
+            
+            # Concatenate with mask (MIM format: [x̂ | m])
+            mask_indicator = (~mask).astype(np.float32)
+            X_mim = np.concatenate([X_imputed, mask_indicator], axis=1)
+            train_datasets.append(X_mim)
+        
+        # Combine all MR datasets
+        train_X_mim = np.concatenate(train_datasets, axis=0)
+        train_y_mim = np.tile(train.y, len(training_mrs))
+        
+        # For validation, use a fixed MR (e.g., 0.4)
+        val_missing_seed = Seed(seed + 999)
+        X_val_missing, val_mask = gen.generate(val_X.copy(), MissingRate(0.4), val_missing_seed)
+        X_val_imputed = imputer.fit_transform(X_val_missing)
+        val_mask_indicator = (~val_mask).astype(np.float32)
+        val_X_mim = np.concatenate([X_val_imputed, val_mask_indicator], axis=1)
+        
+        train_X, train_y = train_X_mim, train_y_mim
+        val_X = val_X_mim
+        
+        print(f"MIM training data: {len(train_X)} samples (multi-MR), {len(val_X)} val samples")
     
     # Train
     train_config = TrainingConfig(epochs=epochs, patience=30)
     trainer = LightningTrainer(train_config)
     
+    # Use the correct train_y (may be expanded for multi-MR)
+    if 'train_y' not in locals():
+        train_y = train.y
+    
     result = trainer.fit(
         model,
-        train_data=(train_X, train.y),
+        train_data=(train_X, train_y),
         val_data=(val_X, val.y)
     )
     

@@ -198,7 +198,8 @@ class LightningTrainer:
             callbacks=callbacks,
             enable_progress_bar=True,
             enable_model_summary=False,
-            logger=False  # Disable default logger for simplicity
+            logger=False,  # Disable default logger for simplicity
+            enable_checkpointing=False  # Disable checkpoint to avoid conflicts
         )
         
         # Train
