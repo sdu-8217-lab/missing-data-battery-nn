@@ -93,3 +93,27 @@ DEFAULT_MODEL_DIR: str = "models"
 
 DEFAULT_RESULTS_DIR: str = "results"
 """Default directory for saving experiment results."""
+
+
+# =============================================================================
+# Random Seed Management
+# =============================================================================
+
+def set_seed(seed: int) -> None:
+    """Set random seed for reproducibility across all libraries.
+    
+    Args:
+        seed: Random seed value
+    """
+    import random
+    import numpy as np
+    import torch
+    
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        # Deterministic behavior (may impact performance)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False

@@ -41,6 +41,6 @@ def rng() -> np.random.Generator:
 @pytest.fixture(autouse=True)
 def set_random_seed():
     """Set random seed for all tests."""
-    from battery_soh.utils import set_seed
+    from battery_soh.core.constants import set_seed
     set_seed(Seed(42))
     yield

@@ -1,0 +1,29 @@
+# 实验配置模板示例
+# 复制此文件创建新的实验配置
+
+# 数据集配置
+dataset:
+  name: "xjtu"
+  batch: "2C"  # 可选: 2C, 3C, R2.5, R3, RW
+
+# 模型配置
+model:
+  type: "mlp"  # 可选: mlp, lstm, cnn
+  use_mim: false  # 是否使用Missing Indicator Method
+  size: "LEVEL_3"  # 参数量级别
+
+# 缺失数据配置
+missing_data:
+  mode: "MCAR"  # 可选: MCAR, MAR, MNAR
+  rate: 0.3  # 缺失率 (0.0 - 0.9)
+  imputation: "mean"  # 可选: mean, knn, iterative, zero
+
+# 训练配置
+training:
+  epochs: 200
+  batch_size: 32
+  learning_rate: 0.001
+  early_stopping_patience: 20
+
+# 随机种子
+seed: 42

@@ -23,7 +23,7 @@ model = create_model("mlp", use_mim=False)
 # Train and evaluate...
 ```
 
-See [Quick Start Guide](quickstart.md) for complete example.
+See [Quick Start Guide](./quickstart.md) for complete example.
 
 ## Architecture
 
@@ -86,11 +86,11 @@ pip install -e ".[dev]"
 
 ## Documentation Structure
 
-- [Quick Start](quickstart.md) - Get started in 5 minutes
-- [Architecture](architecture.md) - Detailed architecture documentation
-- [Tutorials](tutorials/) - Step-by-step guides
-- [API Reference](api/) - Auto-generated API documentation
-- [Design Decisions](adr/) - Architecture Decision Records
+- [Quick Start](./quickstart.md) - Get started in 5 minutes
+- [Architecture](./architecture.md) - Detailed architecture documentation
+- [Datasets](./DATASETS.md) - Dataset information
+- [Architecture](./architecture.md) - Model specifications
+- [Root README](../README.md) - Complete documentation index
 
 ## Contributing
 

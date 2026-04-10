@@ -186,3 +186,42 @@ Planned architectural improvements:
 2. **Configuration Management**: YAML/JSON experiment configs
 3. **Distributed Training**: Multi-GPU support
 4. **Model Registry**: Versioned model management
+
+---
+
+# Model Specifications
+
+## Parameter Budget
+
+All models must respect the parameter constraint: **16,384 - 32,768 parameters** (2^14 to 2^15)
+
+## Model Configurations (3 × 4 = 12 models)
+
+### MLP (Multi-Layer Perceptron)
+
+| Level | Hidden Dims | Dropout | Params (no MIM) | Params (with MIM) |
+|-------|-------------|---------|-----------------|-------------------|
+| 1 | [80, 56] | 0.15 | 5,953 | 7,233 |
+| 2 | [120, 80] | 0.15 | 11,801 | 13,721 |
+| 3 | [168, 104] | 0.15 | 20,537 | 23,225 |
+| 4 | [256, 128, 56] | 0.15 | 44,529 | 48,625 |
+
+### LSTM
+
+| Level | Hidden Size | Layers | Dropout | Params (no MIM) | Params (with MIM) |
+|-------|-------------|--------|---------|-----------------|-------------------|
+| 1 | 28 | 1 | 0.2 | 5,181 | 6,973 |
+| 2 | 44 | 1 | 0.2 | 10,957 | 13,773 |
+| 3 | 44 | 2 | 0.2 | 26,797 | 29,613 |
+| 4 | 64 | 2 | 0.2 | 54,337 | 58,433 |
+
+### CNN1D
+
+| Level | Channels | Kernel | Dropout | Params (no MIM) | Params (with MIM) |
+|-------|----------|--------|---------|-----------------|-------------------|
+| 1 | [40, 28] | 3 | 0.1 | 5,377 | 7,297 |
+| 2 | [72, 40] | 3 | 0.1 | 12,249 | 15,705 |
+| 3 | [96, 56] | 3 | 0.1 | 20,945 | 25,553 |
+| 4 | [136, 72] | 3 | 0.1 | 36,185 | 42,713 |
+
+**Note**: Level 1-2 for baseline; Level 3 is primary (within budget); Level 4 exceeds budget.

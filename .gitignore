@@ -61,3 +61,14 @@ Thumbs.db
 *.tmp
 *.bak
 *.log
+
+# Experiment outputs (version controlled by git, not committed)
+results/
+outputs/
+lightning_logs/
+experiments/logs/
+wandb/
+*.csv
+
+# Data files (large, not committed)
+data/

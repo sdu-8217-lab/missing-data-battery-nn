@@ -14,7 +14,7 @@ from battery_soh.data import XJTULoader, BatteryWiseSplit
 from battery_soh.models import create_model, count_parameters
 from battery_soh.training import LightningTrainer, TrainingConfig
 from battery_soh.evaluation import Evaluator
-from battery_soh.utils import set_seed
+from battery_soh.core.constants import set_seed
 
 
 def main():

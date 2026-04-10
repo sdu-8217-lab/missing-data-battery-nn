@@ -1,1 +1,0 @@
-"""Missing pattern generators."""

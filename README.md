@@ -52,7 +52,7 @@ battery_soh/
 ├── missing/     # Missing generators (MCAR/MAR/MNAR) and imputers
 ├── training/    # PyTorch Lightning trainer
 ├── evaluation/  # Metrics and evaluation pipeline
-└── utils/       # Utilities
+
 ```
 
 ### Key Design: 9-Level Architecture
@@ -145,8 +145,9 @@ evaluator = Evaluator(
 
 - [Quick Start](docs/quickstart.md) - Get started in 5 minutes
 - [Architecture](docs/architecture.md) - Detailed architecture documentation
-- [API Reference](docs/api/) - Auto-generated API docs
-- [Tutorials](docs/tutorials/) - Step-by-step guides
+- [Datasets](docs/DATASETS.md) - Dataset information
+- [Model Specs](docs/architecture.md) - Model specifications
+- [All Documentation](docs/index.md) - Complete documentation index
 
 ## Development
 
@@ -154,7 +155,6 @@ evaluator = Evaluator(
 
 ```bash
 pip install -e ".[dev]"
-pre-commit install
 ```
 
 ### Testing

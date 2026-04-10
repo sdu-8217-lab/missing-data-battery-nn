@@ -26,6 +26,7 @@ from battery_soh.core.constants import (
     MISSING_MODES,
     IMPUTATION_METHODS,
     MODEL_TYPES,
+    set_seed,
 )
 
 __all__ = [
@@ -53,4 +54,6 @@ __all__ = [
     "MISSING_MODES",
     "IMPUTATION_METHODS",
     "MODEL_TYPES",
+    # Functions
+    "set_seed",
 ]
