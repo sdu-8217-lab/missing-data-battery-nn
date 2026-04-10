@@ -1,19 +1,27 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
-name = "missing-data-battery-nn"
-version = "0.4.0"
-description = "Neural Network-based Battery SOH Estimation with Missing Data Handling"
+name = "battery-soh"
+version = "0.5.0-alpha.1"
+description = "Battery State of Health Prediction Framework with Missing Data Support"
 readme = "README.md"
 license = {text = "MIT"}
+requires-python = ">=3.10"
 authors = [
-    {name = "SDU 8217 Lab", email = "sdu.8217.lab@example.com"}
+    {name = "Battery SOH Research Team"},
 ]
-requires-python = ">=3.12"
+keywords = [
+    "battery",
+    "soh",
+    "prognostics",
+    "missing-data",
+    "deep-learning",
+    "pytorch"
+]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -23,137 +31,67 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
+dependencies = [
+    "torch>=2.0.0",
+    "pytorch-lightning>=2.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "mypy>=1.5.0",
+    "ruff>=0.1.0",
+    "pre-commit>=3.0.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+]
+
 [project.urls]
-Repository = "https://github.com/sdu-8217-lab/missing-data-battery-nn"
-Documentation = "https://github.com/sdu-8217-lab/missing-data-battery-nn/tree/main/docs"
+Homepage = "https://github.com/battery-soh/battery-soh-framework"
+Documentation = "https://battery-soh.readthedocs.io"
+Repository = "https://github.com/battery-soh/battery-soh-framework"
+Issues = "https://github.com/battery-soh/battery-soh-framework/issues"
 
-# ============================================================================
-# Commitizen Configuration - 提交规范工具配置
-# ============================================================================
-[tool.commitizen]
-name = "cz_conventional_commits"
-version = "0.4.0"
-version_files = [
-    "pyproject.toml:version",
-]
-tag_format = "v$version"
-annotated_tag = true
+[tool.hatch.build.targets.wheel]
+packages = ["battery_soh"]
 
-# 自定义类型（英文类型 + 中文说明）
-[tool.commitizen.settings]
-types = [
-    {value = "feat", name = "feat:     新功能（A new feature）"},
-    {value = "fix", name = "fix:      Bug修复（A bug fix）"},
-    {value = "docs", name = "docs:     文档更新（Documentation only changes）"},
-    {value = "style", name = "style:    代码格式（Formatting, missing semi colons, etc）"},
-    {value = "refactor", name = "refactor: 代码重构（A code change that neither fixes a bug nor adds a feature）"},
-    {value = "perf", name = "perf:     性能优化（A code change that improves performance）"},
-    {value = "test", name = "test:     测试相关（Adding missing tests or correcting existing tests）"},
-    {value = "chore", name = "chore:    构建/工具（Changes to the build process or auxiliary tools）"},
-    {value = "experiments", name = "experiments: 实验结果（Experiment results and analysis）"},
-    {value = "paper", name = "paper:    论文相关（Paper manuscript, figures, revisions）"},
-]
-
-# 自定义作用域
-scopes = [
-    "data",
-    "models",
-    "experiments",
-    "configs",
-    "scripts",
-    "docs",
-    "paper",
-    "root",
-    "xjtu-2c",
-    "xjtu-1c",
-    "nasa",
-]
-
-# ============================================================================
-# Black Configuration - Python代码格式化
-# ============================================================================
-[tool.black]
+[tool.ruff]
+target-version = "py310"
 line-length = 100
-target-version = ['py310', 'py311', 'py312']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-  | __pycache__
-  | \.ipynb_checkpoints
-  | experiments/runs
-  | results
-  | wandb
-)/
-'''
+select = ["E", "F", "I", "W", "N", "D"]
+ignore = ["D100", "D104"]  # Missing docstrings in __init__ and public modules
 
-# ============================================================================
-# isort Configuration - import排序
-# ============================================================================
-[tool.isort]
-profile = "black"
-line_length = 100
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-ensure_newline_before_comments = true
-skip = [
-    "__pycache__",
-    ".git",
-    ".venv",
-    "experiments/runs",
-]
+[tool.ruff.pydocstyle]
+convention = "google"
 
-# ============================================================================
-# pytest Configuration - 测试配置
-# ============================================================================
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
+python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = [
-    "-v",
-    "--tb=short",
-    "--strict-markers",
-]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "gpu: marks tests that require GPU",
-    "experiment: marks experiment integration tests",
-]
+addopts = "--cov=battery_soh --cov-report=term-missing"
 
-# ============================================================================
-# Coverage Configuration - 代码覆盖率
-# ============================================================================
 [tool.coverage.run]
-source = ["src"]
-omit = [
-    "*/tests/*",
-    "*/test_*",
-    "*/__pycache__/*",
-    "src/experiments/runner.py",  # 实验运行器难以单元测试
-]
+source = ["battery_soh"]
+omit = ["*/tests/*", "*/test_*"]
 
 [tool.coverage.report]
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
     "raise AssertionError",
     "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
 ]
