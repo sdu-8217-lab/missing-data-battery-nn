@@ -1,302 +1,63 @@
-# ======================
-# 项目特定忽略 (PyTorch/深度学习)
-# ======================
-
-# 先定义例外：保留关键文件（必须在忽略规则之前）
-# 注意：所有例外规则在文件末尾的"重新声明例外规则"部分统一声明
-# 以确保在全局忽略规则（如*.yaml）之后生效
-
-# 忽略旧的hydra配置系统（根目录）
-/configs/
-!.github/**/*.yml              # GitHub Actions
-
-# 模型文件
-*.pth
-*.pt
-*.ckpt
-*.h5
-*.hdf5
-*.onnx
-*.pb
-saved_models/
-checkpoints/
-# 模型输出目录（根目录和常见子目录）
-/models/
-experiments/models/
-
-# 训练结果和输出
-results/
-logs/
-runs/                  # PyTorch Lightning/TensorBoard 默认日志目录
-lightning_logs/
-tensorboard/
-wandb/                 # Weights & Biases 本地目录
-/figures/              # 仅排除根目录的figures
-!/paper/figures/       # 但允许paper/figures
-output/
-outputs/               # Hydra 默认输出目录
-
-# 实验输出目录（包含大量时间戳子目录）
-experiments/2C/
-experiments/3C/
-experiments/R2.5/
-experiments/R3/
-experiments/RW/
-experiments/Sim_satellite/
-experiments_v2/
-experiments_v3/
-
-# experiments_new 实验框架输出
-experiments_new/results/*/
-!experiments_new/results/.gitkeep
-experiments_new/outputs/*/
-!experiments_new/outputs/.gitkeep
-experiments_new/**/__pycache__/
-experiments_new/**/*.pyc
-experiments_new/**/*.pyo
-experiments_new/**/*.log
-experiments_new/**/nohup.out
-experiments_new/**/*.pt
-experiments_new/**/*.pth
-experiments_new/**/test_results.csv
-experiments_new/**/train_results.csv
-experiments_new/**/eval.log
-experiments_new/**/train.log
-experiments_new/**/run_*.log
-
-# 数据集相关
-data/cache/
-data/processed/
-data/raw/
-datasets/
-*.npy                  # NumPy 数组
-*.npz                  # 压缩的 NumPy 数组
-*.pkl                  # Python pickle 文件
-*.pickle               # Python pickle 文件（备用扩展名）
-
-# ======================
-# 临时文件和目录
-# ======================
-
-# 旧代码备份和临时目录
-tmp_legacy/            # 旧代码备份
-.rework/               # 重构工作目录
-.imputation_cache/     # 插补缓存
-battery_experiment_reproduce*  # 老代码压缩包及解压目录
-cleanup_backup_*/      # 清理备份
-
-# 临时问题分析文件
-PROBLEM_ANALYSIS.txt
-QUICK_FIX_INSTRUCTIONS.md
-
-# 奇怪的临时文件
-=2.14.0
-*.Zone.Identifier
-
-# ======================
-# Python 通用忽略规则
-# ======================
-
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Distribution / packaging
-build/
-develop-eggs/
-dist/
-eggs/
-lib/
-lib64/
-parts/
-pip-wheel-metadata/
-sdist/
-share/python-wheels/
-var/
-wheels/
-*.egg
-*.egg-info/
-*.manifest
-*.spec
-.installed.cfg
-MANIFEST
-
-# Virtual environments
-.venv/
-venv/
-ENV/
-env/
-env.bak/
-venv.bak/
-virtualenv/
-
-# Testing / coverage
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.pytest_cache/
-
-# Type checking
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# ======================
-# LaTeX 编译产物
-# ======================
-
-*.aux
-*.bbl
-*.blg
-*.bcf
-*.dvi
-*.fdb_latexmk
-*.fls
-*.glg
-*.glo
-*.gls
-*.ist
-*.lof
-*.lot
-*.log
-*.nav
-*.out
-*.ps
-*.pdf
-*.snm
-*.spl
-*.synctex.gz
-*.toc
-*.upa
-*.upb
-*.vrb
-*.run.xml
-*.xdv
-
-# ======================
-# IDE / 编辑器
-# ======================
-
-# VS Code
-.vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# PyCharm / IntelliJ
-.idea/
-*.iml
-
-# Spyder
-.spyderproject
-.spyproject
-
-# Rope
-.ropeproject
-
-# Vim / Emacs
-*.swp
-*.swo
-*~
-
-# ======================
-# Jupyter Notebook
-# ======================
-
-.ipynb_checkpoints
-*.ipynb
-
-# ======================
-# 环境变量 / 密钥
-# ======================
-
-.env
-.env.*
-!.env.example
-
-# ======================
-# 操作系统文件
-# ======================
-
-.DS_Store
-Thumbs.db
-
-# ======================
-# 项目特定规则
-# ======================
-
-# 全局排除（但允许特定目录）
-*.json
-*.png
-
-# YAML 文件 - 保留关键配置，其他忽略
-# 注意：例外规则已在前面的"先定义例外"部分声明
-
-# 然后定义忽略规则（仅对未被例外的文件生效）
-*.yaml
-*.yml
-
-# 重新声明例外规则以确保生效（针对YAML）
-!environment.yml
-!pyproject.toml
-!model_configs.yaml
-# 保留实验框架配置
-!experiments_new/configs/**
-# 但忽略自动生成的批量配置（例外规则之后）
-experiments_new/configs/experiments/batch_configs/
-experiments_new/configs/experiments/batch_configs_*/
-experiments_new/configs/experiments/batch_configs_fast/
-!paper/**/*.yaml
-!paper/**/*.yml
-!.pre-commit-config.yaml
-!**/.github/**/*.yml         # GitHub Actions
-!MODEL_ARCHITECTURE_DESIGN.md  # 模型设计文档
-!model_architecture_design.py  # 模型设计脚本
-
-# 仅排除根目录的 figures，但允许 paper/figures
-/figures/
-!/paper/figures/
-
-# 审稿人可验证的实验结果数据（例外规则必须在results/之后）
-!results/xjtu_2c/
-!results/xjtu_2c/20260308_023704_summary.csv
-!results/xjtu_2c/20260308_023704_raw_data.csv
-
-# 论文图表（带时间戳）
-!paper/figures/20260308_023704/
-!paper/figures/20260308_023704/*.png
-
-# 归档文件
-archive/
-.cleanup_backup/
-
-# === 奥卡姆剃刀清理 - 自动忽略 ===
-# Python缓存
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# 实验日志和输出
-lightning_logs/
-experiments/logs/
-experiments/runs/
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Data and models (large files)
+data/
+models/
+results/
+logs/
+*.pt
+*.pth
+*.ckpt
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
 *.log
-
-# 测试模型（保留核心模型目录）
-models/test_*
-models/debug_*
-models/compare_*
-models/strategy_*
-
-# 备份和临时
-.cleanup_backup/
