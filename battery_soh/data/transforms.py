@@ -45,6 +45,17 @@ def extract_features(df: pd.DataFrame) -> Features:
     # Extract features
     features = df[required_cols].values.astype(np.float32)
     
+    # Clean data: replace inf with nan, then fill nan with column mean
+    features = np.where(np.isfinite(features), features, np.nan)
+    col_means = np.nanmean(features, axis=0)
+    for i in range(features.shape[1]):
+        mask = np.isnan(features[:, i])
+        if mask.any():
+            features[mask, i] = col_means[i]
+    
+    # Clip extreme values to prevent training instability
+    features = np.clip(features, -1e6, 1e6)
+    
     return features
 
 

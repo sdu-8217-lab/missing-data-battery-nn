@@ -118,7 +118,7 @@ class ExperimentRunner:
             learning_rate=config.learning_rate,
             patience=30
         )
-        trainer = LightningTrainer(train_config, verbose=verbose)
+        trainer = LightningTrainer(train_config)
         
         # Apply training missing rate if MIM
         train_X, train_y = train.X, train.y
