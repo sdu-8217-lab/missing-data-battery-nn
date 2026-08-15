@@ -1,0 +1,120 @@
+% ============================================================
+% 技术报告 LaTeX 模板（横向 A4，自包含式）
+% 用法：复制本文件，修改 titlepage / content / figures
+% ============================================================
+\documentclass[11pt,a4paper,landscape]{ctexart}
+
+\usepackage[top=1.5cm,bottom=1.5cm,left=1.6cm,right=1.6cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+% —— 如有图片子文件夹，取消注释：
+% \graphicspath{{figures/}}
+
+\pagestyle{empty}
+
+% —— 每页统一样式 ——
+\newcommand{\slidetitle}[2]{%
+    \noindent{\Large\bfseries #1}\hfill{\normalsize\color{gray!70!black} #2}\par
+    \vspace{0.2em}
+    \noindent\textcolor{gray!50}{\rule{\linewidth}{0.6pt}}\par
+    \vspace{0.6em}
+}
+
+\newcommand{\footerline}{%
+    \vfill
+    \noindent\textcolor{gray!50}{\rule{\linewidth}{0.3pt}}\par
+    \vspace{0.1em}
+    {\footnotesize\color{gray!70} % ← 改成你的日期和报告名
+     数据截止 \today \hfill [报告标题] \hfill [报告人]}
+}
+
+\begin{document}
+
+%======================================================================
+% 封面
+%======================================================================
+\begin{center}
+\vspace*{2.5cm}
+{\Huge\bfseries [报告标题]}\\[0.9em]
+{\Large [副标题：一句话说明报告内容]}\\[3em]
+
+\begin{tabular}{@{}rl@{}}
+{\Large 报告类型}\quad & {\Large [告知 / 汇报 / 讨论]} \\[0.6em]
+{\Large 数据规模}\quad & {\Large [关键数字]} \\
+\end{tabular}
+\end{center}
+
+\newpage
+
+%======================================================================
+% Page 2: 目录
+%======================================================================
+\slidetitle{目录}{[N] 个独立主题}
+
+\vspace{2em}
+\begin{center}
+\begin{tabular}{@{}rp{18cm}@{}}
+\Large\textbf{01.} & \Large [主题一] \\[1em]
+\Large\textbf{02.} & \Large [主题二] \\[1em]
+% ... 按需增减 ...
+\end{tabular}
+\end{center}
+
+\footerline
+\newpage
+
+%======================================================================
+% Page 3+: 内容页（每个 \newpage = 一页）
+%======================================================================
+\slidetitle{01 \quad [页标题]}{[副标题/批注]}
+
+% --- 布局选项 ---
+% 全图型：
+% \begin{minipage}[t]{\textwidth}
+%   \centering
+%   \includegraphics[width=0.85\textwidth]{figure.png}
+% \end{minipage}
+
+% 图表并列：
+% \begin{minipage}[t]{0.58\textwidth}
+%   \includegraphics[width=\textwidth]{figure.png}
+% \end{minipage}\hfill
+% \begin{minipage}[t]{0.40\textwidth}
+%   \begin{tabular}{...} ... \end{tabular}
+% \end{minipage}
+
+% 纯表格：
+% \begin{table}[H]
+%   \centering
+%   \begin{tabular}{...} ... \end{tabular}
+% \end{table}
+
+% 纯文字：
+% \begin{itemize}[leftmargin=1.2em, itemsep=2pt]
+%   \item 要点一
+%   \item 要点二
+% \end{itemize}
+
+\footerline
+\newpage
+
+%======================================================================
+% 封底
+%======================================================================
+\begin{center}
+\vspace*{6cm}
+{\Huge\bfseries 报告结束}
+\end{center}
+
+\end{document}

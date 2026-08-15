@@ -1,0 +1,43 @@
+# BatteryCDE CALCE 长期预测配置
+# 需要先将 CALCE 数据整理为与本项目兼容的格式
+
+experiment:
+  name: batteryCDE_calce
+  seed: 42
+  device: auto
+  output_dir: ./results/calce
+
+data:
+  dataset: CALCE
+  data_dir: ../../data/CALCE
+  trajectory_features: [voltage, current, temperature]
+  target_col: capacity
+  horizon: 400
+  history_len: 50
+  train_batteries: [CS3, CS8, CS9, CS21]
+  val_batteries: [CS33]
+  test_batteries: [CS35, CS36, CS37, CS38]
+  missing_rate: 0.0
+  missing_pattern: random
+
+model:
+  name: BatteryCDE
+  input_dim: 3
+  hidden_dim: 64
+  attention_dim: 32
+  num_layers: 2
+  dropout: 0.1
+  method: rk4
+  options:
+    step_size: 1.0
+
+training:
+  epochs: 200
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  patience: 20
+  optimizer: Adam
+
+logging:
+  level: INFO

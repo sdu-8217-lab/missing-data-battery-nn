@@ -1,0 +1,242 @@
+\documentclass[11pt,a4paper,landscape]{ctexart}
+
+\usepackage[top=1.5cm,bottom=1.5cm,left=1.6cm,right=1.6cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\pagestyle{empty}
+
+\newcommand{\slidetitle}[2]{%
+    \noindent{\Large\bfseries #1}\hfill{\normalsize\color{gray!70!black} #2}\par
+    \vspace{0.2em}
+    \noindent\textcolor{gray!50}{\rule{\linewidth}{0.6pt}}\par
+    \vspace{0.6em}
+}
+
+\begin{document}
+
+% ================================
+% 封面
+% ================================
+\begin{center}
+\vspace*{4.5cm}
+
+{\fontsize{28}{34}\selectfont\bfseries
+掩码感知的神经控制微分方程}
+
+\vspace{1.2em}
+
+{\Large\itshape
+用于缺失数据条件下电池 SOH 估计的一个方案}
+
+\vspace{3cm}
+
+\noindent\textcolor{gray!50}{\rule{\linewidth}{0.5pt}}\\[0.3em]
+{\normalsize\bfseries 核心问题：}\\[0.2em]
+{\normalsize 现有 NCDE 方法在插值后丢弃缺失掩码，}\\[0.1em]
+{\normalsize 长连续缺失窗口内的插值平滑段被当作真实观测。}\\[0.6em]
+\noindent\textcolor{gray!50}{\rule{\linewidth}{0.5pt}}\\[0.3em]
+{\normalsize\bfseries 直接思路：}\\[0.2em]
+{\normalsize 将缺失掩码构造为置信度路径，与观测路径联合输入 NCDE，}\\[0.1em]
+{\normalsize 同时对隐藏状态施加缺失时长依赖的衰减。}\\[0.3em]
+\noindent\textcolor{gray!50}{\rule{\linewidth}{0.5pt}}
+
+\end{center}
+
+\newpage
+
+% ================================
+% Page 2: 现有方法做了什么 vs 掩码带来了什么
+% ================================
+\slidetitle{现有 NCDE 方法的共同操作}{}
+
+\vspace{0.8em}
+
+\begin{minipage}[t]{0.56\textwidth}
+\normalsize
+\textbf{给定数据：} \(\{(t_i, x_i, m_i)\}_{i=1}^N\)
+
+\(x_i\)：测量值（电压、电流、温度等）\\
+\(m_i \in \{0,1\}\)：缺失指示（0=缺失，1=观测）
+
+\vspace{0.8em}
+\textbf{现有 NCDE（BatteryCDE, PA-NCDE 等）：}
+\begin{enumerate}[leftmargin=1.5em, itemsep=0.6em]
+    \item 对 \(x_i\) 做样条或线性插值 → 得到连续路径 \(X(t)\)
+    \item \(X(t)\) 输入 NCDE 做隐藏状态演化
+    \item 输出 SOH 估计
+\end{enumerate}
+
+\vspace{0.6em}
+\textbf{信息流中被丢弃的部分：}
+\[
+\{m_i\} \;\longrightarrow\; \boxed{\text{丢弃}}
+\]
+
+\vspace{0.4em}
+模型不知道：\\
+-- 哪些点是真实观测的\\
+-- 插值段距离最近观测点有多远\\
+-- 缺失是否与工况相关
+
+\end{minipage}\hfill
+\begin{minipage}[t]{0.42\textwidth}
+\vspace{0em}
+\normalsize
+\textbf{缺失掩码携带的信息：}
+
+\vspace{0.6em}
+\begin{enumerate}[leftmargin=1.2em, itemsep=0.8em]
+    \item \textbf{点的真伪}\\
+    区分"传感器真实读数"和"插值猜测值"。
+
+    \item \textbf{距最近观测的时长}\\
+    \(\Delta t(t) = t - t_{\text{last\_obs}}\)： \\
+    时长越长，\(X(t)\) 的偏差风险越大。
+
+    \item \textbf{缺失与工况的关联}（MNAR）\\
+    大电流/高温下丢包率更高时，\\
+    缺失本身暗示系统处于严苛状态。
+\end{enumerate}
+\end{minipage}
+
+\newpage
+
+% ================================
+% Page 3: 两个修改点
+% ================================
+\slidetitle{两个修改点}{双通道路径 + 状态衰减}
+
+\vspace{0.6em}
+
+\normalsize
+
+\textbf{修改点 1：掩码增强的双通道路径}
+
+\vspace{0.4em}
+现有做法：输入路径 \(X(t) \in \mathbb{R}^d\)（仅插值后的观测值）
+
+修改后：
+\[
+\text{输入路径：}\quad Z(t) = [\,X(t)\;\; C(t)\,] \in \mathbb{R}^{d+1}
+\]
+
+其中 \(C(t)\) 由掩码构造，缺失区间内 \(C(t) \in [0,1)\)：
+\[
+C(t) = \exp(-\gamma \cdot \Delta t_{\text{last\_obs}}(t)) \qquad \text{或对 } m_i \text{ 做线性插值}
+\]
+
+\vspace{1.5em}
+\textbf{修改点 2：掩码引导的状态遗忘}
+
+\vspace{0.4em}
+标准 NCDE 演化：
+\[
+dh(t) = f_\theta(h(t))\,dZ(t)
+\]
+
+加入遗忘项（当 \(C(t) \approx 0\) 时激活）：
+\[
+dh(t) = f_\theta(h(t))\,dZ(t) \;-\; \alpha \cdot (1-C(t)) \odot h(t)\,dt
+\]
+
+长缺失区间内隐藏状态指数衰减至默认状态，重新获得观测后从保守状态重启。
+
+\vspace{1.5em}
+\textbf{属性：}
+
+\vspace{0.4em}
+\begin{itemize}[leftmargin=2em, itemsep=0.4em]
+    \item 两项修改是\textbf{插件式的}：不改变 NCDE 基础架构，不改变数据预处理
+    \item 当缺失率 $=0$ 时 \(C(t)\equiv 1\)，模型退化为标准 NCDE
+    \item 参数增量极少（仅 \(C(t)\) 可学习的衰减系数），计算开销可忽略
+\end{itemize}
+
+\newpage
+
+% ================================
+% Page 4: 预期行为
+% ================================
+\slidetitle{不同缺失模式下的预期行为}{对比标准 NCDE（无掩码）}
+
+\vspace{0.6em}
+
+\begin{table}[H]
+\centering
+\normalsize
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{@{}p{4.5cm} p{10.5cm} p{10.5cm}@{}}
+\toprule
+\textbf{缺失模式} & \textbf{标准 NCDE} & \textbf{MA-NCDE 预期} \\
+\midrule
+\textbf{随机缺失} &
+各点等概率，插值段短。 &
+\textbf{差异不大}。\(C(t)\approx 1\) 大多时刻，不造成副作用。 \\
+\midrule
+\textbf{连续块缺失} &
+插值填充整个缺失窗口，模型误认为平滑观测。 &
+衰减机制持续降低隐藏状态。恢复观测后从低状态重启，\textbf{预期优势最大}。 \\
+\midrule
+\textbf{MNAR} &
+不感知丢包上下文。 &
+\(C(t)<1\) 隐含指示数据不可靠，\textbf{可能有可测优势}。\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{0.4em}
+\begin{center}
+\normalsize
+随机缺失（无信息）\quad $\approx$\quad
+块缺失（有结构）\quad $<$\quad
+MNAR（含信号）
+\end{center}
+
+\newpage
+
+% ================================
+% Page 5: 范围与已知未知
+% ================================
+\slidetitle{范围与已知未知}{}
+
+\vspace{0.8em}
+
+\normalsize
+
+\textbf{这个方案做了什么：}
+
+\vspace{0.3em}
+\begin{itemize}[leftmargin=2em, itemsep=0.4em]
+    \item 将缺失掩码从"被丢弃的信息"变为连续置信度路径
+    \item 在连续时间框架内对不可靠区间做状态衰减
+    \item 两项修改是对标准 NCDE 的插件式补充
+\end{itemize}
+
+\vspace{1em}
+\textbf{当前没有讨论的问题：}
+
+\vspace{0.3em}
+\begin{itemize}[leftmargin=2em, itemsep=0.4em]
+    \item \(C(t)\) 的具体构造形式（线性插值 vs 指数衰减 vs 可学习参数）\hfill --- 待实验
+    \item 衰减系数 \(\alpha\) 的敏感性和最优值\hfill --- 待实验
+    \item 是否加入辅助的掩码重构损失\hfill --- 可选，暂未计入
+    \item 跨数据集的泛化表现\hfill --- 可能在 NASA 数据上先验证
+\end{itemize}
+
+\newpage
+
+% ================================
+% 封底
+% ================================
+\begin{center}
+\vspace*{7cm}
+{\Huge\bfseries 方案结束}
+\end{center}
+
+\end{document}

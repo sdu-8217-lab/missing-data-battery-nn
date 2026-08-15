@@ -1,0 +1,4 @@
+# BatteryCDE 复现额外依赖
+# 项目根 requirements.txt 中的依赖已默认安装
+
+torchcde>=0.2.7

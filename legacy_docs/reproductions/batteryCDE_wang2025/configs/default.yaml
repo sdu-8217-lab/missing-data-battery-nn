@@ -1,0 +1,42 @@
+# BatteryCDE 默认配置
+
+experiment:
+  name: batteryCDE_default
+  seed: 42
+  device: auto
+  output_dir: ./results/default
+
+data:
+  dataset: NASA
+  data_dir: ../../data/NASA data
+  trajectory_features: [voltage, current, temperature]
+  target_col: capacity
+  horizon: 100
+  history_len: 20
+  train_batteries: [B5, B6, B7]
+  val_batteries: [B18]
+  test_batteries: [B29, B30]
+  missing_rate: 0.0
+  missing_pattern: random
+
+model:
+  name: BatteryCDE
+  input_dim: 3
+  hidden_dim: 64
+  attention_dim: 32
+  num_layers: 2
+  dropout: 0.1
+  method: rk4
+  options:
+    step_size: 1.0
+
+training:
+  epochs: 200
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  patience: 20
+  optimizer: Adam
+
+logging:
+  level: INFO

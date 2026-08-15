@@ -1,0 +1,38 @@
+# TEMPLATE 默认配置
+# 复制后替换为具体论文的超参数
+
+experiment:
+  name: template_experiment
+  seed: 42
+  device: auto  # auto, cpu, cuda
+  output_dir: ./results
+
+data:
+  dataset: XJTU
+  batch: 3C
+  data_dir: ../../data/XJTU data
+  feature_cols: null  # 在 dataset_registry 中定义
+  target_col: capacity
+  train_split: 0.5
+  val_split: 0.25
+  test_split: 0.25
+
+model:
+  name: TemplateModel
+  input_dim: 16
+  hidden_dim: 64
+  output_dim: 1
+  dropout: 0.1
+
+training:
+  epochs: 100
+  batch_size: 32
+  lr: 0.001
+  weight_decay: 0.0
+  patience: 15
+  optimizer: Adam
+  loss: MSELoss
+
+logging:
+  level: INFO
+  log_dir: ./results/logs

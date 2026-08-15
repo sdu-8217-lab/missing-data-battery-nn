@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BatteryCDE 复现结果汇报</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #1f1f1f;
+            color: #222;
+        }
+
+        #deck {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100vw;
+            height: 56.25vw;
+            max-height: 100vh;
+            max-width: 177.78vh;
+            background: #fafafa;
+            display: none;
+            flex-direction: column;
+            padding: 2.8vw 3.5vw;
+            box-shadow: 0 0 80px rgba(0,0,0,0.35);
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        .slide-header {
+            margin-bottom: 1vw;
+            border-bottom: 1px solid #d0d0d0;
+            padding-bottom: 0.7vw;
+            flex-shrink: 0;
+        }
+
+        .slide-header h1 {
+            font-size: 2.2vw;
+            font-weight: 500;
+            color: #1a1a1a;
+            letter-spacing: -0.01em;
+        }
+
+        .slide-header .subtitle {
+            font-size: 1.05vw;
+            color: #666;
+            margin-top: 0.25vw;
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .figure-single {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 0;
+            padding: 0.3vw 0;
+        }
+
+        .figure-single img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .figure-grid {
+            flex: 1;
+            display: grid;
+            gap: 0.9vw;
+            min-height: 0;
+            padding: 0.5vw 0;
+        }
+
+        .figure-grid.two-by-two {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .figure-grid.three-by-two {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .figure-grid.three-by-one {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: 1fr;
+        }
+
+        .figure-item {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.35vw;
+            padding: 0.6vw;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .figure-item img {
+            flex: 1;
+            width: 100%;
+            object-fit: contain;
+            min-height: 0;
+        }
+
+        .figure-item .label {
+            font-size: 0.85vw;
+            color: #555;
+            text-align: center;
+            margin-top: 0.4vw;
+            font-weight: 500;
+        }
+
+        .annotation {
+            background: #fff;
+            border-left: 3px solid #2c5282;
+            padding: 0.9vw 1.2vw;
+            margin-top: 0.7vw;
+            font-size: 1.2vw;
+            line-height: 1.55;
+            color: #333;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .annotation.warn {
+            border-left-color: #c53030;
+            background: #fff5f5;
+        }
+
+        .annotation.ok {
+            border-left-color: #2f855a;
+            background: #f0fff4;
+        }
+
+        .finding-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2vw;
+            width: 100%;
+        }
+
+        .finding-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.4vw;
+            padding: 1.3vw 1.5vw;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .finding-card .title {
+            font-size: 1.35vw;
+            font-weight: 600;
+            color: #2c5282;
+            margin-bottom: 0.6vw;
+        }
+
+        .finding-card .desc {
+            font-size: 1.15vw;
+            color: #444;
+            line-height: 1.55;
+        }
+
+        .insight-box {
+            background: #f7fafc;
+            border-left: 4px solid #2c5282;
+            border-radius: 0 0.4vw 0.4vw 0;
+            padding: 1.2vw 1.5vw;
+            margin: 0.6vw 0;
+        }
+
+        .insight-box .title {
+            font-size: 1.35vw;
+            font-weight: 600;
+            color: #1a365d;
+            margin-bottom: 0.5vw;
+        }
+
+        .insight-box .desc {
+            font-size: 1.15vw;
+            color: #444;
+            line-height: 1.55;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5vw;
+            width: 100%;
+        }
+
+        .bullet-list {
+            font-size: 1.2vw;
+            line-height: 1.7;
+            color: #333;
+            margin-left: 1.3vw;
+        }
+
+        .bullet-list li {
+            margin-bottom: 0.5vw;
+        }
+
+        .annotation ul {
+            margin-left: 1.1vw;
+        }
+
+        .annotation li {
+            margin-bottom: 0.2vw;
+        }
+
+        .annotation strong {
+            color: #1a202c;
+        }
+
+        .cover {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .cover h1 {
+            font-size: 3.4vw;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 1vw;
+            letter-spacing: -0.02em;
+        }
+
+        .cover .subtitle {
+            font-size: 1.5vw;
+            color: #555;
+            margin-bottom: 2.5vw;
+        }
+
+        .cover .meta {
+            font-size: 1vw;
+            color: #888;
+        }
+
+        .final {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .final h1 {
+            font-size: 2.6vw;
+            font-weight: 500;
+            margin-bottom: 1.5vw;
+        }
+
+        .final p {
+            font-size: 1.4vw;
+            color: #444;
+            line-height: 1.7;
+            max-width: 70%;
+        }
+
+        .term-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2vw;
+            width: 100%;
+            margin-top: 0.8vw;
+        }
+
+        .term-grid.three-col {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .term-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.4vw;
+            padding: 1.4vw 1.5vw;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .term-card .kicker {
+            font-size: 0.85vw;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.35vw;
+        }
+
+        .term-card .term {
+            font-size: 1.45vw;
+            font-weight: 600;
+            color: #2c5282;
+            margin-bottom: 0.65vw;
+            line-height: 1.2;
+        }
+
+        .term-card .def {
+            font-size: 1.15vw;
+            color: #444;
+            line-height: 1.55;
+            flex: 1;
+        }
+
+        .term-card.highlight {
+            border-left: 4px solid #2c5282;
+            background: #f7fafc;
+        }
+
+        .term-card.highlight .term {
+            color: #1a365d;
+        }
+
+        .term-card.warn {
+            border-left: 4px solid #c53030;
+            background: #fff5f5;
+        }
+
+        .term-card.warn .term {
+            color: #742a2a;
+        }
+
+        .nav {
+            position: fixed;
+            bottom: 1.8vw;
+            right: 1.8vw;
+            z-index: 1000;
+            display: flex;
+            gap: 0.5vw;
+        }
+
+        .nav button {
+            background: rgba(30,30,30,0.75);
+            color: #fff;
+            border: none;
+            padding: 0.6vw 1.1vw;
+            border-radius: 0.2vw;
+            font-size: 0.9vw;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .nav button:hover {
+            background: rgba(30,30,30,0.95);
+        }
+
+        .page-num {
+            position: fixed;
+            bottom: 1.8vw;
+            left: 1.8vw;
+            z-index: 1000;
+            color: #aaa;
+            font-size: 0.9vw;
+        }
+    </style>
+</head>
+<body>
+    <div id="deck">
+        <!-- Slide 1: 封面 -->
+        <div class="slide active cover">
+            <h1>BatteryCDE 复现结果</h1>
+            <p class="subtitle">IEEE TTE 2025 · NASA 数据集 · 单 seed 初步结果</p>
+            <p class="meta">陈清洋 · 山东大学核科学与能源动力学院 · 2025.06</p>
+        </div>
+
+        <!-- Slide 2: 论文方法动机与 CDE 基础 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>论文方法动机与 CDE 基础</h1>
+                <p class="subtitle">为什么用 Neural CDE 处理电池缺失数据？</p>
+            </div>
+            <div class="slide-body">
+                <div class="term-grid">
+                    <div class="term-card highlight">
+                        <div class="kicker">Motivation</div>
+                        <div class="term">核心动机</div>
+                        <div class="def">电池容量退化是连续动态过程。传统 RNN/Transformer 将数据离散化，难以自然处理非规则采样与缺失。</div>
+                    </div>
+                    <div class="term-card">
+                        <div class="kicker">Background</div>
+                        <div class="term">Neural ODE</div>
+                        <div class="def">用神经网络参数化隐藏状态演化：dh/dt = f(h(t), t)。适合平滑连续过程，但难以直接利用多变量输入。</div>
+                    </div>
+                    <div class="term-card">
+                        <div class="kicker">Background</div>
+                        <div class="term">Neural CDE</div>
+                        <div class="def">用控制路径 X(t) 驱动隐藏状态：h(t) = h(0) + ∫ f(h(s)) dX(s)。V/I/T 轨迹天然可作为控制路径。</div>
+                    </div>
+                    <div class="term-card">
+                        <div class="kicker">Missingness</div>
+                        <div class="term">CDE 如何处理缺失</div>
+                        <div class="def">先用插值构造连续路径 X(t)，缺失处由插值填补；ODE solver 可在任意时刻评估，无需固定时间步。</div>
+                    </div>
+                    <div class="term-card highlight">
+                        <div class="kicker">Paper Claims</div>
+                        <div class="term">论文的宣称</div>
+                        <div class="def">BatteryCDE 声称实现：(1) 长期容量预测；(2) 不规则采样与缺失数据；(3) 跨电池迁移。</div>
+                    </div>
+                    <div class="term-card warn">
+                        <div class="kicker">Our Question</div>
+                        <div class="term">我们的关注点</div>
+                        <div class="def">"天然处理缺失"是否成立？CDE + 双重注意力在电池 SOH 上是否确实优于 LSTM/Transformer？</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: BatteryCDE 结构与实验设定 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>BatteryCDE 结构与实验设定</h1>
+                <p class="subtitle">三重 CDE + 双重注意力 + NASA 实验配置</p>
+            </div>
+            <div class="slide-body">
+                <div class="term-grid">
+                    <div class="term-card">
+                        <div class="kicker">Architecture</div>
+                        <div class="term">feature-wise CDE</div>
+                        <div class="def">每个特征通道独立运行 CDE，输出 a_feat(t) ∈ (0,1)，作为特征注意力权重。</div>
+                    </div>
+                    <div class="term-card">
+                        <div class="kicker">Architecture</div>
+                        <div class="term">cycle-wise CDE</div>
+                        <div class="def">输出 a_cycle(t) ∈ (0,1)，作为循环/时间步注意力权重，强调关键退化阶段。</div>
+                    </div>
+                    <div class="term-card highlight">
+                        <div class="kicker">Architecture</div>
+                        <div class="term">learning CDE</div>
+                        <div class="def">以注意力加权后的路径 Y(t) 为输入，积分得到最终隐藏表示，经 readout 输出容量。</div>
+                    </div>
+                    <div class="term-card">
+                        <div class="kicker">Data</div>
+                        <div class="term">NASA 数据设定</div>
+                        <div class="def">充电段 V/I/T 轨迹重采样为 30 步；history_len=3；horizon=50；容量按训练集最大容量归一化。</div>
+                    </div>
+                    <div class="term-card">
+                        <div class="kicker">Missingness</div>
+                        <div class="term">缺失实验设定</div>
+                        <div class="def">在原始充电轨迹上施加 random 随机缺失与 block 连续块缺失，缺失率 30% / 50%。</div>
+                    </div>
+                    <div class="term-card">
+                        <div class="kicker">Transfer</div>
+                        <div class="term">迁移实验设定</div>
+                        <div class="def">NASA 电池间跨电池迁移：B5/B6 训练→B7/B18 测试，以及 B7/B18 训练→B5/B6 测试。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 基线对比 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>基线模型对比</h1>
+                <p class="subtitle">NASA 测试集 · horizon=50 · history=3</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/baseline_comparison.png" alt="Baseline comparison">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>Transformer 在本设置下 MAE 最低（0.033），优于 BatteryCDE（0.037）与 LSTM（0.038）；Neural CDE 明显更差（0.106）。论文宣称的 BatteryCDE 优越性未得到复现。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 基线训练历史 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>基线模型训练历史</h1>
+                <p class="subtitle">统一坐标刻度，便于横向比较收敛行为</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/baseline_histories_grid.png" alt="Baseline histories grid">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>Transformer 与 BatteryCDE 收敛较快且稳定；Neural CDE 验证 MAE 波动大；所有模型最终测试 R² 均为负，提示任务设置或数据划分需进一步检查。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Horizon 对比 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>长期预测 Horizon 对比</h1>
+                <p class="subtitle">BatteryCDE 在不同预测步长下的表现</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/horizon_comparison.png" alt="Horizon comparison">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>horizon 与误差非单调相关：h=80 最优（0.021），h=50 最差（0.081）。该反直觉结果说明单 seed 实验波动性大，不足以得出“horizon 越大越难”的结论。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Horizon 历史图 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>不同 Horizon 下的训练历史</h1>
+                <p class="subtitle">统一坐标刻度，横向比较 h=20/50/80/100 的收敛行为</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/horizon_histories_grid.png" alt="Horizon histories grid">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>h=80 验证 MAE 最低且稳定；h=50 验证曲线波动最大。不同 horizon 的样本数量不同（h 越大样本越少），可能是非单调性的部分原因。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Missing 对比 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>缺失数据鲁棒性对比</h1>
+                <p class="subtitle">BatteryCDE 在随机缺失与块缺失下的表现</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/missing_comparison.png" alt="Missing comparison">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>block30/block50（约 0.052）优于 random30/random50 与 clean（0.081）。连续块缺失反而表现更好，可能与 spline 插值在块缺失上更稳定有关，也可能反映单 seed 随机波动。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Missing 历史图 1 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>缺失模式下的训练历史（一）</h1>
+                <p class="subtitle">clean、random30、random50 · 统一坐标刻度</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/missing_histories_grid_1.png" alt="Missing histories 1">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>clean 验证 MAE 波动剧烈；random30 收敛更平滑且最终误差更低。这一现象与“缺失损害性能”的直觉相反，需多 seed 验证。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Missing 历史图 2 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>缺失模式下的训练历史（二）</h1>
+                <p class="subtitle">block30、block50 · 统一坐标刻度</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/missing_histories_grid_2.png" alt="Missing histories 2">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>块缺失下 BatteryCDE 收敛稳定，验证 MAE 低于 clean 与 random 缺失。可能原因：spline 插值对连续块缺失更友好；或测试集划分使 block 场景恰好更简单。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Transfer 对比 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>跨电池迁移</h1>
+                <p class="subtitle">BatteryCDE 在不同源域→目标域划分下的表现</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/transfer_comparison.png" alt="Transfer comparison">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>修正配置后，B5B6_to_B7（MAE 0.045）显著优于 B5B6_to_B18（MAE 0.116），说明 B0018 比 B0007 更难迁移；B7B18_to_B5B6 居中（MAE 0.072）。跨电池迁移仍是核心挑战。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Transfer 历史图 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>迁移场景训练历史</h1>
+                <p class="subtitle">三个跨电池迁移场景 · 统一坐标刻度</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/transfer_histories_grid.png" alt="Transfer histories grid">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>B5B6_to_B18 验证 MAE 显著高于其他场景，反映 B0018 与训练电池退化分布差异大；B5B6_to_B7 收敛平稳且误差最低。多 seed 重复对迁移结论至关重要。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: R² 汇总 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>R² 汇总：所有实验均为负</h1>
+                <p class="subtitle">Baseline / Horizon / Missing / Transfer</p>
+            </div>
+            <div class="slide-body">
+                <div class="figure-single">
+                    <img src="../reproductions/batteryCDE_wang2025/results/figures/r2_summary.png" alt="R2 summary">
+                </div>
+                <div class="annotation">
+                    <strong>注释：</strong>所有实验中 R² 均小于 0，说明模型预测不如简单用训练集均值。这强烈提示：当前数据划分、容量缩放方式或任务设置存在问题，需优先诊断。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 14: 关键发现 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>关键发现</h1>
+                <p class="subtitle">单 seed 复现的初步结论</p>
+            </div>
+            <div class="slide-body" style="justify-content: center;">
+                <div class="finding-grid">
+                    <div class="finding-card">
+                        <div class="title">BatteryCDE 未显著优于 Transformer</div>
+                        <div class="desc">论文宣称的 CDE 优越性在本设置下未复现；Transformer 在 NASA 基线上 MAE 最低（0.033 vs 0.037）。</div>
+                    </div>
+                    <div class="finding-card">
+                        <div class="title">单 seed 结果极不稳定</div>
+                        <div class="desc">horizon 与 missing 实验均出现反直觉排序（h=80 最优而 h=50 最差；random30 优于 clean）。</div>
+                    </div>
+                    <div class="finding-card">
+                        <div class="title">R² 为负是普遍现象</div>
+                        <div class="desc">所有实验中 R² < 0，说明模型预测不如简单用训练集均值。任务设置、数据划分或容量缩放方式需优先诊断。</div>
+                    </div>
+                    <div class="finding-card">
+                        <div class="title">连续块缺失反而更稳定</div>
+                        <div class="desc">block30/block50 的 MAE 低于 clean 与 random 缺失。可能与 spline 插值对结构化时间缺失更友好有关。</div>
+                    </div>
+                </div>
+                <div class="annotation warn" style="margin-top: 1vw;">
+                    <strong>核心判断：</strong>基于当前单 seed 结果，BatteryCDE 的 claim 在本设置下不稳健；需通过多 seed 重复与任务诊断后再下结论。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 15: 下一步与对我们的研究课题的启示 -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1>下一步与对我们研究课题的启示</h1>
+                <p class="subtitle">从 BatteryCDE 复现到本课题的方法论升级</p>
+            </div>
+            <div class="slide-body" style="justify-content: center;">
+                <div class="two-col">
+                    <div>
+                        <div class="insight-box">
+                            <div class="title">短期行动</div>
+                            <div class="desc">
+                                <ul class="bullet-list">
+                                    <li>多 seed 重复，量化单 seed 波动性与统计显著性</li>
+                                    <li>诊断负 R² 根源：容量缩放、数据划分、horizon 定义</li>
+                                    <li>将 BatteryCDE 纳入项目主方法矩阵，与 GroupMIM/GNN 公平对比</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="insight-box">
+                            <div class="title">长期路线</div>
+                            <div class="desc">
+                                <ul class="bullet-list">
+                                    <li>启动 Physics-augmented Neural CDE（Toom et al., JPS 2026）复现</li>
+                                    <li>探索 CDE + 结构感知缺失处理（GroupMIM/GNN）的融合架构</li>
+                                    <li>构建跨数据集、多缺失机制的统一 benchmark</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="insight-box" style="border-left-color: #2f855a; background: #f0fff4;">
+                            <div class="title">对我们研究课题的帮助</div>
+                            <div class="desc">
+                                <ul class="bullet-list">
+                                    <li><strong>第三条缺失处理路线</strong>：在 MIM/GroupMIM/GNN 之外，CDE 提供了"连续时间插值 + 端到端估计"的新范式，可弥补当前项目离散时间建模的不足。</li>
+                                    <li><strong>实验设计参考</strong>：BatteryCDE 的 horizon、missing、transfer 三维度评估为我们的 benchmark 设计提供了可直接借鉴的框架。</li>
+                                    <li><strong>批判性方法观</strong>：复现失败提醒我们，对论文 claim 必须保持审慎——优越性的验证需要多 seed、多数据集、强基线与统计检验。</li>
+                                    <li><strong>物理约束融合</strong>：PA-NCDE 将单调性约束与等效电路知识融入连续时间模型，与本课题"物理信息融合"方向高度契合。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav">
+        <button onclick="prevSlide()">◀</button>
+        <button onclick="nextSlide()">▶</button>
+    </div>
+
+    <div class="page-num">
+        <span id="current">1</span> / <span id="total">15</span>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        let current = 0;
+        const total = slides.length;
+
+        document.getElementById('total').textContent = total;
+
+        function showSlide(index) {
+            slides.forEach((s, i) => {
+                s.classList.toggle('active', i === index);
+            });
+            document.getElementById('current').textContent = index + 1;
+        }
+
+        function nextSlide() {
+            current = (current + 1) % total;
+            showSlide(current);
+        }
+
+        function prevSlide() {
+            current = (current - 1 + total) % total;
+            showSlide(current);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+    </script>
+</body>
+</html>

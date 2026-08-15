@@ -72,3 +72,12 @@ wandb/
 
 # Data files (large, not committed)
 data/
+
+# legacy 版本B合并内容：只收代码/文档，忽略大文件与结果
+legacy_docs/results_legacy/
+legacy_docs/literature/
+legacy_docs/*.xls
+legacy_docs/*.csv
+legacy_docs/savedrecs*.xls
+legacy_docs/references_summary.csv
+legacy_docs/test_results/

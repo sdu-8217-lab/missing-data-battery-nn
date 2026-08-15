@@ -1,0 +1,42 @@
+# BatteryCDE NASA 长期预测配置
+
+experiment:
+  name: batteryCDE_nasa
+  seed: 42
+  device: auto
+  output_dir: ./results/nasa
+
+data:
+  dataset: NASA
+  data_dir: ../../data/NASA data
+  trajectory_features: [voltage, current, temperature]
+  target_col: capacity
+  horizon: 50
+  history_len: 3
+  train_batteries: [B0005, B0006]
+  val_batteries: [B0007]
+  test_batteries: [B0018]
+  missing_rate: 0.0
+  missing_pattern: random
+
+model:
+  name: BatteryCDE
+  input_dim: 3
+  hidden_dim: 16
+  attention_dim: 8
+  num_layers: 1
+  dropout: 0.1
+  method: rk4
+  options:
+    step_size: 1.0
+
+training:
+  epochs: 50
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0
+  patience: 10
+  optimizer: Adam
+
+logging:
+  level: INFO
